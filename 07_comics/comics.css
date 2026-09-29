@@ -1,0 +1,120 @@
+:root {
+  --paper: #f6efe4;
+  --ink: #2b2118;
+  --mute: #7a6858;
+  --line: #e4d5c4;
+  --accent: #b23a2f;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+  font-family: Georgia, "Times New Roman", serif;
+  background: var(--paper);
+  color: var(--ink);
+}
+#shelf {
+  border-right: 1px solid var(--line);
+  padding: 1.4rem 1.1rem 2rem;
+  overflow: auto;
+}
+.kicker, #book-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.7rem;
+  color: var(--accent);
+  margin: 0 0 0.4rem;
+  font-family: "Segoe UI", sans-serif;
+}
+h1 { font-size: 1.7rem; margin: 0 0 0.5rem; font-weight: 600; }
+.lede { color: var(--mute); font-size: 0.92rem; line-height: 1.4; margin: 0 0 1.2rem; }
+#books { display: flex; flex-direction: column; gap: 0.35rem; }
+#books button {
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  color: inherit;
+  padding: 0.45rem 0.5rem;
+  cursor: pointer;
+  font: inherit;
+  border-radius: 4px;
+}
+#books button:hover, #books button.active {
+  border-color: var(--line);
+  background: #fffdf8;
+}
+#books small { display: block; color: var(--mute); font-size: 0.78rem; }
+main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.2rem;
+  border-bottom: 1px solid var(--line);
+}
+h2 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+.tools { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; font-family: "Segoe UI", sans-serif; }
+.tabs { display: flex; border: 1px solid var(--line); background: #fffdf8; }
+.tabs button {
+  border: 0;
+  background: transparent;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font: inherit;
+  color: var(--mute);
+}
+.tabs button[aria-selected="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+.pager button {
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid var(--line);
+  background: #fffdf8;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+.pager button {
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid var(--line);
+  background: #fffdf8;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+#pos { min-width: 4.5rem; text-align: center; font-size: 0.9rem; color: var(--mute); }
+figure {
+  margin: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1rem 1.1rem;
+  min-height: 0;
+}
+#page {
+  max-width: 100%;
+  max-height: calc(100vh - 8rem);
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+figcaption {
+  margin-top: 0.6rem;
+  color: var(--mute);
+  font-size: 0.88rem;
+  text-align: center;
+}
+@media (max-width: 800px) {
+  body { grid-template-columns: 1fr; }
+  #shelf { border-right: 0; border-bottom: 1px solid var(--line); max-height: 40vh; }
+}

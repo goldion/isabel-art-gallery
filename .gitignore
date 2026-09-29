@@ -1,0 +1,9 @@
+﻿node_modules/
+01_originals_copy/
+03_thumbs/
+04_contact_sheets/
+05_by_category/
+06_text/
+tools/
+server.js
+package.json

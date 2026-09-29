@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Isabel Art</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <nav id="topnav" aria-label="Isabel Art">
+    <p class="brand">Isabel Art</p>
+    <div class="sections" role="tablist">
+      <a href="#comics" id="nav-comics" class="section-link" aria-current="page">Comics</a>
+      <a href="#songs" id="nav-songs" class="section-link">Songs</a>
+      <a href="#novels" id="nav-novels" class="section-link">Novels</a>
+      <a href="#gallery" id="nav-gallery" class="section-link">Gallery</a>
+    </div>
+  </nav>
+
+  <aside id="shelf">
+    <p class="kicker" id="shelf-kicker">Comics</p>
+    <h1 id="shelf-title">Books</h1>
+    <p class="lede" id="shelf-lede">Isabel’s notebook pages, plus crayon versions.</p>
+    <nav id="list"></nav>
+  </aside>
+
+  <main>
+    <header>
+      <div>
+        <p id="item-kicker">Choose a book</p>
+        <h2 id="item-title">Isabel Art</h2>
+      </div>
+      <div class="tools">
+        <div class="tabs" id="comic-tabs" role="tablist" aria-label="Page version">
+          <button type="button" id="tab-original" role="tab" aria-selected="true">Original pages</button>
+          <button type="button" id="tab-converted" role="tab" aria-selected="false">Converted</button>
+        </div>
+        <div class="tabs hidden" id="gallery-tabs" role="tablist" aria-label="Art type">
+          <button type="button" id="tab-characters" role="tab" aria-selected="true">Characters</button>
+          <button type="button" id="tab-elements" role="tab" aria-selected="false">Elements</button>
+          <button type="button" id="tab-backgrounds" role="tab" aria-selected="false">Backgrounds</button>
+          <button type="button" id="tab-styles" role="tab" aria-selected="false">Styles</button>
+        </div>
+        <div class="pager" id="pager">
+          <button type="button" id="prev" aria-label="Previous">←</button>
+          <span id="pos">0 / 0</span>
+          <button type="button" id="next" aria-label="Next">→</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="stage-comic" class="stage">
+      <figure>
+        <img id="page" alt="Comic page" />
+        <figcaption id="caption"></figcaption>
+      </figure>
+    </div>
+
+    <div id="stage-song" class="stage hidden">
+      <img id="song-picture" alt="Song picture" />
+      <pre id="song-lyrics"></pre>
+    </div>
+
+    <article id="stage-novel" class="stage hidden"></article>
+
+    <div id="stage-gallery" class="stage hidden">
+      <figure>
+        <img id="gallery-page" alt="Gallery art" />
+        <figcaption id="gallery-caption"></figcaption>
+      </figure>
+      <div id="gallery-grid"></div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
