@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="app.css?v=2" />
 </head>
 <body class="section-comics mode-notebook">
   <nav id="topnav" aria-label="Isabel Art">
@@ -34,11 +34,11 @@
         <h2 id="item-title">Isabel Art</h2>
       </div>
       <div class="tools">
-        <div class="tabs tabs-soft" id="comic-tabs" role="tablist" aria-label="Page version">
-          <button type="button" id="tab-original" role="tab" aria-selected="true">Notebook</button>
-          <button type="button" id="tab-converted" role="tab" aria-selected="false">Comic book</button>
+        <div class="tabs tabs-soft" id="comic-tabs" role="tablist" aria-label="Notebook or comic book">
+          <button type="button" id="tab-original" role="tab" aria-selected="true" aria-label="Notebook pages">Notebook</button>
+          <button type="button" id="tab-converted" role="tab" aria-selected="false" aria-label="Comic book pages">Comic book</button>
         </div>
-        <div class="tabs tabs-soft hidden" id="gallery-tabs" role="tablist" aria-label="Art type">
+        <div class="tabs tabs-soft tabs-crayon hidden" id="gallery-tabs" role="tablist" aria-label="Gallery art type">
           <button type="button" id="tab-characters" role="tab" aria-selected="true">Characters</button>
           <button type="button" id="tab-elements" role="tab" aria-selected="false">Elements</button>
           <button type="button" id="tab-backgrounds" role="tab" aria-selected="false">Backgrounds</button>
@@ -78,6 +78,6 @@
     </div>
   </main>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

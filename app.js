@@ -1,5 +1,21 @@
-const CLEAN = "02_cleaned/";
-const CONV = "07_comics/converted/";
+const SITE_ROOT = (() => {
+  const script = document.currentScript;
+  if (script && script.src) {
+    return new URL("./", script.src).pathname;
+  }
+  let path = location.pathname;
+  if (path.endsWith("/")) return path;
+  const leaf = path.split("/").pop() || "";
+  if (/\./.test(leaf)) return path.slice(0, path.lastIndexOf("/") + 1);
+  return `${path}/`;
+})();
+
+function urlFromRoot(relative) {
+  return SITE_ROOT + relative.replace(/^\//, "");
+}
+
+const CLEAN = urlFromRoot("02_cleaned/");
+const CONV = urlFromRoot("07_comics/converted/");
 
 function imgs(ids) {
   return ids.map((id) => ({
@@ -17,6 +33,7 @@ const BOOKS = [
     id: "god-sisters",
     title: "God sisters",
     blurb: "Letters and songs",
+    shelfCover: "07_comics/converted/cover-isabel-art.png",
     original: imgs([951, 952, 953, 954, 955, 956, 962, 963, 964, 965, 966, 967, 968, 969]),
     converted: [
       conv("cover-isabel-art.png", "Cover"),
@@ -29,6 +46,7 @@ const BOOKS = [
     id: "cats",
     title: "Cat kingdom",
     blurb: "Ivi is a cat",
+    shelfCover: "07_comics/converted/cats-1.png",
     original: imgs([957, 958, 959, 960, 961]),
     converted: [conv("cats-1.png", "Ivi is a cat")],
   },
@@ -36,6 +54,7 @@ const BOOKS = [
     id: "dragon-ville",
     title: "Hum Dragon Ville",
     blurb: "Hatching, picnic, portal",
+    shelfCover: "07_comics/converted/dragon-ville-1.png",
     original: imgs([989, 990, 991, 992]),
     converted: [
       conv("dragon-ville-1.png", "Hum Dragon Ville"),
@@ -46,6 +65,7 @@ const BOOKS = [
     id: "water-city",
     title: "Water City",
     blurb: "荷花龍 to To Be Continued",
+    shelfCover: "07_comics/converted/water-1.png",
     original: imgs([978, 979, 980, 982, 983, 984, 985, 986, 987, 988]),
     converted: [
       conv("water-1.png", "Water City"),
@@ -56,6 +76,7 @@ const BOOKS = [
     id: "dragon-city",
     title: "Dragon City",
     blurb: "Dragons and transformations",
+    shelfCover: "07_comics/converted/dragon-city-1.png",
     original: imgs([970, 971, 972, 973, 974, 975, 976, 977, 1008, 1010]),
     converted: [conv("dragon-city-1.png", "In Dragon City")],
   },
@@ -63,6 +84,7 @@ const BOOKS = [
     id: "next-door",
     title: "Next door",
     blurb: "2018 / 2026",
+    shelfCover: "07_comics/converted/next-door-1.png",
     original: imgs([1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045, 1046, 1047, 1048]),
     converted: [
       conv("next-door-1.png", "Next door"),
@@ -73,6 +95,7 @@ const BOOKS = [
     id: "pond-team",
     title: "Pond team",
     blurb: "Pond, mermaid team, the end",
+    shelfCover: "07_comics/converted/pond-1.png",
     original: imgs([1002, 1003, 1015, 1035, 1036, 1055, 1065]),
     converted: [conv("pond-1.png", "The pond team")],
   },
@@ -80,6 +103,7 @@ const BOOKS = [
     id: "more",
     title: "More comics",
     blurb: "The rest of the notebook",
+    shelfCover: "07_comics/converted/more-1.png",
     original: imgs([
       993, 994, 995, 996, 997, 998, 999,
       1001, 1004, 1005, 1006, 1007, 1009,
@@ -121,7 +145,7 @@ const NOVELS = [
   { id: "pond", title: "The Pond Team", folder: "09_novels/06-the-pond-team", blurb: "Lily pads and mermaids" },
 ];
 
-const ASSET = "10_game_assets/";
+const ASSET = urlFromRoot("10_game_assets/");
 
 const GROUP_LABELS = {
   "god-sisters": "God sisters",
@@ -198,6 +222,7 @@ const GALLERY_CHIP = {
 };
 
 function bookCover(book) {
+  if (book.shelfCover) return urlFromRoot(book.shelfCover);
   const conv = book.converted && book.converted[0];
   if (conv) return conv.src;
   const orig = book.original && book.original[0];
@@ -206,13 +231,54 @@ function bookCover(book) {
 
 function shelfCover(item) {
   if (section === "comics") return bookCover(item);
-  if (section === "songs") return `${item.folder}/picture.png`;
+  if (section === "songs") return urlFromRoot(`${item.folder}/picture.png`);
   if (section === "novels") return NOVEL_COVERS[item.id] || "";
   if (section === "gallery") {
     const art = item.arts && item.arts[0];
     if (art) return ASSET + art.file;
   }
   return "";
+}
+
+function makeShelfThumb(coverSrc, title, fallbacks = []) {
+  const wrap = document.createElement("span");
+  wrap.className = "shelf-thumb-wrap";
+
+  const tryFallback = (sources, index) => {
+    if (index >= sources.length) {
+      wrap.classList.add("is-placeholder");
+      wrap.setAttribute("aria-hidden", "true");
+      wrap.textContent = title.charAt(0).toUpperCase();
+      return;
+    }
+    const img = document.createElement("img");
+    img.className = "shelf-thumb";
+    img.alt = `${title} cover`;
+    img.width = 72;
+    img.height = 72;
+    img.decoding = "async";
+    img.src = sources[index];
+    img.addEventListener("error", () => {
+      img.remove();
+      tryFallback(sources, index + 1);
+    });
+    wrap.appendChild(img);
+  };
+
+  const sources = [coverSrc, ...fallbacks].filter(Boolean);
+  if (sources.length) tryFallback(sources, 0);
+  else tryFallback([], 0);
+
+  return wrap;
+}
+
+function syncVersionTabLabels() {
+  if (!tabOriginal || !tabConverted) return;
+  tabOriginal.textContent = "Notebook";
+  tabConverted.textContent = "Comic book";
+  tabOriginal.setAttribute("aria-label", "Notebook pages");
+  tabConverted.setAttribute("aria-label", "Comic book pages");
+  if (comicTabs) comicTabs.setAttribute("aria-label", "Notebook or comic book");
 }
 
 function applyBodyChrome() {
@@ -399,7 +465,7 @@ function galleryGroups() {
 
 async function loadGallery() {
   if (galleryPack) return galleryPack;
-  const res = await fetch(`${ASSET}manifest.json`);
+  const res = await fetch(urlFromRoot("10_game_assets/manifest.json"));
   galleryPack = await res.json();
   return galleryPack;
 }
@@ -537,19 +603,14 @@ function renderList() {
     if (section === "gallery") extra = item.blurb;
 
     const coverSrc = shelfCover(item);
-    let thumb;
-    if (coverSrc) {
-      thumb = document.createElement("img");
-      thumb.className = "shelf-thumb";
-      thumb.src = coverSrc;
-      thumb.alt = "";
-      thumb.loading = "lazy";
-    } else {
-      thumb = document.createElement("span");
-      thumb.className = "shelf-thumb placeholder";
-      thumb.textContent = item.title.charAt(0).toUpperCase();
-      thumb.setAttribute("aria-hidden", "true");
+    const fallbacks = [];
+    if (section === "comics") {
+      const orig = item.original && item.original[0];
+      const conv = item.converted && item.converted[0];
+      if (orig && orig.src !== coverSrc) fallbacks.push(orig.src);
+      if (conv && conv.src !== coverSrc) fallbacks.push(conv.src);
     }
+    const thumb = makeShelfThumb(coverSrc, item.title, fallbacks);
 
     const text = document.createElement("span");
     text.className = "shelf-text";
@@ -590,11 +651,11 @@ async function showSong() {
   const song = SONGS[itemIndex];
   title.textContent = song.title;
   kicker.textContent = song.blurb;
-  songPicture.src = `${song.folder}/picture.png`;
+  songPicture.src = urlFromRoot(`${song.folder}/picture.png`);
   songPicture.alt = song.title;
   songLyrics.textContent = "Loading…";
   try {
-    const res = await fetch(`${song.folder}/lyrics.txt`);
+    const res = await fetch(urlFromRoot(`${song.folder}/lyrics.txt`));
     songLyrics.textContent = await res.text();
   } catch (err) {
     songLyrics.textContent = "Could not load lyrics.";
@@ -607,9 +668,9 @@ async function showNovel() {
   kicker.textContent = novel.blurb;
   stageNovel.innerHTML = "<p>Loading…</p>";
   try {
-    const res = await fetch(`${novel.folder}/novel.md`);
+    const res = await fetch(urlFromRoot(`${novel.folder}/novel.md`));
     const md = await res.text();
-    stageNovel.innerHTML = renderMarkdown(md, `${novel.folder}/`);
+    stageNovel.innerHTML = renderMarkdown(md, urlFromRoot(`${novel.folder}/`));
     stageNovel.scrollTop = 0;
   } catch (err) {
     stageNovel.innerHTML = "<p>Could not load this novel.</p>";
@@ -712,6 +773,7 @@ function showItem() {
 
 function setMode(nextMode) {
   mode = nextMode;
+  syncVersionTabLabels();
   tabOriginal.setAttribute("aria-selected", mode === "original" ? "true" : "false");
   tabConverted.setAttribute("aria-selected", mode === "converted" ? "true" : "false");
   applyBodyChrome();
@@ -784,4 +846,5 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowRight") next.click();
 });
 window.addEventListener("hashchange", readHash);
+syncVersionTabLabels();
 readHash();
