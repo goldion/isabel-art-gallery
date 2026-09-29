@@ -4,9 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Isabel Art</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="app.css" />
 </head>
-<body>
+<body class="section-comics mode-notebook">
   <nav id="topnav" aria-label="Isabel Art">
     <p class="brand">Isabel Art</p>
     <div class="sections" role="tablist">
@@ -31,11 +34,11 @@
         <h2 id="item-title">Isabel Art</h2>
       </div>
       <div class="tools">
-        <div class="tabs" id="comic-tabs" role="tablist" aria-label="Page version">
-          <button type="button" id="tab-original" role="tab" aria-selected="true">Original pages</button>
-          <button type="button" id="tab-converted" role="tab" aria-selected="false">Converted</button>
+        <div class="tabs tabs-soft" id="comic-tabs" role="tablist" aria-label="Page version">
+          <button type="button" id="tab-original" role="tab" aria-selected="true">Notebook</button>
+          <button type="button" id="tab-converted" role="tab" aria-selected="false">Comic book</button>
         </div>
-        <div class="tabs hidden" id="gallery-tabs" role="tablist" aria-label="Art type">
+        <div class="tabs tabs-soft hidden" id="gallery-tabs" role="tablist" aria-label="Art type">
           <button type="button" id="tab-characters" role="tab" aria-selected="true">Characters</button>
           <button type="button" id="tab-elements" role="tab" aria-selected="false">Elements</button>
           <button type="button" id="tab-backgrounds" role="tab" aria-selected="false">Backgrounds</button>
@@ -49,9 +52,11 @@
       </div>
     </header>
 
-    <div id="stage-comic" class="stage">
-      <figure>
-        <img id="page" alt="Comic page" />
+    <div id="stage-comic" class="stage stage-storybook">
+      <figure class="page-mat">
+        <div class="mat-frame">
+          <img id="page" alt="Comic page" />
+        </div>
         <figcaption id="caption"></figcaption>
       </figure>
     </div>
@@ -63,12 +68,13 @@
 
     <article id="stage-novel" class="stage hidden"></article>
 
-    <div id="stage-gallery" class="stage hidden">
-      <figure>
-        <img id="gallery-page" alt="Gallery art" />
+    <div id="stage-gallery" class="stage stage-shelf hidden">
+      <p class="gallery-shelf-lede" id="gallery-shelf-lede"></p>
+      <div id="gallery-grid" role="list"></div>
+      <figure class="gallery-focus hidden" aria-hidden="true">
+        <img id="gallery-page" alt="" />
         <figcaption id="gallery-caption"></figcaption>
       </figure>
-      <div id="gallery-grid"></div>
     </div>
   </main>
 

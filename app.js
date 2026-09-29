@@ -181,6 +181,57 @@ const ART_NAMES = {
   "sea-dragon-girl": "海龍城 girl",
 };
 
+const NOVEL_COVERS = {
+  "god-sisters": `${CONV}cover-isabel-art.png`,
+  cats: `${CONV}cats-1.png`,
+  dragons: `${CONV}dragon-ville-1.png`,
+  water: `${CONV}water-1.png`,
+  "next-door": `${CONV}next-door-1.png`,
+  pond: `${CONV}pond-1.png`,
+};
+
+const GALLERY_CHIP = {
+  characters: "characters",
+  elements: "elements",
+  backgrounds: "backgrounds",
+  styles: "styles",
+};
+
+function bookCover(book) {
+  const conv = book.converted && book.converted[0];
+  if (conv) return conv.src;
+  const orig = book.original && book.original[0];
+  return orig ? orig.src : "";
+}
+
+function shelfCover(item) {
+  if (section === "comics") return bookCover(item);
+  if (section === "songs") return `${item.folder}/picture.png`;
+  if (section === "novels") return NOVEL_COVERS[item.id] || "";
+  if (section === "gallery") {
+    const art = item.arts && item.arts[0];
+    if (art) return ASSET + art.file;
+  }
+  return "";
+}
+
+function applyBodyChrome() {
+  document.body.classList.remove(
+    "section-comics",
+    "section-songs",
+    "section-novels",
+    "section-gallery",
+    "mode-notebook",
+    "mode-comic"
+  );
+  document.body.classList.add(`section-${section}`);
+  if (section === "comics") {
+    document.body.classList.add(mode === "converted" ? "mode-comic" : "mode-notebook");
+  }
+}
+
+const galleryShelfLede = document.getElementById("gallery-shelf-lede");
+
 const listEl = document.getElementById("list");
 const img = document.getElementById("page");
 const caption = document.getElementById("caption");
@@ -443,6 +494,7 @@ function setSection(next) {
   stageSong.classList.toggle("hidden", section !== "songs");
   stageNovel.classList.toggle("hidden", section !== "novels");
   stageGallery.classList.toggle("hidden", section !== "gallery");
+  applyBodyChrome();
   if (section === "comics") {
     shelfKicker.textContent = "Comics";
     shelfTitle.textContent = "Books";
@@ -466,6 +518,10 @@ function setSection(next) {
   showItem();
 }
 
+function modePageLabel() {
+  return mode === "converted" ? "comic book" : "notebook";
+}
+
 function renderList() {
   const all = items();
   listEl.innerHTML = "";
@@ -476,10 +532,37 @@ function renderList() {
     let extra = item.blurb;
     if (section === "comics") {
       const n = (mode === "converted" ? item.converted : item.original).length;
-      extra = `${n} ${mode} pages · ${item.blurb}`;
+      extra = `${n} ${modePageLabel()} pages · ${item.blurb}`;
     }
     if (section === "gallery") extra = item.blurb;
-    btn.innerHTML = `${item.title}<small>${extra}</small>`;
+
+    const coverSrc = shelfCover(item);
+    let thumb;
+    if (coverSrc) {
+      thumb = document.createElement("img");
+      thumb.className = "shelf-thumb";
+      thumb.src = coverSrc;
+      thumb.alt = "";
+      thumb.loading = "lazy";
+    } else {
+      thumb = document.createElement("span");
+      thumb.className = "shelf-thumb placeholder";
+      thumb.textContent = item.title.charAt(0).toUpperCase();
+      thumb.setAttribute("aria-hidden", "true");
+    }
+
+    const text = document.createElement("span");
+    text.className = "shelf-text";
+    const titleSpan = document.createElement("span");
+    titleSpan.className = "shelf-title";
+    titleSpan.textContent = item.title;
+    const small = document.createElement("small");
+    small.textContent = extra;
+    text.appendChild(titleSpan);
+    text.appendChild(small);
+
+    btn.appendChild(thumb);
+    btn.appendChild(text);
     btn.addEventListener("click", () => {
       itemIndex = i;
       pageIndex = 0;
@@ -533,11 +616,15 @@ async function showNovel() {
   }
 }
 
+function galleryChipKind() {
+  return GALLERY_CHIP[galleryKind] || "characters";
+}
+
 function showGallery() {
   if (galleryKind !== "styles" && !galleryPack) {
     title.textContent = "Gallery";
     kicker.textContent = "Loading…";
-    galleryCaption.textContent = "Loading the art pack…";
+    if (galleryShelfLede) galleryShelfLede.textContent = "Loading the art pack…";
     galleryPage.removeAttribute("src");
     galleryPage.alt = "";
     galleryGrid.innerHTML = "";
@@ -551,7 +638,7 @@ function showGallery() {
       .catch(() => {
         if (section !== "gallery") return;
         kicker.textContent = "Could not load";
-        galleryCaption.textContent = "Could not load the gallery.";
+        if (galleryShelfLede) galleryShelfLede.textContent = "Could not load the gallery.";
       });
     return;
   }
@@ -563,10 +650,15 @@ function showGallery() {
   const art = arts[pageIndex];
   title.textContent = group.title;
   kicker.textContent = galleryKindLabel();
+  const chip = galleryChipKind();
+  if (galleryShelfLede) {
+    galleryShelfLede.textContent = art
+      ? `${arts.length} stickers · pick one or use ← →`
+      : "No art in this group yet.";
+  }
   if (!art) {
     galleryPage.removeAttribute("src");
     galleryPage.alt = "";
-    galleryCaption.textContent = "No art in this group.";
     galleryGrid.innerHTML = "";
     pos.textContent = "0 / 0";
     prev.disabled = true;
@@ -584,12 +676,21 @@ function showGallery() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = i === pageIndex ? "active" : "";
+    btn.setAttribute("role", "listitem");
     const thumb = document.createElement("img");
     thumb.src = ASSET + item.file;
-    thumb.alt = "";
+    thumb.alt = artName(item);
+    const chipRow = document.createElement("span");
+    chipRow.className = "chip-row";
+    const typeChip = document.createElement("span");
+    typeChip.className = `type-chip ${chip}`;
+    typeChip.textContent = galleryKind === "styles" && item.look ? item.look : galleryKindLabel();
+    chipRow.appendChild(typeChip);
     const label = document.createElement("span");
+    label.className = "art-label";
     label.textContent = artName(item);
     btn.appendChild(thumb);
+    btn.appendChild(chipRow);
     btn.appendChild(label);
     btn.addEventListener("click", () => {
       pageIndex = i;
@@ -613,6 +714,7 @@ function setMode(nextMode) {
   mode = nextMode;
   tabOriginal.setAttribute("aria-selected", mode === "original" ? "true" : "false");
   tabConverted.setAttribute("aria-selected", mode === "converted" ? "true" : "false");
+  applyBodyChrome();
   pageIndex = 0;
   showItem();
 }
