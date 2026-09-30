@@ -316,7 +316,6 @@ const stageSong = document.getElementById("stage-song");
 const stageNovel = document.getElementById("stage-novel");
 const stageGallery = document.getElementById("stage-gallery");
 const galleryFocusPanel = document.getElementById("gallery-focus-panel");
-const galleryScroll = document.querySelector(".gallery-scroll");
 const galleryFocus = document.getElementById("gallery-focus");
 const galleryPage = document.getElementById("gallery-page");
 const galleryCaption = document.getElementById("gallery-caption");
