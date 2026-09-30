@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="app.css?v=3" />
+  <link rel="stylesheet" href="app.css?v=5" />
 </head>
 <body class="section-comics mode-comic">
   <nav id="topnav" aria-label="Isabel Art">
@@ -69,15 +69,21 @@
     <article id="stage-novel" class="stage hidden"></article>
 
     <div id="stage-gallery" class="stage stage-shelf hidden">
-      <p class="gallery-shelf-lede" id="gallery-shelf-lede"></p>
-      <figure class="gallery-focus hidden" id="gallery-focus">
-        <img id="gallery-page" alt="" />
-        <figcaption id="gallery-caption"></figcaption>
-      </figure>
-      <div id="gallery-grid" role="list"></div>
+      <div class="gallery-layout">
+        <div class="gallery-scroll">
+          <p class="gallery-shelf-lede" id="gallery-shelf-lede"></p>
+          <div id="gallery-grid" role="list"></div>
+        </div>
+        <aside class="gallery-focus-panel" id="gallery-focus-panel" aria-live="polite">
+          <figure class="gallery-focus hidden" id="gallery-focus">
+            <img id="gallery-page" alt="" />
+            <figcaption id="gallery-caption"></figcaption>
+          </figure>
+        </aside>
+      </div>
     </div>
   </main>
 
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

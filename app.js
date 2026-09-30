@@ -315,6 +315,8 @@ const stageComic = document.getElementById("stage-comic");
 const stageSong = document.getElementById("stage-song");
 const stageNovel = document.getElementById("stage-novel");
 const stageGallery = document.getElementById("stage-gallery");
+const galleryFocusPanel = document.getElementById("gallery-focus-panel");
+const galleryScroll = document.querySelector(".gallery-scroll");
 const galleryFocus = document.getElementById("gallery-focus");
 const galleryPage = document.getElementById("gallery-page");
 const galleryCaption = document.getElementById("gallery-caption");
@@ -548,10 +550,13 @@ function markGalleryTabs() {
 }
 
 function setGalleryFocusVisible(show) {
-  if (!galleryFocus) return;
-  galleryFocus.classList.toggle("hidden", !show);
-  if (show) galleryFocus.removeAttribute("aria-hidden");
-  else galleryFocus.setAttribute("aria-hidden", "true");
+  if (galleryFocus) {
+    galleryFocus.classList.toggle("hidden", !show);
+    if (show) galleryFocus.removeAttribute("aria-hidden");
+    else galleryFocus.setAttribute("aria-hidden", "true");
+  }
+  if (galleryFocusPanel) galleryFocusPanel.classList.toggle("is-open", show);
+  if (galleryScroll) galleryScroll.classList.toggle("has-preview-open", show);
 }
 
 function setSection(next) {
