@@ -9,4 +9,4 @@ Built output only — no game source trees. Published for anonymous play at `/pl
 | `dragon-flight/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `d111c68` | `rnd/threejs/dragon-flight` static root |
 | `god-sisters-stroll/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `d111c68` | `rnd/threejs/god-sisters-stroll` static root |
 
-Picnic art cards live under `showcase/picnic/` (shortlist from god-sisters-world `release`).
+Legacy picnic art assets may remain under `showcase/picnic/` but are not linked from the Demo hub.
