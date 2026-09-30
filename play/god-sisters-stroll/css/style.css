@@ -1,0 +1,223 @@
+:root {
+  --paper: #f7f1e4;
+  --ink: #2a221c;
+  --pink: #d45b7a;
+  --line: #e8d9c4;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  overflow: hidden;
+  background: #3d3229;
+  color: var(--ink);
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  touch-action: none;
+  user-select: none;
+}
+
+#view {
+  position: absolute;
+  inset: 0;
+}
+
+#view canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 12px 18px;
+  background: linear-gradient(to bottom, rgba(247, 241, 228, 0.92), rgba(247, 241, 228, 0));
+  pointer-events: none;
+  z-index: 2;
+}
+
+.brand {
+  font-weight: 800;
+  color: var(--pink);
+  letter-spacing: 0.02em;
+}
+
+#place-name {
+  font-weight: 800;
+  font-size: 1.15rem;
+}
+
+#crumbs {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: #7a6a5c;
+}
+
+#crumbs span[aria-current="true"] {
+  color: var(--pink);
+  font-weight: 800;
+}
+
+#prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 28%;
+  transform: translateX(-50%);
+  background: #fffaf3;
+  border: 3px solid var(--pink);
+  color: var(--ink);
+  padding: 8px 14px;
+  font-weight: 700;
+  z-index: 3;
+  white-space: nowrap;
+}
+
+#talk {
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  transform: translateX(-50%);
+  width: min(520px, 92vw);
+  background: #fffaf3;
+  border: 4px solid var(--pink);
+  padding: 14px 16px 10px;
+  z-index: 4;
+  cursor: pointer;
+}
+
+#talk-who {
+  font-weight: 800;
+  color: var(--pink);
+  margin-bottom: 4px;
+}
+
+#talk-line {
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.talk-hint {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: #7a6a5c;
+}
+
+#onboarding,
+#loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(61, 50, 41, 0.72);
+  color: var(--paper);
+  z-index: 6;
+  text-align: center;
+  padding: 24px;
+}
+
+#onboarding[hidden],
+#loading[hidden],
+#talk[hidden],
+#prompt[hidden],
+#touch[hidden] {
+  display: none;
+}
+
+.onboarding-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #ffd3e0;
+}
+
+#onboarding ul {
+  list-style: none;
+  line-height: 1.7;
+}
+
+.onboarding-hint {
+  margin-top: 8px;
+  color: #ffe082;
+  font-weight: 700;
+}
+
+#fade {
+  position: absolute;
+  inset: 0;
+  background: #3d3229;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+  z-index: 5;
+}
+
+#fade.on {
+  opacity: 1;
+}
+
+#touch {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+#stick {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  width: 128px;
+  height: 128px;
+  border: 3px solid rgba(212, 91, 122, 0.7);
+  border-radius: 50%;
+  background: rgba(255, 250, 243, 0.35);
+  pointer-events: auto;
+}
+
+#stick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border-radius: 50%;
+  background: var(--pink);
+}
+
+#action-btn {
+  position: absolute;
+  right: 24px;
+  bottom: 36px;
+  width: 72px;
+  height: 72px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pink);
+  color: #fffaf3;
+  font-size: 1.4rem;
+  font-weight: 800;
+  pointer-events: auto;
+}
+
+@media (pointer: fine) {
+  #touch {
+    display: none;
+  }
+}

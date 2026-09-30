@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>God Sisters 3D Stroll</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div id="view"></div>
+    <header id="hud">
+      <div class="brand">God Sisters</div>
+      <div id="place-name">Garden</div>
+      <div id="crumbs" aria-label="Places">
+        <span data-place="garden">Garden</span>
+        <span data-place="park">Park</span>
+        <span data-place="pond">Pond</span>
+      </div>
+    </header>
+    <p id="prompt" hidden></p>
+    <div id="talk" hidden>
+      <p id="talk-who"></p>
+      <p id="talk-line"></p>
+      <p class="talk-hint">E or click</p>
+    </div>
+    <div id="onboarding" hidden>
+      <p class="onboarding-title">God Sisters 3D Stroll</p>
+      <ul>
+        <li>WASD or arrows to walk</li>
+        <li>Drag to look around</li>
+        <li>Rainbow door = next place</li>
+        <li>E talks to friends</li>
+      </ul>
+      <p class="onboarding-hint">Walk to start</p>
+    </div>
+    <div id="loading">Drawing the garden…</div>
+    <div id="fade"></div>
+    <div id="touch" hidden>
+      <div id="stick" aria-label="Move">
+        <div id="stick-knob"></div>
+      </div>
+      <button id="action-btn" type="button">E</button>
+    </div>
+  </div>
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>
