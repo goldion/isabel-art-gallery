@@ -316,6 +316,7 @@ const stageSong = document.getElementById("stage-song");
 const stageNovel = document.getElementById("stage-novel");
 const stageGallery = document.getElementById("stage-gallery");
 const galleryFocusPanel = document.getElementById("gallery-focus-panel");
+const galleryScroll = document.querySelector("#stage-gallery .gallery-scroll");
 const galleryFocus = document.getElementById("gallery-focus");
 const galleryPage = document.getElementById("gallery-page");
 const galleryCaption = document.getElementById("gallery-caption");
@@ -764,9 +765,15 @@ function showGallery() {
     btn.type = "button";
     btn.className = i === pageIndex ? "active" : "";
     btn.setAttribute("role", "listitem");
+    const slot = document.createElement("span");
+    slot.className = "grid-thumb-slot";
     const thumb = document.createElement("img");
     thumb.src = ASSET + item.file;
-    thumb.alt = artName(item);
+    thumb.alt = "";
+    slot.appendChild(thumb);
+    if (i === pageIndex) {
+      slot.appendChild(document.createTextNode("Shown above"));
+    }
     const chipRow = document.createElement("span");
     chipRow.className = "chip-row";
     const typeChip = document.createElement("span");
@@ -776,7 +783,7 @@ function showGallery() {
     const label = document.createElement("span");
     label.className = "art-label";
     label.textContent = artName(item);
-    btn.appendChild(thumb);
+    btn.appendChild(slot);
     btn.appendChild(chipRow);
     btn.appendChild(label);
     btn.addEventListener("click", () => {
@@ -786,7 +793,10 @@ function showGallery() {
     galleryGrid.appendChild(btn);
   });
   const active = galleryGrid.querySelector("button.active");
-  if (active) active.scrollIntoView({ block: "nearest", inline: "nearest" });
+  if (active && galleryScroll) {
+    const top = active.offsetTop - Math.max(0, (galleryScroll.clientHeight - active.offsetHeight) / 2);
+    galleryScroll.scrollTo({ top, behavior: "smooth" });
+  }
 }
 
 function showItem() {
