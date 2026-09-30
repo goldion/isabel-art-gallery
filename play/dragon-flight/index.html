@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Dragon Flight</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div id="view"></div>
+    <header id="hud">
+      <div class="brand">Dragon Flight</div>
+      <div id="place-name">天龍城</div>
+      <div id="crumbs" aria-label="Cities">
+        <span data-zone="sky">Sky</span>
+        <span data-zone="earth">Earth</span>
+        <span data-zone="sea">Sea</span>
+      </div>
+    </header>
+    <div id="stats">
+      <div id="rings">Rings 0 / 12</div>
+      <div id="speed">Speed 1.0×</div>
+    </div>
+    <div id="onboarding" hidden>
+      <p class="onboarding-title">Dragon Flight</p>
+      <ul>
+        <li>Fly the lotus dragon through 龍城</li>
+        <li>WASD or arrows to steer</li>
+        <li>Hold Shift to go faster</li>
+        <li>Fly through the rings</li>
+      </ul>
+      <p class="onboarding-hint">Steer to start</p>
+    </div>
+    <div id="finish" hidden>
+      <p class="finish-title">The three cities!</p>
+      <p id="finish-line"></p>
+      <button id="restart-btn" type="button">Fly again</button>
+    </div>
+    <div id="loading">Drawing 龍城…</div>
+    <div id="touch" hidden>
+      <div id="stick" aria-label="Steer">
+        <div id="stick-knob"></div>
+      </div>
+      <button id="boost-btn" type="button">Boost</button>
+    </div>
+  </div>
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>
