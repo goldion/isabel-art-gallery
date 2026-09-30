@@ -467,18 +467,37 @@ figcaption {
   border-radius: var(--radius-md);
 }
 
-/* Gallery: only .gallery-scroll moves; preview is a fixed body overlay */
+/* Gallery: large preview dock on top; only thumb grid scrolls below */
 .stage-shelf {
   padding: 0;
   min-height: 0;
   flex: 1;
 }
 
+.gallery-stage {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.gallery-preview-dock {
+  flex: 0 0 auto;
+  display: none;
+  padding: 0.65rem 1rem 0.75rem;
+  border-bottom: 2px dashed var(--line);
+  background: rgba(255, 249, 240, 0.96);
+}
+
+.gallery-preview-dock.is-open {
+  display: block;
+}
+
 .gallery-scroll {
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
-  height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -491,33 +510,6 @@ figcaption {
   font-size: 0.92rem;
   color: var(--mute);
   font-weight: 500;
-}
-
-.gallery-focus-panel {
-  position: fixed;
-  z-index: 200;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.15s ease, visibility 0.15s ease;
-}
-
-.gallery-focus-panel.is-open {
-  pointer-events: auto;
-  opacity: 1;
-  visibility: visible;
-  top: var(--gallery-preview-top, 5.75rem);
-  right: 1rem;
-  left: var(--gallery-preview-left, 17.5rem);
-  bottom: 1rem;
-  width: auto;
-  max-width: min(24rem, calc(100vw - var(--gallery-preview-left, 17.5rem) - 1.5rem));
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.gallery-focus-panel.is-open .gallery-focus {
-  max-height: 100%;
 }
 
 #gallery-grid {
@@ -634,10 +626,12 @@ figcaption {
 }
 
 #gallery-page {
-  width: 100%;
-  max-width: 100%;
-  max-height: min(100%, calc(100vh - var(--gallery-preview-top, 5.75rem) - 4rem));
+  display: block;
+  width: auto;
+  max-width: min(100%, 40rem);
+  max-height: min(42vh, 22rem);
   height: auto;
+  margin: 0 auto;
   object-fit: contain;
   background: #fff;
   border: 2px solid var(--line);
@@ -668,23 +662,14 @@ body.section-gallery #pager {
   }
   #stage-song { grid-template-columns: 1fr; }
   #topnav { flex-wrap: wrap; }
+  .gallery-preview-dock {
+    padding: 0.55rem 0.75rem 0.65rem;
+  }
   .gallery-scroll {
     padding: 0.65rem 0.75rem 1rem;
   }
-  .gallery-scroll.has-preview-open {
-    padding-bottom: min(44vh, 16.5rem);
-  }
-  .gallery-focus-panel.is-open {
-    top: auto;
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
-    max-width: none;
-    max-height: min(42vh, 16rem);
-    overflow-y: auto;
-  }
   #gallery-page {
-    max-height: min(34vh, 13.5rem);
+    max-height: min(36vh, 14rem);
   }
   #gallery-grid {
     grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
