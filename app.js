@@ -549,13 +549,39 @@ function markGalleryTabs() {
   }
 }
 
+function layoutGalleryPreview() {
+  const mainEl = document.querySelector("main");
+  const headerEl = mainEl && mainEl.querySelector("header");
+  const shelfEl = document.getElementById("shelf");
+  const topNav = document.getElementById("topnav");
+  let top = 0;
+  if (topNav) top = topNav.getBoundingClientRect().bottom;
+  if (headerEl) top = Math.max(top, headerEl.getBoundingClientRect().bottom);
+  document.body.style.setProperty("--gallery-preview-top", `${Math.ceil(top + 8)}px`);
+
+  if (window.innerWidth <= 900) {
+    document.body.style.removeProperty("--gallery-preview-left");
+    return;
+  }
+  let left = 0;
+  if (shelfEl) left = shelfEl.getBoundingClientRect().right;
+  else if (mainEl) left = mainEl.getBoundingClientRect().left;
+  document.body.style.setProperty("--gallery-preview-left", `${Math.ceil(left + 8)}px`);
+}
+
 function setGalleryFocusVisible(show) {
   if (galleryFocus) {
     galleryFocus.classList.toggle("hidden", !show);
     if (show) galleryFocus.removeAttribute("aria-hidden");
     else galleryFocus.setAttribute("aria-hidden", "true");
   }
-  if (galleryFocusPanel) galleryFocusPanel.classList.toggle("is-open", show);
+  if (galleryFocusPanel) {
+    galleryFocusPanel.classList.toggle("is-open", show);
+    if (show) {
+      galleryFocusPanel.removeAttribute("hidden");
+      layoutGalleryPreview();
+    } else galleryFocusPanel.setAttribute("hidden", "");
+  }
   if (galleryScroll) galleryScroll.classList.toggle("has-preview-open", show);
 }
 
@@ -580,7 +606,9 @@ function setSection(next) {
   stageSong.classList.toggle("hidden", section !== "songs");
   stageNovel.classList.toggle("hidden", section !== "novels");
   stageGallery.classList.toggle("hidden", section !== "gallery");
+  if (section !== "gallery") setGalleryFocusVisible(false);
   applyBodyChrome();
+  if (section === "gallery") layoutGalleryPreview();
   if (section === "comics") {
     shelfKicker.textContent = "Comics";
     shelfTitle.textContent = "Books";
@@ -869,5 +897,8 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowRight") next.click();
 });
 window.addEventListener("hashchange", readHash);
+window.addEventListener("resize", () => {
+  if (galleryFocusPanel && galleryFocusPanel.classList.contains("is-open")) layoutGalleryPreview();
+});
 syncVersionTabLabels();
 readHash();
