@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="app.css?v=8" />
+  <link rel="stylesheet" href="app.css?v=9" />
 </head>
 <body class="section-comics mode-comic">
   <nav id="topnav" aria-label="Isabel Art">
@@ -16,6 +16,7 @@
       <a href="#comics" id="nav-comics" class="section-link" aria-current="page">Comics</a>
       <a href="#songs" id="nav-songs" class="section-link">Songs</a>
       <a href="#novels" id="nav-novels" class="section-link">Novels</a>
+      <a href="#showcase" id="nav-showcase" class="section-link">Showcase</a>
       <a href="#gallery" id="nav-gallery" class="section-link">Gallery</a>
     </div>
   </nav>
@@ -68,6 +69,16 @@
 
     <article id="stage-novel" class="stage hidden"></article>
 
+    <div id="stage-showcase" class="stage hidden">
+      <div id="showcase-play" class="showcase-play hidden">
+        <iframe id="showcase-iframe" title="Playable demo" loading="lazy"></iframe>
+      </div>
+      <div id="showcase-picnic" class="showcase-picnic hidden">
+        <p class="gallery-shelf-lede" id="showcase-picnic-lede"></p>
+        <div id="showcase-picnic-grid" role="list"></div>
+      </div>
+    </div>
+
     <div id="stage-gallery" class="stage stage-shelf hidden">
       <div class="gallery-stage">
         <div class="gallery-preview-dock" id="gallery-focus-panel" aria-live="polite" hidden>
@@ -84,6 +95,6 @@
     </div>
   </main>
 
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>
