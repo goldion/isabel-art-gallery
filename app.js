@@ -136,6 +136,34 @@ const SONGS = [
   { id: "eeee", title: "EEEE song", folder: "08_songs/09-eeee-song", blurb: "IMG_0956" },
 ];
 
+const SHOWCASE = [
+  {
+    id: "fruit-catcher",
+    title: "Fruit Catcher",
+    blurb: "Legend + SFX · 2-minute run",
+    kind: "play",
+    playPath: "play/fruit-catcher/",
+    shelfCover: "10_game_assets/characters/isabel.png",
+    iframeTitle: "Fruit Catcher",
+  },
+  {
+    id: "clover-wheel",
+    title: "Clover-wheel Race",
+    blurb: "3 laps · beat Maisie",
+    kind: "play",
+    playPath: "play/clover-wheel/",
+    shelfCover: "10_game_assets/elements/clover-wheel.png",
+    iframeTitle: "Clover-wheel Race",
+  },
+  {
+    id: "picnic-art",
+    title: "Dragon Ville Picnic",
+    blurb: "Art pack · playable loop coming soon",
+    kind: "picnic",
+    shelfCover: "10_game_assets/backgrounds/picnic-tree.png",
+  },
+];
+
 const NOVELS = [
   { id: "god-sisters", title: "God Sisters", folder: "09_novels/01-god-sisters", blurb: "Isabel and Maisie" },
   { id: "cats", title: "The Cat Kingdom", folder: "09_novels/02-cat-kingdom", blurb: "Ivi and King Mr R" },
@@ -146,6 +174,7 @@ const NOVELS = [
 ];
 
 const ASSET = urlFromRoot("10_game_assets/");
+const PICNIC = urlFromRoot("showcase/picnic/");
 
 const GROUP_LABELS = {
   "god-sisters": "God sisters",
@@ -237,6 +266,7 @@ function shelfCover(item) {
     const art = item.arts && item.arts[0];
     if (art) return ASSET + art.file;
   }
+  if (section === "showcase" && item.shelfCover) return urlFromRoot(item.shelfCover);
   return "";
 }
 
@@ -287,6 +317,7 @@ function applyBodyChrome() {
     "section-songs",
     "section-novels",
     "section-gallery",
+    "section-showcase",
     "mode-notebook",
     "mode-comic"
   );
@@ -315,6 +346,12 @@ const stageComic = document.getElementById("stage-comic");
 const stageSong = document.getElementById("stage-song");
 const stageNovel = document.getElementById("stage-novel");
 const stageGallery = document.getElementById("stage-gallery");
+const stageShowcase = document.getElementById("stage-showcase");
+const showcasePlay = document.getElementById("showcase-play");
+const showcaseIframe = document.getElementById("showcase-iframe");
+const showcasePicnic = document.getElementById("showcase-picnic");
+const showcasePicnicLede = document.getElementById("showcase-picnic-lede");
+const showcasePicnicGrid = document.getElementById("showcase-picnic-grid");
 const galleryFocusPanel = document.getElementById("gallery-focus-panel");
 const galleryScroll = document.querySelector(".gallery-scroll");
 const galleryFocus = document.getElementById("gallery-focus");
@@ -330,6 +367,7 @@ const shelfLede = document.getElementById("shelf-lede");
 let section = "comics";
 let galleryKind = "characters";
 let galleryPack = null;
+let picnicManifest = null;
 let itemIndex = 0;
 let pageIndex = 0;
 let mode = "converted";
@@ -400,6 +438,7 @@ function styleGroups() {
 function items() {
   if (section === "songs") return SONGS;
   if (section === "novels") return NOVELS;
+  if (section === "showcase") return SHOWCASE;
   if (section === "gallery") return galleryGroups();
   return BOOKS;
 }
@@ -473,6 +512,13 @@ async function loadGallery() {
   return galleryPack;
 }
 
+async function loadPicnicManifest() {
+  if (picnicManifest) return picnicManifest;
+  const res = await fetch(PICNIC + "manifest.json");
+  picnicManifest = await res.json();
+  return picnicManifest;
+}
+
 function currentGalleryArts() {
   const group = galleryGroups()[itemIndex];
   return (group && group.arts) || [];
@@ -535,7 +581,7 @@ function renderMarkdown(md, imgBase) {
 }
 
 function markNav() {
-  for (const id of ["comics", "songs", "novels", "gallery"]) {
+  for (const id of ["comics", "songs", "novels", "showcase", "gallery"]) {
     const link = document.getElementById(`nav-${id}`);
     if (section === id) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
@@ -586,7 +632,7 @@ function setGalleryFocusVisible(show) {
 }
 
 function setSection(next) {
-  const allowed = { comics: 1, songs: 1, novels: 1, gallery: 1 };
+  const allowed = { comics: 1, songs: 1, novels: 1, showcase: 1, gallery: 1 };
   const prevSection = section;
   section = allowed[next] ? next : "comics";
   if (section === "comics" && prevSection !== "comics") {
@@ -601,11 +647,13 @@ function setSection(next) {
   markGalleryTabs();
   comicTabs.classList.toggle("hidden", section !== "comics");
   galleryTabs.classList.toggle("hidden", section !== "gallery");
-  pager.classList.toggle("hidden", section !== "comics" && section !== "gallery");
+  pager.classList.toggle("hidden", section !== "comics" && section !== "gallery" && section !== "showcase");
   stageComic.classList.toggle("hidden", section !== "comics");
   stageSong.classList.toggle("hidden", section !== "songs");
   stageNovel.classList.toggle("hidden", section !== "novels");
+  stageShowcase.classList.toggle("hidden", section !== "showcase");
   stageGallery.classList.toggle("hidden", section !== "gallery");
+  if (section !== "showcase" && showcaseIframe) showcaseIframe.removeAttribute("src");
   if (section !== "gallery") setGalleryFocusVisible(false);
   applyBodyChrome();
   if (section === "gallery") layoutGalleryPreview();
@@ -624,6 +672,10 @@ function setSection(next) {
       galleryKind === "styles"
         ? "Ten looks for games, tried on people, props, and places."
         : "Characters, props, and places redrawn from the notebook.";
+  } else if (section === "showcase") {
+    shelfKicker.textContent = "Showcase";
+    shelfTitle.textContent = "Play & preview";
+    shelfLede.textContent = "Playable demos on this site, plus picnic art for the next game.";
   } else {
     shelfKicker.textContent = "Novels";
     shelfTitle.textContent = "Stories";
@@ -648,7 +700,7 @@ function renderList() {
       const n = (mode === "converted" ? item.converted : item.original).length;
       extra = `${n} ${modePageLabel()} pages · ${item.blurb}`;
     }
-    if (section === "gallery") extra = item.blurb;
+    if (section === "gallery" || section === "showcase") extra = item.blurb;
 
     const coverSrc = shelfCover(item);
     const fallbacks = [];
@@ -727,6 +779,92 @@ async function showNovel() {
 
 function galleryChipKind() {
   return GALLERY_CHIP[galleryKind] || "characters";
+}
+
+function picnicKindLabel(kind) {
+  if (kind === "background") return "Place";
+  if (kind === "element") return "Prop";
+  return "Character";
+}
+
+function showShowcasePlay(entry) {
+  showcasePlay.classList.remove("hidden");
+  showcasePicnic.classList.add("hidden");
+  showcaseIframe.title = entry.iframeTitle || entry.title;
+  const src = urlFromRoot(entry.playPath);
+  if (showcaseIframe.getAttribute("src") !== src) showcaseIframe.src = src;
+}
+
+function renderPicnicGrid(cards) {
+  showcasePicnicGrid.innerHTML = "";
+  cards.forEach((card, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = i === pageIndex ? "active" : "";
+    btn.setAttribute("role", "listitem");
+    const thumb = document.createElement("img");
+    thumb.src = PICNIC + "thumbs/" + card.file;
+    thumb.alt = card.kid;
+    const chipRow = document.createElement("span");
+    chipRow.className = "chip-row";
+    const typeChip = document.createElement("span");
+    typeChip.className = `type-chip ${card.kind === "background" ? "backgrounds" : card.kind === "element" ? "elements" : "characters"}`;
+    typeChip.textContent = picnicKindLabel(card.kind);
+    chipRow.appendChild(typeChip);
+    const kid = document.createElement("span");
+    kid.className = "showcase-kid-label";
+    kid.textContent = card.kid;
+    const parent = document.createElement("span");
+    parent.className = "showcase-parent-label";
+    parent.textContent = card.parent;
+    btn.appendChild(thumb);
+    btn.appendChild(chipRow);
+    btn.appendChild(kid);
+    btn.appendChild(parent);
+    btn.addEventListener("click", () => {
+      pageIndex = i;
+      showItem();
+    });
+    showcasePicnicGrid.appendChild(btn);
+  });
+}
+
+async function showShowcase() {
+  const entry = SHOWCASE[itemIndex];
+  title.textContent = entry.title;
+  kicker.textContent = entry.kind === "play" ? "Playable" : "Art preview";
+  if (entry.kind === "play") {
+    showShowcasePlay(entry);
+    pager.classList.add("hidden");
+    return;
+  }
+  pager.classList.remove("hidden");
+  showcasePlay.classList.add("hidden");
+  showcasePicnic.classList.remove("hidden");
+  showcaseIframe.removeAttribute("src");
+  if (!picnicManifest) {
+    if (showcasePicnicLede) showcasePicnicLede.textContent = "Loading picnic art…";
+    showcasePicnicGrid.innerHTML = "";
+    try {
+      await loadPicnicManifest();
+      if (section === "showcase") showItem();
+    } catch (err) {
+      if (showcasePicnicLede) showcasePicnicLede.textContent = "Could not load picnic art.";
+    }
+    return;
+  }
+  const cards = picnicManifest;
+  if (pageIndex >= cards.length) pageIndex = 0;
+  const card = cards[pageIndex];
+  if (showcasePicnicLede) {
+    showcasePicnicLede.textContent = card
+      ? `${cards.length} picnic stickers · art only (not playable yet)`
+      : "No picnic art yet.";
+  }
+  renderPicnicGrid(cards);
+  pos.textContent = card ? `${pageIndex + 1} / ${cards.length}` : "0 / 0";
+  prev.disabled = pageIndex <= 0;
+  next.disabled = !card || pageIndex >= cards.length - 1;
 }
 
 function showGallery() {
@@ -818,6 +956,7 @@ function showItem() {
   renderList();
   if (section === "songs") return showSong();
   if (section === "novels") return showNovel();
+  if (section === "showcase") return showShowcase();
   if (section === "gallery") return showGallery();
   showComics();
 }
@@ -866,6 +1005,15 @@ function readHash() {
 }
 
 function stepPage(delta) {
+  if (section === "showcase") {
+    const entry = SHOWCASE[itemIndex];
+    if (!entry || entry.kind !== "picnic" || !picnicManifest) return;
+    const nextIndex = pageIndex + delta;
+    if (nextIndex < 0 || nextIndex >= picnicManifest.length) return;
+    pageIndex = nextIndex;
+    showItem();
+    return;
+  }
   if (section === "comics") {
     const pages = comicPages(BOOKS[itemIndex]);
     const nextIndex = pageIndex + delta;
@@ -892,7 +1040,10 @@ document.getElementById("tab-styles").addEventListener("click", () => setGallery
 prev.addEventListener("click", () => stepPage(-1));
 next.addEventListener("click", () => stepPage(1));
 document.addEventListener("keydown", (event) => {
-  if (section !== "comics" && section !== "gallery") return;
+  if (section === "showcase") {
+    const entry = SHOWCASE[itemIndex];
+    if (!entry || entry.kind !== "picnic") return;
+  } else if (section !== "comics" && section !== "gallery") return;
   if (event.key === "ArrowLeft") prev.click();
   if (event.key === "ArrowRight") next.click();
 });

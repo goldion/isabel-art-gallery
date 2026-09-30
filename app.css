@@ -334,6 +334,88 @@ body.section-gallery {
   overflow: hidden;
 }
 
+#stage-showcase.stage {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0.75rem 1rem 1.25rem;
+}
+
+.showcase-play {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+#showcase-iframe {
+  flex: 1;
+  width: 100%;
+  min-height: min(72vh, 40rem);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: #2a221c;
+  box-shadow: var(--shadow-soft);
+}
+
+.showcase-picnic {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+#showcase-picnic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.85rem;
+  align-content: start;
+  padding-bottom: 0.5rem;
+}
+
+#showcase-picnic-grid button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.55rem;
+  border: 2px solid var(--line);
+  background: linear-gradient(180deg, #fff 0%, #fff8ef 100%);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  border-radius: var(--radius-md);
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(61, 52, 40, 0.06);
+}
+
+#showcase-picnic-grid button.active {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px rgba(244, 164, 184, 0.35), var(--shadow-soft);
+}
+
+#showcase-picnic-grid img {
+  width: 100%;
+  height: 8rem;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(220, 201, 176, 0.6);
+}
+
+.showcase-kid-label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.88rem;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.showcase-parent-label {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--mute);
+  font-weight: 500;
+}
+
 /* Comics: storybook — one big page */
 .stage-storybook figure {
   margin: 0;

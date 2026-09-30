@@ -1,0 +1,20 @@
+[
+  {"id": "picnic-tree", "file": "picnic-tree.png", "kind": "background", "kid": "Picnic tree park", "parent": "Where eggs hatch and the blanket goes"},
+  {"id": "hatch-field", "file": "hatch-field.png", "kind": "background", "kid": "Hatch field", "parent": "Open grass for dragon eggs"},
+  {"id": "campsite", "file": "campsite.png", "kind": "background", "kid": "Campsite home", "parent": "Soft win scene after the portal"},
+  {"id": "socket-space", "file": "socket-space.png", "kind": "background", "kid": "Socket space", "parent": "Portal hallway between picnic and home"},
+  {"id": "snow-field", "file": "snow-field.png", "kind": "background", "kid": "Snow field", "parent": "Spare winter place art"},
+  {"id": "undercover-princess", "file": "undercover-princess.png", "kind": "character", "kid": "Undercover princess", "parent": "Playable hero · mind-move picnic"},
+  {"id": "purple-fox-dragon", "file": "purple-fox-dragon.png", "kind": "character", "kid": "Purple fox dragon", "parent": "Hatches from an egg · picnic crew"},
+  {"id": "pink-bunny-dragon", "file": "pink-bunny-dragon.png", "kind": "character", "kid": "Pink bunny dragon", "parent": "Hatches from an egg · picnic crew"},
+  {"id": "yellow-lightning-dragon", "file": "yellow-lightning-dragon.png", "kind": "character", "kid": "Yellow lightning dragon", "parent": "Hatches from an egg · picnic crew"},
+  {"id": "blue-princess-dragon", "file": "blue-princess-dragon.png", "kind": "character", "kid": "Blue princess dragon", "parent": "Hatches from an egg · picnic crew"},
+  {"id": "bird", "file": "bird.png", "kind": "character", "kid": "Gift-thief bird", "parent": "Shoo it—no theft!"},
+  {"id": "dragon-egg", "file": "dragon-egg.png", "kind": "element", "kid": "Dragon egg", "parent": "Walk into all four to hatch"},
+  {"id": "picnic", "file": "picnic.png", "kind": "element", "kid": "Picnic blanket", "parent": "Mind-move food onto the blanket"},
+  {"id": "gift", "file": "gift.png", "kind": "element", "kid": "Gift box", "parent": "Keep safe from the bird"},
+  {"id": "portal", "file": "portal.png", "kind": "element", "kid": "Portal door", "parent": "Opens when picnic is ready"},
+  {"id": "cake", "file": "cake.png", "kind": "element", "kid": "Cake", "parent": "Extra picnic food prop"},
+  {"id": "fries", "file": "fries.png", "kind": "element", "kid": "Fries", "parent": "Extra picnic food prop"},
+  {"id": "tray", "file": "tray.png", "kind": "element", "kid": "Tray", "parent": "Extra picnic food prop"}
+]

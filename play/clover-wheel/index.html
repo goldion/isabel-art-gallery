@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Clover-wheel Race</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div id="view"></div>
+    <header id="hud">
+      <div class="brand">Clover-wheel Race</div>
+      <div id="place-name">Neighborhood</div>
+    </header>
+    <div id="stats">
+      <div id="lap">Lap 1 / 3</div>
+      <div id="place">1st</div>
+    </div>
+    <div id="onboarding" hidden>
+      <p class="onboarding-title">Clover-wheel Race</p>
+      <ul>
+        <li>Isabel rides the clover wheel</li>
+        <li>A and D, or arrows, steer on the road</li>
+        <li>Hold Shift to go faster</li>
+        <li>Three laps. Beat Maisie on the skateboard</li>
+      </ul>
+      <p class="onboarding-hint">Steer to start</p>
+    </div>
+    <div id="finish" hidden>
+      <p class="finish-title">Finish!</p>
+      <p id="finish-line"></p>
+      <button id="restart-btn" type="button">Race again</button>
+    </div>
+    <div id="loading">Drawing the neighborhood…</div>
+    <div id="touch" hidden>
+      <div id="stick" aria-label="Steer">
+        <div id="stick-knob"></div>
+      </div>
+      <button id="boost-btn" type="button">Boost</button>
+    </div>
+  </div>
+  <script type="module" src="js/game.js"></script>
+</body>
+</html>

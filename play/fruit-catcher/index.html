@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fruit Catcher</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="game-container">
+    <div id="hud">
+      <div id="score-block">
+        <div id="score">Score: 0</div>
+        <div id="best-score">Best: 0</div>
+      </div>
+      <div id="hud-right">
+        <button id="legend-btn" type="button" title="Why do bombs fall?">Legend</button>
+        <button id="mute-btn" type="button" aria-pressed="false" title="Toggle sound (M)">Sound on</button>
+        <div id="timer">2:00</div>
+      </div>
+    </div>
+    <div id="canvas-wrapper"></div>
+    <div id="onboarding" aria-live="polite">
+      <p class="onboarding-title">Fruit Catcher</p>
+      <ul class="onboarding-tips">
+        <li>Move mouse to catch fruit</li>
+        <li>Skip boom-berries—the gnomes' sour pranks!</li>
+        <li>2 minutes on the clock</li>
+      </ul>
+      <button id="onboarding-legend-btn" type="button" class="onboarding-legend-btn">Legend</button>
+      <p class="onboarding-hint">Move to start</p>
+    </div>
+    <div id="rainbow-tip" hidden aria-live="polite">
+      <p>Rainbow can — things get faster!</p>
+    </div>
+    <div id="legend-overlay" hidden role="dialog" aria-labelledby="legend-title">
+      <button type="button" class="legend-backdrop" aria-label="Close legend"></button>
+      <div class="legend-panel">
+        <p id="legend-title" class="legend-title">Legend</p>
+        <p class="legend-body">Cheeky tree gnomes hide sour boom-berries high in the forest canopy—they fizz and pop if they land in your basket! When the wind shakes the branches, a few tumble down with the ripe fruit, so catch the sweet treats and leave the gnomes their pranks.</p>
+        <p class="legend-hint">Press Esc or click outside to close</p>
+      </div>
+    </div>
+    <div id="pause-overlay" hidden>
+      <p class="pause-title">Paused</p>
+      <button id="resume-btn" type="button">Resume</button>
+      <button id="pause-legend-btn" type="button" class="pause-legend-btn">Legend</button>
+      <p class="pause-hint">Press Esc or P</p>
+    </div>
+    <div id="game-over" hidden>
+      <p id="game-over-title" class="game-over-title">Game Over!</p>
+      <p id="game-over-subtitle" class="game-over-subtitle"></p>
+      <p id="final-score">Score: 0</p>
+      <p id="final-best-score">Best: 0</p>
+      <button id="restart-btn" type="button">Restart</button>
+    </div>
+  </div>
+  <script type="module" src="game.js"></script>
+</body>
+</html>

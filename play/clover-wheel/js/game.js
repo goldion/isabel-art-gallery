@@ -1,0 +1,504 @@
+/**
+ * Clover-wheel Race — one neighborhood loop, Isabel vs Maisie.
+ * Crayon sprites stay billboards. The road is the only 3D mesh that matters.
+ */
+import * as THREE from "three";
+
+const LAPS = 3;
+const TRACK_A = 34;
+const TRACK_B = 20;
+const ROAD_HALF = 3.3;
+const LAT_MAX = 5.4;
+const BASE_SPEED = 16;
+const BOOST_MUL = 1.55;
+const RIVAL_SPEED = 14.2;
+
+const view = document.getElementById("view");
+const lapEl = document.getElementById("lap");
+const placeEl = document.getElementById("place");
+const onboardingEl = document.getElementById("onboarding");
+const loadingEl = document.getElementById("loading");
+const finishEl = document.getElementById("finish");
+const finishLineEl = document.getElementById("finish-line");
+const restartBtn = document.getElementById("restart-btn");
+const touchEl = document.getElementById("touch");
+const stickEl = document.getElementById("stick");
+const stickKnobEl = document.getElementById("stick-knob");
+const boostBtn = document.getElementById("boost-btn");
+
+const keys = { left: false, right: false, boost: false };
+const analog = { x: 0 };
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xc5e4f7);
+scene.fog = new THREE.Fog(0xd5e8c8, 28, 90);
+
+const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 180);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+view.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xfff6df, 0x6d8f4a, 1.05));
+const sun = new THREE.DirectionalLight(0xfff8e8, 0.85);
+sun.position.set(-12, 24, 8);
+scene.add(sun);
+
+const clock = new THREE.Clock();
+const sprites = [];
+const sidePages = [];
+
+const player = { u: 0, lat: -0.8, speed: 0, spin: 0, group: new THREE.Group() };
+const rival = { u: 0.07, lat: 1.2, spin: 0, group: new THREE.Group() };
+scene.add(player.group, rival.group);
+
+let started = false;
+let finished = false;
+let raceTime = 0;
+let playerWon = false;
+
+function ellipseLength(a, b) {
+  const h = ((a - b) / (a + b)) ** 2;
+  return Math.PI * (a + b) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
+}
+
+const TRACK_LEN = ellipseLength(TRACK_A, TRACK_B);
+
+function sample(u) {
+  const ang = (u % 1) * Math.PI * 2;
+  const x = Math.cos(ang) * TRACK_A;
+  const z = Math.sin(ang) * TRACK_B;
+  const tx = -Math.sin(ang) * TRACK_A;
+  const tz = Math.cos(ang) * TRACK_B;
+  const len = Math.hypot(tx, tz) || 1;
+  const fx = tx / len;
+  const fz = tz / len;
+  return { x, z, fx, fz, rx: fz, rz: -fx };
+}
+
+function loadImage(src) {
+  return fetch(src)
+    .then((res) => {
+      if (!res.ok) throw new Error(src);
+      return res.blob();
+    })
+    .then((blob) => createImageBitmap(blob))
+    .then((bitmap) => {
+      const c = document.createElement("canvas");
+      c.width = bitmap.width;
+      c.height = bitmap.height;
+      c.getContext("2d").drawImage(bitmap, 0, 0);
+      bitmap.close();
+      return c;
+    });
+}
+
+function chromaAndTrim(canvas) {
+  const ctx = canvas.getContext("2d");
+  const { width, height } = canvas;
+  const data = ctx.getImageData(0, 0, width, height);
+  const d = data.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const min = Math.min(d[i], d[i + 1], d[i + 2]);
+    if (min > 210) d[i + 3] = 0;
+  }
+  ctx.putImageData(data, 0, 0);
+  let minX = width;
+  let minY = height;
+  let maxX = 0;
+  let maxY = 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (d[(y * width + x) * 4 + 3] > 12) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX <= minX || maxY <= minY) return canvas;
+  const out = document.createElement("canvas");
+  out.width = maxX - minX + 1;
+  out.height = maxY - minY + 1;
+  out.getContext("2d").drawImage(canvas, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
+  return out;
+}
+
+function cutCell(img, cols, index) {
+  const cellW = img.width / cols;
+  const pad = cellW * 0.08;
+  const cellH = img.height * 0.63;
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.floor(cellW - pad * 2));
+  c.height = Math.max(1, Math.floor(cellH));
+  c.getContext("2d").drawImage(img, cellW * index + pad, 0, cellW - pad * 2, cellH, 0, 0, c.width, c.height);
+  return chromaAndTrim(c);
+}
+
+function cutFull(img) {
+  const c = document.createElement("canvas");
+  c.width = img.width;
+  c.height = img.height;
+  c.getContext("2d").drawImage(img, 0, 0);
+  return chromaAndTrim(c);
+}
+
+function canvasTexture(canvas) {
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+function imageTexture(img) {
+  const tex = new THREE.Texture(img);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+function makeSprite(tex, height) {
+  const img = tex.image;
+  const mat = new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+  });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(height * (img.width / img.height), height, 1);
+  sprite.center.set(0.5, 0);
+  sprites.push(sprite);
+  return sprite;
+}
+
+function buildRoad() {
+  const grass = new THREE.Mesh(
+    new THREE.CircleGeometry(62, 48),
+    new THREE.MeshStandardMaterial({ color: 0x7fbf57, flatShading: true })
+  );
+  grass.rotation.x = -Math.PI / 2;
+  scene.add(grass);
+
+  const segs = 96;
+  const positions = [];
+  const indices = [];
+  for (let i = 0; i <= segs; i++) {
+    const s = sample(i / segs);
+    positions.push(
+      s.x + s.rx * ROAD_HALF, 0.04, s.z + s.rz * ROAD_HALF,
+      s.x - s.rx * ROAD_HALF, 0.04, s.z - s.rz * ROAD_HALF
+    );
+    if (i < segs) {
+      const a = i * 2;
+      indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  const road = new THREE.Mesh(
+    geo,
+    new THREE.MeshStandardMaterial({ color: 0x8d8680, flatShading: true, side: THREE.DoubleSide })
+  );
+  scene.add(road);
+
+  const line = new THREE.Mesh(
+    new THREE.BoxGeometry(0.35, 0.08, ROAD_HALF * 2),
+    new THREE.MeshBasicMaterial({ color: 0xfffaf3 })
+  );
+  const start = sample(0);
+  line.position.set(start.x, 0.1, start.z);
+  line.lookAt(start.x + start.rx, 0.1, start.z + start.rz);
+  scene.add(line);
+}
+
+function addSidePage(tex, u, height) {
+  const s = sample(u);
+  const img = tex.image;
+  const w = height * (img.width / img.height);
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, height),
+    new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, fog: true })
+  );
+  const out = 22;
+  mesh.position.set(s.x + s.rx * out, height * 0.46, s.z + s.rz * out);
+  mesh.lookAt(0, height * 0.46, 0);
+  scene.add(mesh);
+  sidePages.push({ mesh, u });
+}
+
+function updateSidePages() {
+  for (const page of sidePages) {
+    let ahead = page.u - (player.u % 1);
+    ahead = ((ahead % 1) + 1) % 1;
+    page.mesh.visible = ahead > 0.2;
+  }
+}
+
+function tree(x, z) {
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.18, 0.24, 1.2, 6),
+    new THREE.MeshStandardMaterial({ color: 0x8a5a32, flatShading: true })
+  );
+  trunk.position.y = 0.6;
+  const top = new THREE.Mesh(
+    new THREE.ConeGeometry(1.3, 2.4, 7),
+    new THREE.MeshStandardMaterial({ color: 0x3f8f3a, flatShading: true })
+  );
+  top.position.y = 2.2;
+  g.add(trunk, top);
+  g.position.set(x, 0, z);
+  scene.add(g);
+}
+
+function buildWorld(textures) {
+  buildRoad();
+  addSidePage(textures.neighborhood, 0.18, 4.6);
+  addSidePage(textures.neighborhood, 0.68, 4.2);
+  addSidePage(textures.mall, 0.42, 4.4);
+  addSidePage(textures.mall, 0.9, 4.2);
+  for (let i = 0; i < 8; i++) {
+    const s = sample(i / 8 + 0.05);
+    tree(s.x - s.rx * 11, s.z - s.rz * 11);
+  }
+  const scooter = makeSprite(textures.scooter, 1.6);
+  const spot = sample(0.22);
+  scooter.position.set(spot.x + spot.rx * 8, 0, spot.z + spot.rz * 8);
+  scene.add(scooter);
+}
+
+function mountRider(group, riderTex, boardTex, riderH, boardH, foot) {
+  const board = makeSprite(boardTex, boardH);
+  const rider = makeSprite(riderTex, riderH);
+  board.position.y = 0.08;
+  board.renderOrder = 2;
+  rider.position.y = 0.08 + boardH * foot;
+  rider.renderOrder = 3;
+  group.add(board, rider);
+  return { board, rider };
+}
+
+function placeRacer(racer) {
+  const s = sample(racer.u);
+  racer.group.position.set(s.x + s.rx * racer.lat, 0, s.z + s.rz * racer.lat);
+  racer.fx = s.fx;
+  racer.fz = s.fz;
+}
+
+function onRoad(lat) {
+  return Math.abs(lat) <= ROAD_HALF;
+}
+
+function steerInput() {
+  // Chase cam looks along the track, so +lat is screen-left.
+  let ix = -analog.x;
+  if (keys.left) ix += 1;
+  if (keys.right) ix -= 1;
+  return Math.max(-1, Math.min(1, ix));
+}
+
+function startRace() {
+  if (started || finished) return;
+  started = true;
+  onboardingEl.hidden = true;
+}
+
+function endRace() {
+  finished = true;
+  started = false;
+  const place = player.u >= rival.u ? "1st" : "2nd";
+  playerWon = place === "1st";
+  finishLineEl.textContent = playerWon
+    ? `You beat Maisie · ${raceTime.toFixed(1)}s`
+    : `Maisie got there first · ${raceTime.toFixed(1)}s`;
+  finishEl.hidden = false;
+}
+
+function resetRun() {
+  player.u = 0;
+  player.lat = -0.8;
+  player.speed = 0;
+  player.spin = 0;
+  rival.u = 0.07;
+  rival.lat = 1.2;
+  rival.spin = 0;
+  started = false;
+  finished = false;
+  raceTime = 0;
+  playerWon = false;
+  finishEl.hidden = true;
+  onboardingEl.hidden = false;
+  placeRacer(player);
+  placeRacer(rival);
+  updateCamera(0);
+  updateHud();
+}
+
+function updateHud() {
+  const lap = Math.min(LAPS, Math.floor(player.u) + 1);
+  lapEl.textContent = `Lap ${lap} / ${LAPS}`;
+  placeEl.textContent = player.u + 0.01 >= rival.u ? "1st" : "2nd";
+}
+
+function updateRace(dt) {
+  const ix = steerInput();
+  if (ix !== 0 || keys.boost) startRace();
+  if (!started || finished) return;
+  raceTime += dt;
+  player.lat = Math.max(-LAT_MAX, Math.min(LAT_MAX, player.lat + ix * 7.5 * dt));
+  const grip = onRoad(player.lat) ? 1 : 0.42;
+  const target = BASE_SPEED * (keys.boost ? BOOST_MUL : 1) * grip;
+  player.speed += (target - player.speed) * Math.min(1, 2.4 * dt);
+  player.u += (player.speed * dt) / TRACK_LEN;
+  player.spin += player.speed * dt * 0.35;
+
+  rival.lat = Math.sin(raceTime * 0.65) * 1.5;
+  rival.u += (RIVAL_SPEED * dt) / TRACK_LEN;
+  rival.spin += RIVAL_SPEED * dt * 0.28;
+
+  if (player.u >= LAPS) {
+    player.u = LAPS;
+    endRace();
+  }
+}
+
+function updateCamera(dt) {
+  const s = sample(player.u);
+  const px = player.group.position.x;
+  const pz = player.group.position.z;
+  const desired = new THREE.Vector3(px - s.fx * 6.4, 2.55, pz - s.fz * 6.4);
+  if (dt > 0) camera.position.lerp(desired, 1 - Math.exp(-5.5 * dt));
+  else camera.position.copy(desired);
+  camera.lookAt(px + s.fx * 4.2, 1.15, pz + s.fz * 4.2);
+}
+
+function resize() {
+  const w = view.clientWidth;
+  const h = view.clientHeight;
+  camera.aspect = w / Math.max(h, 1);
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+}
+
+function onKey(e, down) {
+  const k = e.key.toLowerCase();
+  if (k === "a" || k === "arrowleft") keys.left = down;
+  if (k === "d" || k === "arrowright") keys.right = down;
+  if (k === "shift") keys.boost = down;
+  if (down && (k === " " || k === "enter")) {
+    e.preventDefault();
+    if (finished) resetRun();
+    else startRace();
+  }
+}
+
+function bindStick() {
+  if (window.matchMedia("(pointer: coarse)").matches) touchEl.hidden = false;
+  let active = false;
+  const setFromEvent = (e) => {
+    const t = e.touches ? e.touches[0] : e;
+    const rect = stickEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    let dx = (t.clientX - cx) / (rect.width / 2);
+    dx = Math.max(-1, Math.min(1, dx));
+    analog.x = dx;
+    stickKnobEl.style.transform = `translate(${dx * 28}px, 0)`;
+    startRace();
+  };
+  const end = () => {
+    active = false;
+    analog.x = 0;
+    stickKnobEl.style.transform = "";
+  };
+  stickEl.addEventListener("pointerdown", (e) => {
+    active = true;
+    stickEl.setPointerCapture(e.pointerId);
+    setFromEvent(e);
+  });
+  stickEl.addEventListener("pointermove", (e) => {
+    if (active) setFromEvent(e);
+  });
+  stickEl.addEventListener("pointerup", end);
+  stickEl.addEventListener("pointercancel", end);
+  boostBtn.addEventListener("pointerdown", () => {
+    keys.boost = true;
+    startRace();
+  });
+  boostBtn.addEventListener("pointerup", () => {
+    keys.boost = false;
+  });
+}
+
+function tick() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  updateRace(dt);
+  placeRacer(player);
+  placeRacer(rival);
+  updateSidePages();
+  if (player.board) player.board.material.rotation = player.spin;
+  if (rival.board) rival.board.material.rotation = rival.spin;
+  updateCamera(dt);
+  updateHud();
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+
+async function boot() {
+  resize();
+  window.addEventListener("resize", resize);
+  window.addEventListener("keydown", (e) => onKey(e, true));
+  window.addEventListener("keyup", (e) => onKey(e, false));
+  restartBtn.addEventListener("click", resetRun);
+  view.addEventListener("pointerdown", () => {
+    if (!started && !finished) startRace();
+  });
+  bindStick();
+
+  const jobs = {
+    isabel: "assets/characters/isabel.png",
+    maisie: "assets/characters/maisie.png",
+    wheel: "assets/elements/clover-wheel.png",
+    skate: "assets/elements/skateboard.png",
+    scooter: "assets/elements/scooter.png",
+    neighborhood: "assets/backgrounds/neighborhood.png",
+    mall: "assets/backgrounds/mall-city.png",
+  };
+  const imgs = {};
+  await Promise.all(
+    Object.entries(jobs).map(async ([key, src]) => {
+      imgs[key] = await loadImage(src);
+    })
+  );
+
+  const textures = {
+    isabel: canvasTexture(cutCell(imgs.isabel, 7, 3)),
+    maisie: canvasTexture(cutCell(imgs.maisie, 8, 0)),
+    wheel: canvasTexture(cutFull(imgs.wheel)),
+    skate: canvasTexture(cutFull(imgs.skate)),
+    scooter: canvasTexture(cutFull(imgs.scooter)),
+    neighborhood: imageTexture(imgs.neighborhood),
+    mall: imageTexture(imgs.mall),
+  };
+
+  const you = mountRider(player.group, textures.isabel, textures.wheel, 2.25, 3.05, 0.56);
+  const her = mountRider(rival.group, textures.maisie, textures.skate, 1.9, 1.2, 0.5);
+  player.board = you.board;
+  rival.board = her.board;
+  buildWorld(textures);
+  resetRun();
+  loadingEl.hidden = true;
+  onboardingEl.hidden = false;
+  clock.getDelta();
+  tick();
+}
+
+boot().catch((err) => {
+  loadingEl.textContent = "Could not load the neighborhood.";
+  console.error(err);
+});
