@@ -7,9 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="app.css?v=2" />
+  <link rel="stylesheet" href="app.css?v=3" />
 </head>
-<body class="section-comics mode-notebook">
+<body class="section-comics mode-comic">
   <nav id="topnav" aria-label="Isabel Art">
     <p class="brand">Isabel Art</p>
     <div class="sections" role="tablist">
@@ -35,8 +35,8 @@
       </div>
       <div class="tools">
         <div class="tabs tabs-soft" id="comic-tabs" role="tablist" aria-label="Notebook or comic book">
-          <button type="button" id="tab-original" role="tab" aria-selected="true" aria-label="Notebook pages">Notebook</button>
-          <button type="button" id="tab-converted" role="tab" aria-selected="false" aria-label="Comic book pages">Comic book</button>
+          <button type="button" id="tab-converted" role="tab" aria-selected="true" aria-label="Comic book pages">Comic book</button>
+          <button type="button" id="tab-original" role="tab" aria-selected="false" aria-label="Notebook pages">Notebook</button>
         </div>
         <div class="tabs tabs-soft tabs-crayon hidden" id="gallery-tabs" role="tablist" aria-label="Gallery art type">
           <button type="button" id="tab-characters" role="tab" aria-selected="true">Characters</button>
@@ -70,14 +70,14 @@
 
     <div id="stage-gallery" class="stage stage-shelf hidden">
       <p class="gallery-shelf-lede" id="gallery-shelf-lede"></p>
-      <div id="gallery-grid" role="list"></div>
-      <figure class="gallery-focus hidden" aria-hidden="true">
+      <figure class="gallery-focus hidden" id="gallery-focus">
         <img id="gallery-page" alt="" />
         <figcaption id="gallery-caption"></figcaption>
       </figure>
+      <div id="gallery-grid" role="list"></div>
     </div>
   </main>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

@@ -315,6 +315,7 @@ const stageComic = document.getElementById("stage-comic");
 const stageSong = document.getElementById("stage-song");
 const stageNovel = document.getElementById("stage-novel");
 const stageGallery = document.getElementById("stage-gallery");
+const galleryFocus = document.getElementById("gallery-focus");
 const galleryPage = document.getElementById("gallery-page");
 const galleryCaption = document.getElementById("gallery-caption");
 const galleryGrid = document.getElementById("gallery-grid");
@@ -329,7 +330,7 @@ let galleryKind = "characters";
 let galleryPack = null;
 let itemIndex = 0;
 let pageIndex = 0;
-let mode = "original";
+let mode = "converted";
 
 const STYLE_LOOKS = [
   ["japan-comic", "Japan comic"],
@@ -546,9 +547,23 @@ function markGalleryTabs() {
   }
 }
 
+function setGalleryFocusVisible(show) {
+  if (!galleryFocus) return;
+  galleryFocus.classList.toggle("hidden", !show);
+  if (show) galleryFocus.removeAttribute("aria-hidden");
+  else galleryFocus.setAttribute("aria-hidden", "true");
+}
+
 function setSection(next) {
   const allowed = { comics: 1, songs: 1, novels: 1, gallery: 1 };
+  const prevSection = section;
   section = allowed[next] ? next : "comics";
+  if (section === "comics" && prevSection !== "comics") {
+    mode = "converted";
+    syncVersionTabLabels();
+    tabOriginal.setAttribute("aria-selected", "false");
+    tabConverted.setAttribute("aria-selected", "true");
+  }
   itemIndex = 0;
   pageIndex = 0;
   markNav();
@@ -689,6 +704,7 @@ function showGallery() {
     galleryPage.removeAttribute("src");
     galleryPage.alt = "";
     galleryGrid.innerHTML = "";
+    setGalleryFocusVisible(false);
     pos.textContent = "0 / 0";
     prev.disabled = true;
     next.disabled = true;
@@ -721,6 +737,7 @@ function showGallery() {
     galleryPage.removeAttribute("src");
     galleryPage.alt = "";
     galleryGrid.innerHTML = "";
+    setGalleryFocusVisible(false);
     pos.textContent = "0 / 0";
     prev.disabled = true;
     next.disabled = true;
@@ -729,6 +746,7 @@ function showGallery() {
   galleryPage.src = ASSET + art.file;
   galleryPage.alt = artName(art);
   galleryCaption.textContent = art.note ? `${artName(art)} · ${art.note}` : artName(art);
+  setGalleryFocusVisible(true);
   pos.textContent = `${pageIndex + 1} / ${arts.length}`;
   prev.disabled = pageIndex <= 0;
   next.disabled = pageIndex >= arts.length - 1;

@@ -570,7 +570,40 @@ figcaption {
 }
 
 .gallery-focus {
-  display: none;
+  margin: 0;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.5rem 0.85rem;
+  min-height: 10rem;
+}
+
+.gallery-focus.hidden {
+  display: none !important;
+}
+
+#gallery-page {
+  max-width: min(96%, 36rem);
+  max-height: min(52vh, calc(100vh - 17rem));
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 8px 28px rgba(61, 52, 40, 0.1),
+    0 0 0 3px rgba(245, 215, 110, 0.28);
+}
+
+#gallery-caption {
+  margin-top: 0.55rem;
+  color: var(--mute);
+  font-size: 0.9rem;
+  text-align: center;
+  font-weight: 500;
 }
 
 body.section-gallery #pager {
