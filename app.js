@@ -139,47 +139,47 @@ const SONGS = [
 const DEMOS = [
   {
     id: "fruit-catcher",
-    title: "Fruit Catcher",
+    title: "Catch the fruit!",
     kid: "Catch the fruit!",
-    parent: "Basket game · boom-berry legend",
-    blurb: "2 min · Legend + SFX",
+    parent: "Basket race · 2 minutes · dodge bombs",
+    blurb: "",
     kind: "play",
     playPath: "play/fruit-catcher/",
-    shelfCover: "10_game_assets/characters/isabel.png",
-    iframeTitle: "Fruit Catcher",
+    shelfCover: "10_game_assets/demo/fruit-catcher.png",
+    iframeTitle: "Catch the fruit!",
   },
   {
     id: "clover-wheel",
-    title: "Clover-wheel Race",
+    title: "Race the clover wheel!",
     kid: "Race the clover wheel!",
-    parent: "Isabel vs Maisie · neighborhood",
-    blurb: "3 laps · Shift to boost",
+    parent: "Greenness Queen vs sunglasses 小花 · 3 laps",
+    blurb: "",
     kind: "play",
     playPath: "play/clover-wheel/",
-    shelfCover: "10_game_assets/elements/clover-wheel.png",
-    iframeTitle: "Clover-wheel Race",
+    shelfCover: "10_game_assets/demo/clover-wheel.png",
+    iframeTitle: "Race the clover wheel!",
   },
   {
     id: "dragon-flight",
-    title: "Dragon Flight",
-    kid: "Fly the lotus dragon!",
-    parent: "Ring race · sky, earth, sea 龍城",
-    blurb: "12 rings · WASD + Shift",
+    title: "Fly the blue princess!",
+    kid: "Fly the blue princess!",
+    parent: "Ring race through 龍城 · 12 rings",
+    blurb: "",
     kind: "play",
     playPath: "play/dragon-flight/",
-    shelfCover: "10_game_assets/characters/lotus-dragon.png",
-    iframeTitle: "Dragon Flight",
+    shelfCover: "10_game_assets/demo/dragon-flight.png",
+    iframeTitle: "Fly the blue princess!",
   },
   {
     id: "god-sisters-stroll",
-    title: "God Sisters 3D stroll",
+    title: "Walk with your god sister",
     kid: "Walk with your god sister",
     parent: "Garden, park, pond · talk with E",
-    blurb: "3 places · rainbow doors",
+    blurb: "",
     kind: "play",
     playPath: "play/god-sisters-stroll/",
-    shelfCover: "10_game_assets/characters/isabel.png",
-    iframeTitle: "God Sisters 3D Stroll",
+    shelfCover: "10_game_assets/demo/god-sisters-stroll.png",
+    iframeTitle: "Walk with your god sister",
   },
 ];
 
@@ -684,7 +684,11 @@ function renderList() {
     }
     if (section === "gallery") extra = item.blurb;
     if (section === "demo") {
-      extra = item.parent ? `${item.parent} · ${item.blurb}` : item.blurb;
+      extra = item.parent
+        ? item.blurb
+          ? `${item.parent} · ${item.blurb}`
+          : item.parent
+        : item.blurb;
     }
 
     const coverSrc = shelfCover(item);
