@@ -5,11 +5,7 @@ Built output only — no game source trees. Published for anonymous play at `/pl
 | Path | Source repo | Ref / commit | Notes |
 | --- | --- | --- | --- |
 | `fruit-catcher/` | [goldion/test](https://github.com/goldion/test) | `release` @ `f1be815` | Jump (Space/tap hop, coyote, air catch) · Legend + SFX |
-<<<<<<< HEAD
-| `clover-wheel/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `c96c55e` | `rnd/threejs/clover-wheel-race` static root |
-=======
 | `clover-wheel/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `c96c55e` | `rnd/threejs/clover-wheel-race` static root (wavy track, locked cast) |
->>>>>>> 28d804e (Vendor Clover-wheel Race from engine release c96c55e)
 | `dragon-flight/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `d111c68` | `rnd/threejs/dragon-flight` static root |
 | `god-sisters-stroll/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `d111c68` | `rnd/threejs/god-sisters-stroll` static root |
 
