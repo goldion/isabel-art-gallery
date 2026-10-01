@@ -11,6 +11,10 @@ const BASKET_REACH_X = 3.4;
 const BASKET_CATCH_HALF_H = 0.35;
 const PLAYER_HALF_W = (BASKET_REACH_X + BASKET_RADIUS) * PLAYER_SCALE + 0.5;
 const GROUND_Y = -19.8;
+const JUMP_VELOCITY = 19.5;
+const JUMP_GRAVITY = 46;
+const COYOTE_TIME = 0.1;
+const AIR_CATCH_HALF_HEIGHT_BONUS = 0.22;
 const SKY_TOP = 0xa8d4f0;
 const SKY_HORIZON = 0xc9e6f5;
 const FOG_COLOR = 0xb0cfc0;
@@ -140,6 +144,10 @@ let mouseX = 0;
 let lastSpawn = 0;
 let nextSpawnDelay = randomSpawnDelay();
 let playerBaskets = [];
+let playerJumpY = 0;
+let playerJumpVy = 0;
+let coyoteTimeLeft = 0;
+let airJumpUsed = false;
 
 function mat(color, opts = {}) {
   return new THREE.MeshStandardMaterial({ color, flatShading: true, ...opts });
@@ -661,7 +669,14 @@ function getTimeFallSpeedBonus() {
   return 1 + FALL_SPEED_TIME_RAMP * t;
 }
 
+function isPlayerAirborne() {
+  return playerJumpY > 0.02 || playerJumpVy > 0.05;
+}
+
 function getBasketHitboxes() {
+  const airborne = isPlayerAirborne();
+  const halfHeight =
+    BASKET_CATCH_HALF_H * PLAYER_SCALE + (airborne ? AIR_CATCH_HALF_HEIGHT_BONUS * PLAYER_SCALE : 0);
   return playerBaskets.map(({ mesh }) => {
     const pos = mesh.getWorldPosition(new THREE.Vector3());
     return {
@@ -669,9 +684,50 @@ function getBasketHitboxes() {
       y: pos.y,
       z: pos.z,
       radius: BASKET_RADIUS * PLAYER_SCALE,
-      halfHeight: BASKET_CATCH_HALF_H * PLAYER_SCALE,
+      halfHeight,
     };
   });
+}
+
+function resetPlayerJump() {
+  playerJumpY = 0;
+  playerJumpVy = 0;
+  coyoteTimeLeft = COYOTE_TIME;
+  airJumpUsed = false;
+  playerGroup.position.y = 0;
+}
+
+function isPlayerOnGround() {
+  return playerJumpY <= 0 && playerJumpVy <= 0;
+}
+
+function tryHop() {
+  if (gameOver || paused || legendOpen || !gameStarted) return false;
+  if (airJumpUsed && !isPlayerOnGround()) return false;
+  const canHop = (isPlayerOnGround() || coyoteTimeLeft > 0) && playerJumpVy <= 0;
+  if (!canHop) return false;
+  playerJumpVy = JUMP_VELOCITY;
+  airJumpUsed = true;
+  coyoteTimeLeft = 0;
+  return true;
+}
+
+function updatePlayerJump(dt) {
+  if (playerJumpVy !== 0 || playerJumpY > 0) {
+    playerJumpVy -= JUMP_GRAVITY * dt;
+    playerJumpY += playerJumpVy * dt;
+    if (playerJumpY <= 0) {
+      playerJumpY = 0;
+      playerJumpVy = 0;
+    } else {
+      coyoteTimeLeft = Math.max(0, coyoteTimeLeft - dt);
+    }
+  }
+  if (isPlayerOnGround()) {
+    airJumpUsed = false;
+    coyoteTimeLeft = COYOTE_TIME;
+  }
+  playerGroup.position.y = playerJumpY;
 }
 
 function loadBestScore() {
@@ -1190,6 +1246,7 @@ function restartGame() {
   updateTimerDisplay();
   lastSpawn = 0;
   nextSpawnDelay = randomSpawnDelay();
+  resetPlayerJump();
 }
 
 function updateEffects(dt) {
@@ -1265,6 +1322,7 @@ function update(timestamp) {
     const viewHalf = getViewHalfWidth();
     playerX = THREE.MathUtils.clamp(mouseX, -viewHalf + PLAYER_HALF_W, viewHalf - PLAYER_HALF_W);
     playerGroup.position.x = playerX;
+    resetPlayerJump();
     updateEffects(dt);
     return;
   }
@@ -1306,6 +1364,8 @@ function update(timestamp) {
   playerX = THREE.MathUtils.clamp(mouseX, -viewHalf + PLAYER_HALF_W, viewHalf - PLAYER_HALF_W);
   playerGroup.position.x = playerX;
 
+  updatePlayerJump(dt);
+
   for (let i = fruits.length - 1; i >= 0; i--) {
     const fruit = fruits[i];
     fruit.y -= fruit.speed * getTimeFallSpeedBonus() * dt;
@@ -1334,6 +1394,7 @@ function init() {
   generateForest();
   createPlayer();
   playerGroup.position.x = 0;
+  resetPlayerJump();
   resizeRenderer();
   updateTimerDisplay();
 
@@ -1350,7 +1411,12 @@ function init() {
   }, { passive: false });
   container.addEventListener("touchstart", (e) => {
     handlePointerInput(e.touches[0].clientX);
+    tryHop();
   }, { passive: true });
+  container.addEventListener("click", (e) => {
+    if (e.target !== renderer.domElement) return;
+    tryHop();
+  });
   restartBtn.addEventListener("click", restartGame);
   resumeBtn.addEventListener("click", () => setPaused(false));
   muteBtn.addEventListener("click", () => toggleMuted());
@@ -1390,6 +1456,13 @@ function init() {
       if (gameStarted && !gameOver && !legendOpen) {
         e.preventDefault();
         togglePause();
+      }
+      return;
+    }
+    if (e.code === "Space") {
+      if (gameStarted && !gameOver && !legendOpen && !paused) {
+        e.preventDefault();
+        tryHop();
       }
       return;
     }
