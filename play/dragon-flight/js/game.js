@@ -71,8 +71,7 @@ const clock = new THREE.Clock();
 const ringMeshes = [];
 const sparkPool = [];
 const billboards = [];
-let dragonCute;
-let dragonJump;
+let dragonFly;
 let started = false;
 let finished = false;
 let collected = 0;
@@ -123,32 +122,6 @@ function chromaAndTrim(canvas) {
   out.height = maxY - minY + 1;
   out.getContext("2d").drawImage(canvas, minX, minY, out.width, out.height, 0, 0, out.width, out.height);
   return out;
-}
-
-function cutCuteDragon(img) {
-  const cellW = img.width / 4;
-  const sx = cellW * 0.12;
-  const sw = cellW * 0.406;
-  const sy = img.height * 0.35;
-  const sh = img.height * 0.286;
-  const c = document.createElement("canvas");
-  c.width = Math.max(1, Math.floor(sw));
-  c.height = Math.max(1, Math.floor(sh));
-  c.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
-  return chromaAndTrim(c);
-}
-
-function cutCell(img, cols, index, y0 = 0.08, cellH = 0.54) {
-  const cellW = img.width / cols;
-  const yStart = img.height * y0;
-  const h = img.height * cellH;
-  const c = document.createElement("canvas");
-  c.width = Math.max(1, Math.floor(cellW));
-  c.height = Math.max(1, Math.floor(h));
-  const ctx = c.getContext("2d");
-  ctx.drawImage(img, cellW * index, yStart, cellW, h, 0, 0, c.width, c.height);
-  ctx.clearRect(0, c.height * 0.88, c.width, c.height * 0.12);
-  return chromaAndTrim(c);
 }
 
 function cutGrid(img, cols, rows, col, row) {
@@ -433,10 +406,9 @@ function movePlayer(dt) {
   player.position.y = Math.max(1.8, Math.min(11.5, player.position.y));
   player.rotation.z = vx * 0.05;
   player.rotation.x = vy * 0.02;
-  if (dragonCute && dragonJump) {
-    const boosting = keys.boost;
-    dragonCute.visible = !boosting;
-    dragonJump.visible = boosting;
+  if (dragonFly) {
+    const boostScale = keys.boost ? 1.06 : 1;
+    dragonFly.scale.setScalar(boostScale);
   }
   if (player.position.z >= FINISH_Z) endFlight();
 }
@@ -587,7 +559,7 @@ async function boot() {
   bindStick();
 
   const jobs = {
-    lotus: "assets/characters/lotus-dragon.png",
+    playerFly: "assets/characters/blue-princess-dragon-fly.png",
     skyGirl: "assets/characters/sky-dragon-girl.png",
     earthGirl: "assets/characters/earth-dragon-girl.png",
     seaGirl: "assets/characters/sea-dragon-girl.png",
@@ -604,8 +576,7 @@ async function boot() {
     })
   );
 
-  poses.lotusCute = canvasTexture(cutCuteDragon(imgs.lotus));
-  poses.lotusJump = canvasTexture(cutCell(imgs.lotus, 4, 1, 0.12, 0.5));
+  poses.playerFly = canvasTexture(cutFull(imgs.playerFly));
   poses.skyGirl = canvasTexture(cutGrid(imgs.skyGirl, 2, 2, 1, 0));
   poses.earthGirl = canvasTexture(cutGrid(imgs.earthGirl, 2, 2, 0, 1));
   poses.seaGirl = canvasTexture(cutGrid(imgs.seaGirl, 2, 2, 1, 0));
@@ -615,12 +586,9 @@ async function boot() {
   textures.hills = imageTexture(imgs.hills);
   textures.flag = canvasTexture(cutFull(imgs.flag));
 
-  dragonCute = makeBillboard(poses.lotusCute, 2.9);
-  dragonJump = makeBillboard(poses.lotusJump, 2.9);
-  dragonCute.position.y = 0;
-  dragonJump.position.y = 0;
-  dragonJump.visible = false;
-  player.add(dragonCute, dragonJump);
+  dragonFly = makeBillboard(poses.playerFly, 3.25);
+  dragonFly.position.y = 0;
+  player.add(dragonFly);
   buildWorld();
   resetRun();
   camera.position.set(0, 7.2, -8);
