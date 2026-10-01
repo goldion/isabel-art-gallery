@@ -7,10 +7,10 @@ import * as THREE from "three";
 const LAPS = 3;
 const TRACK_A = 32;
 const TRACK_B = 19;
-/** Harmonic bumps on the oval so the loop has clear bends (not a smooth ellipse). */
-const TRACK_WAVE_A = 0.3;
-const TRACK_WAVE_B = 0.16;
-const TRACK_WAVE_FREQ = 5;
+/** Gentle radius wobble — three wide bends per lap (same period; no high-frequency kinks). */
+const TRACK_WAVE_A = 0.24;
+const TRACK_WAVE_B = 0.07;
+const TRACK_WAVE_FREQ = 3;
 const ROAD_HALF = 3.3;
 const LAT_MAX = 5.4;
 const BASE_SPEED = 16;
@@ -56,6 +56,8 @@ const sidePages = [];
 
 const player = { u: 0, lat: -0.8, speed: 0, spin: 0, group: new THREE.Group() };
 const rival = { u: 0.07, lat: 1.2, spin: 0, group: new THREE.Group() };
+/** Smoothed track forward vector for chase cam (avoids snapping on bends). */
+const camForward = { fx: 1, fz: 0 };
 scene.add(player.group, rival.group);
 
 let started = false;
@@ -64,11 +66,8 @@ let raceTime = 0;
 let playerWon = false;
 
 function trackWave(ang) {
-  return (
-    1 +
-    TRACK_WAVE_A * Math.cos(TRACK_WAVE_FREQ * ang - 0.2) +
-    TRACK_WAVE_B * Math.sin(TRACK_WAVE_FREQ * 2 * ang + 0.45)
-  );
+  const f = TRACK_WAVE_FREQ * ang;
+  return 1 + TRACK_WAVE_A * Math.cos(f - 0.2) + TRACK_WAVE_B * Math.sin(f + 0.85);
 }
 
 function trackPoint(ang) {
@@ -91,7 +90,7 @@ const TRACK_LEN = measureTrackLength();
 
 function sample(u) {
   const ang = (u % 1) * Math.PI * 2;
-  const eps = 0.0015;
+  const eps = 0.004;
   const p = trackPoint(ang);
   const q = trackPoint(ang + eps);
   const tx = q.x - p.x;
@@ -386,6 +385,9 @@ function resetRun() {
   rival.group.scale.setScalar(1);
   placeRacer(player);
   placeRacer(rival);
+  const startFrame = sample(player.u);
+  camForward.fx = startFrame.fx;
+  camForward.fz = startFrame.fz;
   updateCamera(0);
   updateRivalReadability();
   updateHud();
@@ -402,14 +404,14 @@ function updateRace(dt) {
   if (ix !== 0 || keys.boost) startRace();
   if (!started || finished) return;
   raceTime += dt;
-  player.lat = Math.max(-LAT_MAX, Math.min(LAT_MAX, player.lat + ix * 8.2 * dt));
+  player.lat = Math.max(-LAT_MAX, Math.min(LAT_MAX, player.lat + ix * 6.6 * dt));
   const grip = onRoad(player.lat) ? 1 : 0.42;
   const target = BASE_SPEED * (keys.boost ? BOOST_MUL : 1) * grip;
   player.speed += (target - player.speed) * Math.min(1, 2.4 * dt);
   player.u += (player.speed * dt) / TRACK_LEN;
   player.spin += player.speed * dt * 0.35;
 
-  rival.lat = Math.sin(raceTime * 0.65) * 1.5;
+  rival.lat = Math.sin(raceTime * 0.42 + 0.6) * 0.75;
   rival.u += (RIVAL_SPEED * dt) / TRACK_LEN;
   rival.spin += RIVAL_SPEED * dt * 0.28;
 
@@ -421,19 +423,26 @@ function updateRace(dt) {
 
 function updateCamera(dt) {
   const s = sample(player.u);
+  const blend = dt > 0 ? 1 - Math.exp(-4.2 * dt) : 1;
+  camForward.fx += (s.fx - camForward.fx) * blend;
+  camForward.fz += (s.fz - camForward.fz) * blend;
+  const fLen = Math.hypot(camForward.fx, camForward.fz) || 1;
+  camForward.fx /= fLen;
+  camForward.fz /= fLen;
+
   const px = player.group.position.x;
   const pz = player.group.position.z;
-  const desired = new THREE.Vector3(px - s.fx * 6.4, 2.55, pz - s.fz * 6.4);
-  if (dt > 0) camera.position.lerp(desired, 1 - Math.exp(-5.5 * dt));
+  const desired = new THREE.Vector3(px - camForward.fx * 6.8, 2.55, pz - camForward.fz * 6.8);
+  if (dt > 0) camera.position.lerp(desired, 1 - Math.exp(-4.8 * dt));
   else camera.position.copy(desired);
 
-  const aheadX = px + s.fx * 4.2;
-  const aheadZ = pz + s.fz * 4.2;
+  const aheadX = px + camForward.fx * 5.6;
+  const aheadZ = pz + camForward.fz * 5.6;
   let lookX = aheadX;
   let lookZ = aheadZ;
   if (player.u + 0.012 < rival.u) {
     const gap = rival.u - player.u;
-    const t = THREE.MathUtils.clamp(gap * 16, 0.38, 0.78);
+    const t = THREE.MathUtils.clamp(gap * 10, 0.22, 0.52);
     lookX = THREE.MathUtils.lerp(aheadX, rival.group.position.x, t);
     lookZ = THREE.MathUtils.lerp(aheadZ, rival.group.position.z, t);
   }
