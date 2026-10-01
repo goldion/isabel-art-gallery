@@ -1,17 +1,23 @@
 /**
- * Clover-wheel Race — one neighborhood loop, Isabel vs Maisie.
+ * Clover-wheel Race — one neighborhood loop, Greenness Queen vs 小花.
  * Crayon sprites stay billboards. The road is the only 3D mesh that matters.
  */
 import * as THREE from "three";
 
 const LAPS = 3;
-const TRACK_A = 34;
-const TRACK_B = 20;
+const TRACK_A = 32;
+const TRACK_B = 19;
+/** Harmonic bumps on the oval so the loop has clear bends (not a smooth ellipse). */
+const TRACK_WAVE_A = 0.3;
+const TRACK_WAVE_B = 0.16;
+const TRACK_WAVE_FREQ = 5;
 const ROAD_HALF = 3.3;
 const LAT_MAX = 5.4;
 const BASE_SPEED = 16;
 const BOOST_MUL = 1.55;
 const RIVAL_SPEED = 14.2;
+const RIVAL_RIDER_H = 3.55;
+const RIVAL_BOARD_H = 2.28;
 
 const view = document.getElementById("view");
 const lapEl = document.getElementById("lap");
@@ -57,23 +63,43 @@ let finished = false;
 let raceTime = 0;
 let playerWon = false;
 
-function ellipseLength(a, b) {
-  const h = ((a - b) / (a + b)) ** 2;
-  return Math.PI * (a + b) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
+function trackWave(ang) {
+  return (
+    1 +
+    TRACK_WAVE_A * Math.cos(TRACK_WAVE_FREQ * ang - 0.2) +
+    TRACK_WAVE_B * Math.sin(TRACK_WAVE_FREQ * 2 * ang + 0.45)
+  );
 }
 
-const TRACK_LEN = ellipseLength(TRACK_A, TRACK_B);
+function trackPoint(ang) {
+  const w = trackWave(ang);
+  return { x: Math.cos(ang) * TRACK_A * w, z: Math.sin(ang) * TRACK_B * w };
+}
+
+function measureTrackLength(steps = 720) {
+  let len = 0;
+  let prev = trackPoint(0);
+  for (let i = 1; i <= steps; i++) {
+    const p = trackPoint((i / steps) * Math.PI * 2);
+    len += Math.hypot(p.x - prev.x, p.z - prev.z);
+    prev = p;
+  }
+  return len;
+}
+
+const TRACK_LEN = measureTrackLength();
 
 function sample(u) {
   const ang = (u % 1) * Math.PI * 2;
-  const x = Math.cos(ang) * TRACK_A;
-  const z = Math.sin(ang) * TRACK_B;
-  const tx = -Math.sin(ang) * TRACK_A;
-  const tz = Math.cos(ang) * TRACK_B;
+  const eps = 0.0015;
+  const p = trackPoint(ang);
+  const q = trackPoint(ang + eps);
+  const tx = q.x - p.x;
+  const tz = q.z - p.z;
   const len = Math.hypot(tx, tz) || 1;
   const fx = tx / len;
   const fz = tz / len;
-  return { x, z, fx, fz, rx: fz, rz: -fx };
+  return { x: p.x, z: p.z, fx, fz, rx: fz, rz: -fx };
 }
 
 function loadImage(src) {
@@ -136,6 +162,28 @@ function cutCell(img, cols, index) {
   return chromaAndTrim(c);
 }
 
+function cutGridCell(img, cols, rows, col, row) {
+  const cellW = img.width / cols;
+  const cellH = img.height / rows;
+  const padX = cellW * 0.06;
+  const padY = cellH * 0.06;
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.floor(cellW - padX * 2));
+  c.height = Math.max(1, Math.floor(cellH - padY * 2));
+  c.getContext("2d").drawImage(
+    img,
+    col * cellW + padX,
+    row * cellH + padY,
+    cellW - padX * 2,
+    cellH - padY * 2,
+    0,
+    0,
+    c.width,
+    c.height
+  );
+  return chromaAndTrim(c);
+}
+
 function cutFull(img) {
   const c = document.createElement("canvas");
   c.width = img.width;
@@ -183,7 +231,7 @@ function buildRoad() {
   grass.rotation.x = -Math.PI / 2;
   scene.add(grass);
 
-  const segs = 96;
+  const segs = 128;
   const positions = [];
   const indices = [];
   for (let i = 0; i <= segs; i++) {
@@ -273,13 +321,14 @@ function buildWorld(textures) {
   scene.add(scooter);
 }
 
-function mountRider(group, riderTex, boardTex, riderH, boardH, foot) {
+function mountRider(group, riderTex, boardTex, riderH, boardH, foot, boardSpin = true) {
   const board = makeSprite(boardTex, boardH);
   const rider = makeSprite(riderTex, riderH);
   board.position.y = 0.08;
   board.renderOrder = 2;
   rider.position.y = 0.08 + boardH * foot;
-  rider.renderOrder = 3;
+  rider.renderOrder = 4;
+  board.userData.spins = boardSpin;
   group.add(board, rider);
   return { board, rider };
 }
@@ -315,8 +364,8 @@ function endRace() {
   const place = player.u >= rival.u ? "1st" : "2nd";
   playerWon = place === "1st";
   finishLineEl.textContent = playerWon
-    ? `You beat Maisie · ${raceTime.toFixed(1)}s`
-    : `Maisie got there first · ${raceTime.toFixed(1)}s`;
+    ? `You beat 小花 · ${raceTime.toFixed(1)}s`
+    : `小花 got there first · ${raceTime.toFixed(1)}s`;
   finishEl.hidden = false;
 }
 
@@ -334,9 +383,11 @@ function resetRun() {
   playerWon = false;
   finishEl.hidden = true;
   onboardingEl.hidden = false;
+  rival.group.scale.setScalar(1);
   placeRacer(player);
   placeRacer(rival);
   updateCamera(0);
+  updateRivalReadability();
   updateHud();
 }
 
@@ -351,7 +402,7 @@ function updateRace(dt) {
   if (ix !== 0 || keys.boost) startRace();
   if (!started || finished) return;
   raceTime += dt;
-  player.lat = Math.max(-LAT_MAX, Math.min(LAT_MAX, player.lat + ix * 7.5 * dt));
+  player.lat = Math.max(-LAT_MAX, Math.min(LAT_MAX, player.lat + ix * 8.2 * dt));
   const grip = onRoad(player.lat) ? 1 : 0.42;
   const target = BASE_SPEED * (keys.boost ? BOOST_MUL : 1) * grip;
   player.speed += (target - player.speed) * Math.min(1, 2.4 * dt);
@@ -375,7 +426,32 @@ function updateCamera(dt) {
   const desired = new THREE.Vector3(px - s.fx * 6.4, 2.55, pz - s.fz * 6.4);
   if (dt > 0) camera.position.lerp(desired, 1 - Math.exp(-5.5 * dt));
   else camera.position.copy(desired);
-  camera.lookAt(px + s.fx * 4.2, 1.15, pz + s.fz * 4.2);
+
+  const aheadX = px + s.fx * 4.2;
+  const aheadZ = pz + s.fz * 4.2;
+  let lookX = aheadX;
+  let lookZ = aheadZ;
+  if (player.u + 0.012 < rival.u) {
+    const gap = rival.u - player.u;
+    const t = THREE.MathUtils.clamp(gap * 16, 0.38, 0.78);
+    lookX = THREE.MathUtils.lerp(aheadX, rival.group.position.x, t);
+    lookZ = THREE.MathUtils.lerp(aheadZ, rival.group.position.z, t);
+  }
+  camera.lookAt(lookX, 1.16, lookZ);
+}
+
+function updateRivalReadability() {
+  const dx = player.group.position.x - rival.group.position.x;
+  const dz = player.group.position.z - rival.group.position.z;
+  const alongTrack = dx * rival.fx + dz * rival.fz;
+  const sep = Math.hypot(dx, dz);
+  const camDist = rival.group.position.distanceTo(camera.position);
+  const aheadBoost = alongTrack < -1.5 ? 0.24 : 0;
+  let scale = 1.18 + (camDist - 8) * 0.058 + aheadBoost;
+  if (alongTrack < -1.5 && sep < 22) {
+    scale = Math.max(scale, 1.95 + (22 - sep) * 0.055);
+  }
+  rival.group.scale.setScalar(THREE.MathUtils.clamp(scale, 1.18, 2.85));
 }
 
 function resize() {
@@ -440,9 +516,10 @@ function tick() {
   updateRace(dt);
   placeRacer(player);
   placeRacer(rival);
+  updateRivalReadability();
   updateSidePages();
-  if (player.board) player.board.material.rotation = player.spin;
-  if (rival.board) rival.board.material.rotation = rival.spin;
+  if (player.board?.userData.spins) player.board.material.rotation = player.spin;
+  if (rival.board?.userData.spins) rival.board.material.rotation = rival.spin;
   updateCamera(dt);
   updateHud();
   renderer.render(scene, camera);
@@ -461,8 +538,8 @@ async function boot() {
   bindStick();
 
   const jobs = {
-    isabel: "assets/characters/isabel.png",
-    maisie: "assets/characters/maisie.png",
+    queen: "assets/characters/greenness-queen.png",
+    xiaohua: "assets/characters/xiaohua.png",
     wheel: "assets/elements/clover-wheel.png",
     skate: "assets/elements/skateboard.png",
     scooter: "assets/elements/scooter.png",
@@ -477,8 +554,8 @@ async function boot() {
   );
 
   const textures = {
-    isabel: canvasTexture(cutCell(imgs.isabel, 7, 3)),
-    maisie: canvasTexture(cutCell(imgs.maisie, 8, 0)),
+    queen: canvasTexture(cutGridCell(imgs.queen, 2, 2, 1, 0)),
+    xiaohua: canvasTexture(cutCell(imgs.xiaohua, 5, 1)),
     wheel: canvasTexture(cutFull(imgs.wheel)),
     skate: canvasTexture(cutFull(imgs.skate)),
     scooter: canvasTexture(cutFull(imgs.scooter)),
@@ -486,10 +563,21 @@ async function boot() {
     mall: imageTexture(imgs.mall),
   };
 
-  const you = mountRider(player.group, textures.isabel, textures.wheel, 2.25, 3.05, 0.56);
-  const her = mountRider(rival.group, textures.maisie, textures.skate, 1.9, 1.2, 0.5);
-  player.board = you.board;
+  const you = mountRider(player.group, textures.queen, textures.wheel, 3.85, 3.45, 0.34, false);
+  const her = mountRider(rival.group, textures.xiaohua, textures.skate, RIVAL_RIDER_H, RIVAL_BOARD_H, 0.54);
+  you.rider.userData.cast = "greenness-queen";
+  her.rider.userData.cast = "xiaohua-sunglasses";
+  her.board.userData.cast = "skateboard";
+  you.board.visible = false;
+  player.board = null;
   rival.board = her.board;
+  player.rider = you.rider;
+  rival.rider = her.rider;
+  window.__cloverWheelRacerCast = () => ({
+    player: player.rider.userData.cast,
+    rival: rival.rider.userData.cast,
+    rivalVehicle: rival.board.userData.cast,
+  });
   buildWorld(textures);
   resetRun();
   loadingEl.hidden = true;
