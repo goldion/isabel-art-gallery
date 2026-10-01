@@ -222,6 +222,22 @@ function makeSprite(tex, height) {
   return sprite;
 }
 
+function setSpriteTexture(sprite, tex, height) {
+  const img = tex.image;
+  sprite.material.map = tex;
+  sprite.scale.set(height * (img.width / img.height), height, 1);
+  sprite.material.needsUpdate = true;
+}
+
+function updateQueenPose() {
+  if (!player.rider || !player.queenPoses) return;
+  const { stand, wheel, wave } = player.queenPoses;
+  const h = player.riderH;
+  if (finished) setSpriteTexture(player.rider, wave, h);
+  else if (!started) setSpriteTexture(player.rider, stand, h);
+  else setSpriteTexture(player.rider, wheel, h);
+}
+
 function buildRoad() {
   const grass = new THREE.Mesh(
     new THREE.CircleGeometry(62, 48),
@@ -355,6 +371,7 @@ function startRace() {
   if (started || finished) return;
   started = true;
   onboardingEl.hidden = true;
+  updateQueenPose();
 }
 
 function endRace() {
@@ -366,6 +383,7 @@ function endRace() {
     ? `You beat 小花 · ${raceTime.toFixed(1)}s`
     : `小花 got there first · ${raceTime.toFixed(1)}s`;
   finishEl.hidden = false;
+  updateQueenPose();
 }
 
 function resetRun() {
@@ -388,6 +406,7 @@ function resetRun() {
   const startFrame = sample(player.u);
   camForward.fx = startFrame.fx;
   camForward.fz = startFrame.fz;
+  updateQueenPose();
   updateCamera(0);
   updateRivalReadability();
   updateHud();
@@ -529,6 +548,7 @@ function tick() {
   updateSidePages();
   if (player.board?.userData.spins) player.board.material.rotation = player.spin;
   if (rival.board?.userData.spins) rival.board.material.rotation = rival.spin;
+  updateQueenPose();
   updateCamera(dt);
   updateHud();
   renderer.render(scene, camera);
@@ -547,8 +567,10 @@ async function boot() {
   bindStick();
 
   const jobs = {
-    queen: "assets/characters/greenness-queen.png",
-    xiaohua: "assets/characters/xiaohua.png",
+    queenStand: "assets/characters/greenness-queen-stand.png",
+    queenWheel: "assets/characters/greenness-queen-wheel.png",
+    queenWave: "assets/characters/greenness-queen-wave.png",
+    xiaohuaSkate: "assets/characters/xiaohua-sunglasses-skate.png",
     wheel: "assets/elements/clover-wheel.png",
     skate: "assets/elements/skateboard.png",
     scooter: "assets/elements/scooter.png",
@@ -562,9 +584,14 @@ async function boot() {
     })
   );
 
+  const queenStand = canvasTexture(cutFull(imgs.queenStand));
+  const queenWheel = canvasTexture(cutFull(imgs.queenWheel));
+  const queenWave = canvasTexture(cutFull(imgs.queenWave));
   const textures = {
-    queen: canvasTexture(cutGridCell(imgs.queen, 2, 2, 1, 0)),
-    xiaohua: canvasTexture(cutCell(imgs.xiaohua, 5, 1)),
+    queenStand,
+    queenWheel,
+    queenWave,
+    xiaohua: canvasTexture(cutFull(imgs.xiaohuaSkate)),
     wheel: canvasTexture(cutFull(imgs.wheel)),
     skate: canvasTexture(cutFull(imgs.skate)),
     scooter: canvasTexture(cutFull(imgs.scooter)),
@@ -572,15 +599,19 @@ async function boot() {
     mall: imageTexture(imgs.mall),
   };
 
-  const you = mountRider(player.group, textures.queen, textures.wheel, 3.85, 3.45, 0.34, false);
+  const riderH = 3.85;
+  const you = mountRider(player.group, textures.queenStand, textures.wheel, riderH, 3.45, 0.34, false);
   const her = mountRider(rival.group, textures.xiaohua, textures.skate, RIVAL_RIDER_H, RIVAL_BOARD_H, 0.54);
   you.rider.userData.cast = "greenness-queen";
-  her.rider.userData.cast = "xiaohua-sunglasses";
+  her.rider.userData.cast = "xiaohua-sunglasses-skate";
   her.board.userData.cast = "skateboard";
   you.board.visible = false;
+  her.board.visible = false;
   player.board = null;
-  rival.board = her.board;
+  rival.board = null;
   player.rider = you.rider;
+  player.riderH = riderH;
+  player.queenPoses = { stand: queenStand, wheel: queenWheel, wave: queenWave };
   rival.rider = her.rider;
   window.__cloverWheelRacerCast = () => ({
     player: player.rider.userData.cast,

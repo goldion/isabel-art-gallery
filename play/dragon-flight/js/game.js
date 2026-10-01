@@ -72,6 +72,7 @@ const ringMeshes = [];
 const sparkPool = [];
 const billboards = [];
 let dragonFly;
+let dragonPose = "fly";
 let started = false;
 let finished = false;
 let collected = 0;
@@ -188,6 +189,27 @@ function makeBillboard(tex, height) {
   mesh.position.y = height / 2;
   mesh.rotation.y = Math.PI;
   return mesh;
+}
+
+function setBillboardTexture(mesh, tex, height) {
+  const img = tex.image;
+  const w = height * (img.width / img.height);
+  mesh.material.map = tex;
+  mesh.geometry.dispose();
+  mesh.geometry = new THREE.PlaneGeometry(w, height);
+  mesh.position.y = height / 2;
+  mesh.material.needsUpdate = true;
+}
+
+function updateDragonPose() {
+  if (!dragonFly || !poses.playerFly) return;
+  const height = 3.25;
+  let next = "fly";
+  if (keys.boost) next = Math.abs(vy) > 3.2 ? "cape" : "throw";
+  if (next === dragonPose) return;
+  dragonPose = next;
+  const tex = poses[`player${next[0].toUpperCase()}${next.slice(1)}`] || poses.playerFly;
+  setBillboardTexture(dragonFly, tex, height);
 }
 
 function addSideArt(tex, x, z, height) {
@@ -331,6 +353,9 @@ function resetRun() {
   player.rotation.set(0, 0, 0);
   vx = 0;
   vy = 0;
+  dragonPose = "";
+  if (dragonFly) setBillboardTexture(dragonFly, poses.playerFly, 3.25);
+  dragonPose = "fly";
   collected = 0;
   flightTime = 0;
   finished = false;
@@ -409,6 +434,7 @@ function movePlayer(dt) {
   if (dragonFly) {
     const boostScale = keys.boost ? 1.06 : 1;
     dragonFly.scale.setScalar(boostScale);
+    updateDragonPose();
   }
   if (player.position.z >= FINISH_Z) endFlight();
 }
@@ -559,7 +585,9 @@ async function boot() {
   bindStick();
 
   const jobs = {
-    playerFly: "assets/characters/blue-princess-dragon-fly.png",
+    playerFly: "assets/characters/blue-princess-fly.png",
+    playerCape: "assets/characters/blue-princess-cape.png",
+    playerThrow: "assets/characters/blue-princess-throw.png",
     skyGirl: "assets/characters/sky-dragon-girl.png",
     earthGirl: "assets/characters/earth-dragon-girl.png",
     seaGirl: "assets/characters/sea-dragon-girl.png",
@@ -577,6 +605,8 @@ async function boot() {
   );
 
   poses.playerFly = canvasTexture(cutFull(imgs.playerFly));
+  poses.playerCape = canvasTexture(cutFull(imgs.playerCape));
+  poses.playerThrow = canvasTexture(cutFull(imgs.playerThrow));
   poses.skyGirl = canvasTexture(cutGrid(imgs.skyGirl, 2, 2, 1, 0));
   poses.earthGirl = canvasTexture(cutGrid(imgs.earthGirl, 2, 2, 0, 1));
   poses.seaGirl = canvasTexture(cutGrid(imgs.seaGirl, 2, 2, 1, 0));
@@ -586,6 +616,7 @@ async function boot() {
   textures.hills = imageTexture(imgs.hills);
   textures.flag = canvasTexture(cutFull(imgs.flag));
 
+  dragonPose = "fly";
   dragonFly = makeBillboard(poses.playerFly, 3.25);
   dragonFly.position.y = 0;
   player.add(dragonFly);
