@@ -181,6 +181,17 @@ const DEMOS = [
     shelfCover: "10_game_assets/demo/god-sisters-stroll.png",
     iframeTitle: "Walk with your god sister",
   },
+  {
+    id: "transform-dragon-city",
+    title: "Transform Dragon City!",
+    kid: "Transform Dragon City!",
+    parent: "Move · jump · transform · rescue",
+    blurb: "",
+    kind: "play",
+    playPath: "play/transform-dragon-city/",
+    shelfCover: "10_game_assets/demo/transform-dragon-city.png",
+    iframeTitle: "Transform Dragon City",
+  },
 ];
 
 const NOVELS = [
