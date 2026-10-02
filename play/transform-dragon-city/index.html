@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Transform Dragon City</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="view"><canvas id="game"></canvas></div>
+    <header id="hud" hidden>
+      <div class="brand">Transform Dragon City</div>
+      <div id="place-name">Hills</div>
+      <div id="form-name">Girl</div>
+      <div id="lives" aria-label="Lives"></div>
+      <div id="crumbs" aria-label="Cities">
+        <span data-place="hills">Hills</span>
+        <span data-place="sky">天龍城</span>
+        <span data-place="earth">地龍城</span>
+        <span data-place="sea">海龍城</span>
+        <span data-place="jail">Jail</span>
+      </div>
+    </header>
+    <p id="banner" hidden></p>
+    <p id="prompt" hidden>help! friends!</p>
+    <div id="title" class="screen">
+      <h1>Transform Dragon City</h1>
+      <p>Walk the crayon cities. Punch gugu and the VS foe. Press F to swap girl and dragon — dragon hits harder and jumps higher. Rescue 小生 and 小连, then reach the treehouse.</p>
+      <p>← → walk · ↑ ↓ depth · Space jump · J punch · F transform</p>
+      <button type="button" id="btn-start">Who transforms?</button>
+    </div>
+    <div id="pick" class="screen" hidden>
+      <h1>Pick a hero</h1>
+      <p>F anytime. Dragon hits harder.</p>
+      <div id="roster" class="roster"></div>
+    </div>
+    <div id="end" class="screen" hidden>
+      <h1 id="end-title">The end!</h1>
+      <p id="end-text"></p>
+      <button type="button" id="btn-again">Play again</button>
+    </div>
+    <div id="loading" class="screen">Drawing the hills…</div>
+    <div id="touch">
+      <button type="button" id="t-left" aria-label="Left">◀</button>
+      <button type="button" id="t-up" aria-label="Farther">▲</button>
+      <button type="button" id="t-down" aria-label="Nearer">▼</button>
+      <button type="button" id="t-right" aria-label="Right">▶</button>
+      <button type="button" id="t-jump">Jump</button>
+      <button type="button" id="t-punch">Punch</button>
+      <button type="button" id="t-form">F</button>
+    </div>
+  </div>
+  <script src="js/game.js"></script>
+</body>
+</html>
