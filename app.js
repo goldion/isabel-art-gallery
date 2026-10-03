@@ -145,7 +145,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/fruit-catcher/",
-    shelfCover: "10_game_assets/demo/fruit-catcher.png",
+    shelfCover: "10_game_assets/demo/fruit-catcher.png?v=21",
     iframeTitle: "Catch the fruit!",
   },
   {
@@ -167,7 +167,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/dragon-flight/",
-    shelfCover: "10_game_assets/demo/dragon-flight.png",
+    shelfCover: "10_game_assets/demo/dragon-flight.png?v=21",
     iframeTitle: "Fly the blue princess!",
   },
   {
@@ -189,7 +189,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/transform-dragon-city/?v=20",
-    shelfCover: "10_game_assets/demo/transform-dragon-city.png",
+    shelfCover: "10_game_assets/demo/transform-dragon-city.png?v=21",
     iframeTitle: "Transform Dragon City",
   },
 ];
