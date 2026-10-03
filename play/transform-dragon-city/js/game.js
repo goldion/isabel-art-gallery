@@ -18,6 +18,7 @@ const STAGES = [
   { id: "earth", name: "地龍城", x0: 1800, bg: "earth" },
   { id: "sea", name: "海龍城", x0: 2700, bg: "sea" },
   { id: "jail", name: "Jail", x0: 3400, bg: "jail" },
+  { id: "treehouse", name: "Treehouse", x0: 3680, bg: "tree" },
 ];
 
 const viewEl = document.getElementById("view");
@@ -176,10 +177,7 @@ function startPlay() {
     { x: 3050, depth: 0.58, min: 2880, max: 3280, vx: -78, patrol: 78, hp: 4, kind: "gugu", hitT: 0, struck: false },
     { x: 3680, depth: 0.7, min: 3520, max: 3860, vx: 90, patrol: 90, hp: 5, kind: "vs", hitT: 0, struck: false },
   ];
-  friends = [
-    { x: 1420, depth: 0.66, id: "xiaosheng", name: "小生", saved: false },
-    { x: 2920, depth: 0.7, id: "xiaolian", name: "小连", saved: false },
-  ];
+  friends = [{ x: 3520, depth: 0.68, id: "xiaosheng", name: "小盛", saved: false }];
   camX = 0;
   announced = "hills";
   mode = "play";
@@ -192,8 +190,8 @@ function startPlay() {
   showBanner("help! friends!", 90);
 }
 
-function savedCount() {
-  return friends.filter((friend) => friend.saved).length;
+function friendSaved() {
+  return friends.length > 0 && friends[0].saved;
 }
 
 function win() {
@@ -202,7 +200,7 @@ function win() {
   bannerEl.hidden = true;
   promptEl.hidden = true;
   endEl.hidden = false;
-  endTextEl.textContent = hero().name + " got everyone home. Girl and dragon. The end.";
+  endTextEl.textContent = "";
 }
 
 function respawn() {
@@ -301,7 +299,7 @@ function tick(dt) {
     if (!friend.saved && close) {
       friend.saved = true;
       showBanner(friend.name + "!", 50);
-      setPrompt(savedCount() === 2 ? "Jail is ahead. Get them home." : "One more friend. Keep going.");
+      setPrompt("Treehouse ahead. Get home together.");
     }
     if (friend.saved) {
       const tx = player.x - 56 - index * 36;
@@ -315,14 +313,14 @@ function tick(dt) {
   paintCrumbs(stage.id);
   if (stage.id !== announced) {
     announced = stage.id;
-    if (savedCount() < 2 && player.x < FINISH - 40) setPrompt(stage.name);
+    if (!friendSaved() && player.x < FINISH - 40) setPrompt(stage.name);
   }
 
-  if (player.x > FINISH && savedCount() === 2) win();
+  if (player.x > FINISH && friendSaved()) win();
   else if (player.x > FINISH) {
     player.x = FINISH - 30;
     showBanner("help! friends!", 50);
-    setPrompt("Go back. Rescue 小生 and 小连.");
+    setPrompt("Go back. Rescue 小盛 in the jail.");
   }
 
   const target = player.x - cssW * 0.32;
@@ -513,7 +511,6 @@ Promise.all([
   loadImage(`${cropBase}/vs_opponent_hit.png`).then((img) => (sprites.vsHit = img)),
   loadImage(`${cropBase}/vs_opponent_down.png`).then((img) => (sprites.vsSit = img)),
   loadImage(`${cropBase}/xiaosheng.png`).then((img) => (sprites.xiaosheng = img)),
-  loadImage(`${cropBase}/xiaolian.png`).then((img) => (sprites.xiaolian = img)),
   ...HEROES.flatMap((item) => [
     loadImage(`${cropBase}/${item.id}_girl.png`).then((img) => {
       sprites[item.id + "G"] = img;
