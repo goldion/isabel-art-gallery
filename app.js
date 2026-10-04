@@ -145,7 +145,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/fruit-catcher/",
-    shelfCover: "10_game_assets/demo/fruit-catcher.png?v=21",
+    shelfCover: "10_game_assets/demo/fruit-catcher.png?v=22",
     iframeTitle: "Catch the fruit!",
   },
   {
@@ -156,7 +156,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/clover-wheel/",
-    shelfCover: "10_game_assets/demo/clover-wheel.png",
+    shelfCover: "10_game_assets/demo/clover-wheel.png?v=22",
     iframeTitle: "Race the clover wheel!",
   },
   {
@@ -178,7 +178,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/god-sisters-stroll/",
-    shelfCover: "10_game_assets/demo/god-sisters-stroll.png",
+    shelfCover: "10_game_assets/demo/god-sisters-stroll.png?v=22",
     iframeTitle: "Walk with your god sister",
   },
   {
@@ -189,7 +189,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/transform-dragon-city/?v=20",
-    shelfCover: "10_game_assets/demo/transform-dragon-city.png?v=21",
+    shelfCover: "10_game_assets/demo/transform-dragon-city.png?v=22",
     iframeTitle: "Transform Dragon City",
   },
 ];
