@@ -17,7 +17,8 @@ const BASE_SPEED = 16;
 const BOOST_MUL = 1.55;
 const RIVAL_SPEED = 14.2;
 const RIVAL_RIDER_H = 3.55;
-const RIVAL_BOARD_H = 2.28;
+/** Small deck under 小花's stance (not full prop scale). */
+const RIVAL_SKATE_H = 0.58;
 
 const view = document.getElementById("view");
 const lapEl = document.getElementById("lap");
@@ -191,6 +192,47 @@ function cutFull(img) {
   return chromaAndTrim(c);
 }
 
+/** Isabel stand on the wooden clover wheel (not the flat green disk pose). */
+function composeQueenOnCloverWheel(queenCanvas, wheelCanvas) {
+  const queen = chromaAndTrim(queenCanvas);
+  const wheel = chromaAndTrim(wheelCanvas);
+  const queenW = queen.width;
+  const queenH = queen.height;
+  const wheelW = Math.round(queenW * 3.05);
+  const wheelH = Math.round((wheel.height / wheel.width) * wheelW);
+  const queenDrawW = Math.round(wheelW * 0.38);
+  const queenDrawH = Math.round((queenH / queenW) * queenDrawW);
+  const padX = 36;
+  const padTop = 22;
+  const wheelOverlap = wheelH * 0.17;
+  const out = document.createElement("canvas");
+  out.width = wheelW + padX * 2;
+  out.height = padTop + queenDrawH + wheelH - wheelOverlap;
+  const ctx = out.getContext("2d");
+  const wheelX = (out.width - wheelW) / 2;
+  const wheelY = out.height - wheelH;
+  ctx.drawImage(wheel, wheelX, wheelY, wheelW, wheelH);
+  const queenX = (out.width - queenDrawW) / 2;
+  const queenY = wheelY - queenDrawH + wheelOverlap;
+  ctx.drawImage(queen, queenX, queenY, queenDrawW, queenDrawH);
+  return chromaAndTrim(out);
+}
+
+/** Level the crayon skate art: wheels down, deck horizontal for a billboard read. */
+function makeLevelSkateDeck(img) {
+  const src = chromaAndTrim(cutFull(img));
+  const angle = 0.27;
+  const size = Math.ceil(Math.hypot(src.width, src.height) * 1.08);
+  const stage = document.createElement("canvas");
+  stage.width = size;
+  stage.height = size;
+  const ctx = stage.getContext("2d");
+  ctx.translate(size / 2, size / 2);
+  ctx.rotate(angle);
+  ctx.drawImage(src, -src.width / 2, -src.height / 2);
+  return chromaAndTrim(stage);
+}
+
 function canvasTexture(canvas) {
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -231,11 +273,11 @@ function setSpriteTexture(sprite, tex, height) {
 
 function updateQueenPose() {
   if (!player.rider || !player.queenPoses) return;
-  const { stand, wheel, wave } = player.queenPoses;
+  const { stand, riding, wave } = player.queenPoses;
   const h = player.riderH;
   if (finished) setSpriteTexture(player.rider, wave, h);
   else if (!started) setSpriteTexture(player.rider, stand, h);
-  else setSpriteTexture(player.rider, wheel, h);
+  else setSpriteTexture(player.rider, riding, player.rideH);
 }
 
 function buildRoad() {
@@ -546,7 +588,6 @@ function tick() {
   placeRacer(rival);
   updateRivalReadability();
   updateSidePages();
-  if (player.board?.userData.spins) player.board.material.rotation = player.spin;
   if (rival.board?.userData.spins) rival.board.material.rotation = rival.spin;
   updateQueenPose();
   updateCamera(dt);
@@ -568,7 +609,6 @@ async function boot() {
 
   const jobs = {
     queenStand: "assets/characters/greenness-queen-stand.png",
-    queenWheel: "assets/characters/greenness-queen-wheel.png",
     queenWave: "assets/characters/greenness-queen-wave.png",
     xiaohuaSkate: "assets/characters/xiaohua-sunglasses-skate.png",
     wheel: "assets/elements/clover-wheel.png",
@@ -584,39 +624,59 @@ async function boot() {
     })
   );
 
-  const queenStand = canvasTexture(cutFull(imgs.queenStand));
-  const queenWheel = canvasTexture(cutFull(imgs.queenWheel));
+  const queenStandCanvas = cutFull(imgs.queenStand);
+  const queenStand = canvasTexture(queenStandCanvas);
+  const queenRidingCanvas = composeQueenOnCloverWheel(queenStandCanvas, cutFull(imgs.wheel));
+  const queenRiding = canvasTexture(queenRidingCanvas);
   const queenWave = canvasTexture(cutFull(imgs.queenWave));
   const textures = {
     queenStand,
-    queenWheel,
+    queenRiding,
     queenWave,
     xiaohua: canvasTexture(cutFull(imgs.xiaohuaSkate)),
     wheel: canvasTexture(cutFull(imgs.wheel)),
     skate: canvasTexture(cutFull(imgs.skate)),
+    skateDeck: canvasTexture(makeLevelSkateDeck(imgs.skate)),
     scooter: canvasTexture(cutFull(imgs.scooter)),
     neighborhood: imageTexture(imgs.neighborhood),
     mall: imageTexture(imgs.mall),
   };
 
   const riderH = 3.85;
+  const rideH = 6.65;
   const you = mountRider(player.group, textures.queenStand, textures.wheel, riderH, 3.45, 0.34, false);
-  const her = mountRider(rival.group, textures.xiaohua, textures.skate, RIVAL_RIDER_H, RIVAL_BOARD_H, 0.54);
-  you.rider.userData.cast = "greenness-queen";
+  const her = mountRider(
+    rival.group,
+    textures.xiaohua,
+    textures.skateDeck,
+    RIVAL_RIDER_H,
+    RIVAL_SKATE_H,
+    0.74,
+    false
+  );
+  you.rider.userData.cast = "greenness-queen-on-clover-wheel";
   her.rider.userData.cast = "xiaohua-sunglasses-skate";
   her.board.userData.cast = "skateboard";
   you.board.visible = false;
-  her.board.visible = false;
+  her.board.visible = true;
+  her.board.position.y = 0.13;
+  her.board.material.rotation = 0;
+  const deckImg = textures.skateDeck.image;
+  const deckW = RIVAL_SKATE_H * (deckImg.width / deckImg.height) * 0.82;
+  her.board.scale.set(deckW, RIVAL_SKATE_H, 1);
+  const deckTopY = her.board.position.y + RIVAL_SKATE_H * 0.5;
+  her.rider.position.y = deckTopY - RIVAL_RIDER_H * 0.125;
   player.board = null;
-  rival.board = null;
+  rival.board = her.board;
   player.rider = you.rider;
   player.riderH = riderH;
-  player.queenPoses = { stand: queenStand, wheel: queenWheel, wave: queenWave };
+  player.rideH = rideH;
+  player.queenPoses = { stand: queenStand, riding: queenRiding, wave: queenWave };
   rival.rider = her.rider;
   window.__cloverWheelRacerCast = () => ({
-    player: player.rider.userData.cast,
+    player: started && !finished ? player.rider.userData.cast : "greenness-queen",
     rival: rival.rider.userData.cast,
-    rivalVehicle: rival.board.userData.cast,
+    rivalVehicle: "skateboard",
   });
   buildWorld(textures);
   resetRun();
