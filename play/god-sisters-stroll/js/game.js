@@ -564,6 +564,26 @@ function tryUse() {
   if (item) item.use();
 }
 
+function flatten(root) {
+  root.traverse((obj) => {
+    if (!obj.isMesh) return;
+    const source = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const basic = source.map((mat) => {
+      const emissive = mat.emissive;
+      const glow = emissive && emissive.r + emissive.g + emissive.b > 0.05;
+      const color = glow ? emissive.clone() : mat.color.clone();
+      return new THREE.MeshBasicMaterial({
+        color,
+        map: mat.map || null,
+        transparent: mat.transparent,
+        opacity: mat.opacity,
+        side: THREE.DoubleSide,
+      });
+    });
+    obj.material = Array.isArray(obj.material) ? basic : basic[0];
+  });
+}
+
 function shortName(name) {
   const parts = name.split(/[|/]/);
   return parts[parts.length - 1];
@@ -843,6 +863,7 @@ async function boot() {
   });
   const angelGltf = await new GLTFLoader().loadAsync(ANGEL_URL);
   angel = angelGltf.scene;
+  flatten(angel);
   angel.scale.setScalar(ANGEL_SCALE);
   angel.position.y = -FEET * ANGEL_SCALE;
   playerGroup.add(angel);
