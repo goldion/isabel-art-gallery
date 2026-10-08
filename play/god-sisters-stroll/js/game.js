@@ -2,9 +2,13 @@
  * God Sisters 3D Stroll — third-person walk through Isabel's garden, park, and pond.
  */
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const ANGEL_URL = "assets/characters/isabel-angel.glb";
+const ANGEL_SCALE = 1.65;
+const FEET = 0.179;
 
 const ASSETS = {
-  isabel: { src: "assets/characters/isabel.png", cols: 7 },
   maisie: { src: "assets/characters/maisie.png", cols: 8 },
   mermaid: { src: "assets/characters/mermaid.png", cols: 4 },
   portal: { src: "assets/elements/portal.png" },
@@ -112,8 +116,11 @@ const state = {
   facing: 1,
 };
 
-let playerIdle;
-let playerWalk;
+let angel;
+let mixer;
+let clips = {};
+let currentClip = "";
+let waving = false;
 let interactables = [];
 let waters = [];
 let pads = [];
@@ -557,23 +564,60 @@ function tryUse() {
   if (item) item.use();
 }
 
+function shortName(name) {
+  const parts = name.split(/[|/]/);
+  return parts[parts.length - 1];
+}
+
+function playClip(name, loop) {
+  const action = clips[name];
+  if (!action) return;
+  if (currentClip === name && action.isRunning()) return;
+  for (const key of Object.keys(clips)) {
+    if (key !== name) clips[key].fadeOut(0.12);
+  }
+  action.reset();
+  action.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, loop ? Infinity : 1);
+  action.clampWhenFinished = !loop;
+  action.enabled = true;
+  action.fadeIn(0.12).play();
+  currentClip = name;
+}
+
+function updatePose(moving) {
+  if (!angel) return;
+  if (state.talking || state.traveling) {
+    waving = false;
+    playClip("Idle", true);
+    return;
+  }
+  if (waving) {
+    const wave = clips.Wave;
+    if (wave && wave.isRunning() && !wave.paused) return;
+    waving = false;
+  }
+  playClip(moving ? "Walk" : "Idle", true);
+}
+
+function startWave() {
+  if (!clips.Wave || state.talking || state.traveling) return;
+  waving = true;
+  currentClip = "";
+  playClip("Wave", false);
+}
+
 function movePlayer(dt) {
-  if (!state.started || state.talking || state.traveling) return;
+  if (!angel || !state.started || state.talking || state.traveling) return false;
   let ix = analog.x;
   let iz = analog.z;
   if (keys.a) ix -= 1;
   if (keys.d) ix += 1;
   if (keys.w) iz += 1;
   if (keys.s) iz -= 1;
-  if (ix === 0 && iz === 0) {
-    playerIdle.visible = true;
-    playerWalk.visible = false;
-    return;
-  }
+  if (ix === 0 && iz === 0) return false;
   const len = Math.hypot(ix, iz) || 1;
   ix /= len;
   iz /= len;
-
   const lookX = -Math.sin(state.camYaw);
   const lookZ = -Math.cos(state.camYaw);
   const rightX = Math.cos(state.camYaw);
@@ -581,21 +625,19 @@ function movePlayer(dt) {
   const mx = lookX * iz + rightX * ix;
   const mz = lookZ * iz + rightZ * ix;
   const speed = 5.6;
-  let nx = playerGroup.position.x + mx * speed * dt;
-  let nz = playerGroup.position.z + mz * speed * dt;
+  const nx = playerGroup.position.x + mx * speed * dt;
+  const nz = playerGroup.position.z + mz * speed * dt;
   const place = PLACES[state.place];
-  if (!inBounds(nx, nz, place.radius)) return;
   const waterHit = waters.some((w) => insideEllipse(nx, nz, w));
-  if (waterHit && !onPad(nx, nz)) return;
-
-  playerGroup.position.x = nx;
-  playerGroup.position.z = nz;
-  state.facing = mx >= 0 ? 1 : -1;
-  state.bob += dt * 9;
-  playerIdle.visible = false;
-  playerWalk.visible = true;
-  playerIdle.scale.x = state.facing;
-  playerWalk.scale.x = state.facing;
+  if (inBounds(nx, nz, place.radius) && !(waterHit && !onPad(nx, nz))) {
+    playerGroup.position.x = nx;
+    playerGroup.position.z = nz;
+  }
+  const face = Math.atan2(mx, mz);
+  const turn = face - angel.rotation.y;
+  const wrapped = Math.atan2(Math.sin(turn), Math.cos(turn));
+  angel.rotation.y += wrapped * (1 - Math.exp(-14 * dt));
+  return true;
 }
 
 function updateCamera() {
@@ -620,11 +662,6 @@ function faceBillboards() {
     if (!sprite) return;
     sprite.rotation.y = Math.atan2(camX - obj.position.x, camZ - obj.position.z);
   });
-  const bobY = playerWalk.visible ? Math.sin(state.bob) * 0.05 : 0;
-  playerIdle.position.y = playerIdle.userData.height / 2 + bobY;
-  playerWalk.position.y = playerWalk.userData.height / 2 + bobY;
-  playerIdle.rotation.y = Math.atan2(camX - playerGroup.position.x, camZ - playerGroup.position.z);
-  playerWalk.rotation.y = playerIdle.rotation.y;
 }
 
 function updatePrompt() {
@@ -670,6 +707,11 @@ function onKey(e, down) {
   if (down && (k === "e" || k === " ")) {
     e.preventDefault();
     tryUse();
+  }
+  if (down && k === "f") {
+    e.preventDefault();
+    startWalking();
+    startWave();
   }
   if (down && e.shiftKey && (k === "1" || k === "2" || k === "3")) {
     const map = { 1: ["garden", "spawn"], 2: ["park", "spawn"], 3: ["pond", "spawn"] };
@@ -764,7 +806,9 @@ function bindStick() {
 
 function tick() {
   const dt = Math.min(clock.getDelta(), 0.05);
-  movePlayer(dt);
+  const moving = movePlayer(dt);
+  updatePose(moving);
+  if (mixer) mixer.update(dt);
   updateCamera();
   faceBillboards();
   updatePrompt();
@@ -786,10 +830,7 @@ async function boot() {
     images[key] = img;
     if (spec.cols) {
       poses[key] = {};
-      if (key === "isabel") {
-        poses.isabel.standing = canvasTexture(cutCell(img, spec.cols, 0));
-        poses.isabel.school = canvasTexture(cutCell(img, spec.cols, 3));
-      } else if (key === "maisie") {
+      if (key === "maisie") {
         poses.maisie.school = canvasTexture(cutCell(img, spec.cols, 0));
       } else if (key === "mermaid") {
         poses.mermaid.invite = canvasTexture(cutCell(img, spec.cols, 1));
@@ -800,12 +841,21 @@ async function boot() {
       textures[key] = canvasTexture(cutFull(img));
     }
   });
-  await Promise.all(jobs);
+  const angelGltf = await new GLTFLoader().loadAsync(ANGEL_URL);
+  angel = angelGltf.scene;
+  angel.scale.setScalar(ANGEL_SCALE);
+  angel.position.y = -FEET * ANGEL_SCALE;
+  playerGroup.add(angel);
+  mixer = new THREE.AnimationMixer(angel);
+  mixer.addEventListener("finished", (event) => {
+    if (event.action === clips.Wave) waving = false;
+  });
+  for (const clip of angelGltf.animations) {
+    clips[shortName(clip.name)] = mixer.clipAction(clip);
+  }
+  playClip("Idle", true);
 
-  playerIdle = makeBillboard(poses.isabel.standing, 1.85);
-  playerWalk = makeBillboard(poses.isabel.school, 1.85);
-  playerWalk.visible = false;
-  playerGroup.add(playerIdle, playerWalk);
+  await Promise.all(jobs);
 
   buildPlace("garden", "spawn");
   loadingEl.hidden = true;
