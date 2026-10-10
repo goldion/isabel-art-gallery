@@ -188,7 +188,7 @@ const DEMOS = [
     parent: "Move · jump · transform · rescue",
     blurb: "",
     kind: "play",
-    playPath: "play/transform-dragon-city/?v=23",
+    playPath: "play/transform-dragon-city/?v=24",
     shelfCover: "10_game_assets/demo/transform-dragon-city.png?v=22",
     iframeTitle: "Transform Dragon City",
   },
