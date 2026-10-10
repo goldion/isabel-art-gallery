@@ -8,6 +8,6 @@ Built output only — no game source trees. Published for anonymous play at `/pl
 | `clover-wheel/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `a3e4cda` | `rnd/threejs/clover-wheel-race` static root (Queen on wooden clover wheel composite + 小花 sunglasses on level skate deck) |
 | `dragon-flight/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `9b3221d` | `rnd/threejs/dragon-flight` static root (blue princess fly/throw/cape billboards) |
 | `god-sisters-stroll/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `d111c68` | `rnd/threejs/god-sisters-stroll` static root |
-| `transform-dragon-city/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `f8daded` (tip `8f9f072`) | Tester-PASS stamped Godot web export (`a4e517eb1284`) from `rnd/godot/transform-dragon-city/build/web` |
+| `transform-dragon-city/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `d301424` (tip `4c9d777`) | Stamped Godot web export (`4716187cafbe`) from `rnd/godot/transform-dragon-city/build/web` |
 
 Legacy picnic art assets may remain under `showcase/picnic/` but are not linked from the Demo hub.
