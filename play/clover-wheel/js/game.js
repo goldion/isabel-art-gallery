@@ -15,6 +15,11 @@ const ROAD_HALF = 3.3;
 const LAT_MAX = 5.4;
 const BASE_SPEED = 16;
 const BOOST_MUL = 1.55;
+/** Hold Shift / Boost to build speed; release to stop (no idle cruise). */
+const ACCEL_RATE = 2.6;
+const DECEL_RATE = 4.2;
+const CAM_HEIGHT = 1.92;
+const CAM_LOOK_Y = 0.74;
 const RIVAL_SPEED = 14.2;
 const RIVAL_RIDER_H = 3.55;
 /** Small deck under 小花's stance (not full prop scale). */
@@ -198,7 +203,9 @@ function composeQueenOnCloverWheel(queenCanvas, wheelCanvas) {
   const wheel = chromaAndTrim(wheelCanvas);
   const queenW = queen.width;
   const queenH = queen.height;
-  const wheelW = Math.round(queenW * 3.05);
+  // Soft Next: wheel scale — Art soft-check
+  const WHEEL_SOFT_NEXT_SCALE = 0.88;
+  const wheelW = Math.round(queenW * 3.05 * WHEEL_SOFT_NEXT_SCALE);
   const wheelH = Math.round((wheel.height / wheel.width) * wheelW);
   const queenDrawW = Math.round(wheelW * 0.38);
   const queenDrawH = Math.round((queenH / queenW) * queenDrawW);
@@ -467,8 +474,9 @@ function updateRace(dt) {
   raceTime += dt;
   player.lat = Math.max(-LAT_MAX, Math.min(LAT_MAX, player.lat + ix * 6.6 * dt));
   const grip = onRoad(player.lat) ? 1 : 0.42;
-  const target = BASE_SPEED * (keys.boost ? BOOST_MUL : 1) * grip;
-  player.speed += (target - player.speed) * Math.min(1, 2.4 * dt);
+  const target = keys.boost ? BASE_SPEED * BOOST_MUL * grip : 0;
+  const rate = keys.boost ? ACCEL_RATE : DECEL_RATE;
+  player.speed += (target - player.speed) * Math.min(1, rate * dt);
   player.u += (player.speed * dt) / TRACK_LEN;
   player.spin += player.speed * dt * 0.35;
 
@@ -493,7 +501,7 @@ function updateCamera(dt) {
 
   const px = player.group.position.x;
   const pz = player.group.position.z;
-  const desired = new THREE.Vector3(px - camForward.fx * 6.8, 2.55, pz - camForward.fz * 6.8);
+  const desired = new THREE.Vector3(px - camForward.fx * 6.8, CAM_HEIGHT, pz - camForward.fz * 6.8);
   if (dt > 0) camera.position.lerp(desired, 1 - Math.exp(-4.8 * dt));
   else camera.position.copy(desired);
 
@@ -507,7 +515,7 @@ function updateCamera(dt) {
     lookX = THREE.MathUtils.lerp(aheadX, rival.group.position.x, t);
     lookZ = THREE.MathUtils.lerp(aheadZ, rival.group.position.z, t);
   }
-  camera.lookAt(lookX, 1.16, lookZ);
+  camera.lookAt(lookX, CAM_LOOK_Y, lookZ);
 }
 
 function updateRivalReadability() {
@@ -642,9 +650,9 @@ async function boot() {
     mall: imageTexture(imgs.mall),
   };
 
-  const riderH = 3.85;
-  const rideH = 6.65;
-  const you = mountRider(player.group, textures.queenStand, textures.wheel, riderH, 3.45, 0.34, false);
+  const riderH = 3.15;
+  const rideH = 5.35;
+  const you = mountRider(player.group, textures.queenStand, textures.wheel, riderH, 2.85, 0.34, false);
   const her = mountRider(
     rival.group,
     textures.xiaohua,
