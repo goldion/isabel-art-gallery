@@ -155,7 +155,7 @@ const DEMOS = [
     parent: "Greenness Queen vs sunglasses 小花 · 3 laps",
     blurb: "",
     kind: "play",
-    playPath: "play/clover-wheel/?v=24",
+    playPath: "play/clover-wheel/?v=26",
     shelfCover: "10_game_assets/demo/clover-wheel.png?v=22",
     iframeTitle: "Race the clover wheel!",
   },
