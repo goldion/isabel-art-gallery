@@ -18,8 +18,8 @@ const BOOST_MUL = 1.55;
 /** Hold Shift / Boost to build speed; release to stop (no idle cruise). */
 const ACCEL_RATE = 2.6;
 const DECEL_RATE = 4.2;
-const CAM_HEIGHT = 1.92;
-const CAM_LOOK_Y = 0.74;
+const CAM_HEIGHT = 1.72;
+const CAM_LOOK_Y = 0.58;
 const RIVAL_SPEED = 14.2;
 const RIVAL_RIDER_H = 3.55;
 /** Small deck under 小花's stance (not full prop scale). */
@@ -204,8 +204,8 @@ function composeQueenOnCloverWheel(queenCanvas, wheelCanvas) {
   const queenW = queen.width;
   const queenH = queen.height;
   // Soft Next: wheel scale — Art soft-check
-  const WHEEL_SOFT_NEXT_SCALE = 0.6;
-  const QUEEN_ON_WHEEL_FRAC = 0.6;
+  const WHEEL_SOFT_NEXT_SCALE = 0.4;
+  const QUEEN_ON_WHEEL_FRAC = 0.7;
   const wheelW = Math.round(queenW * 3.05 * WHEEL_SOFT_NEXT_SCALE);
   const wheelH = Math.round((wheel.height / wheel.width) * wheelW);
   const queenDrawW = Math.round(wheelW * QUEEN_ON_WHEEL_FRAC);
@@ -651,9 +651,10 @@ async function boot() {
     mall: imageTexture(imgs.mall),
   };
 
-  const riderH = 3.15;
-  const rideH = 5.35;
+  const riderH = 2.9;
+  const rideH = 4.6;
   const you = mountRider(player.group, textures.queenStand, textures.wheel, riderH, 2.85, 0.34, false);
+  you.rider.position.y = 0.05;
   const her = mountRider(
     rival.group,
     textures.xiaohua,
