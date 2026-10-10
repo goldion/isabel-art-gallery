@@ -204,10 +204,11 @@ function composeQueenOnCloverWheel(queenCanvas, wheelCanvas) {
   const queenW = queen.width;
   const queenH = queen.height;
   // Soft Next: wheel scale — Art soft-check
-  const WHEEL_SOFT_NEXT_SCALE = 0.88;
+  const WHEEL_SOFT_NEXT_SCALE = 0.6;
+  const QUEEN_ON_WHEEL_FRAC = 0.6;
   const wheelW = Math.round(queenW * 3.05 * WHEEL_SOFT_NEXT_SCALE);
   const wheelH = Math.round((wheel.height / wheel.width) * wheelW);
-  const queenDrawW = Math.round(wheelW * 0.38);
+  const queenDrawW = Math.round(wheelW * QUEEN_ON_WHEEL_FRAC);
   const queenDrawH = Math.round((queenH / queenW) * queenDrawW);
   const padX = 36;
   const padTop = 22;
