@@ -1,7 +1,7 @@
-tip: 101791eb9d5433f23ddb7704d12ee3ada1bb5919
-merge: c76150756f776f2fdbc90086aa973433aec1d7d6
-stamp: 796e855f5328
-sha256_pck: 796e855f53289bd39dd17bc637e0d5a612118de07682a5615834f3e5d4321a29
+tip: 6c76a001b64ea1e4680bb78bb3ad0c92a64f343c
+merge: 6c76a001b64ea1e4680bb78bb3ad0c92a64f343c
+stamp: 7a6847e4a089
+sha256_pck: 7a6847e4a089554f3353525a8893a47102db6a6e7ab71ef6c19594a4e3d97a3c
 sha256_wasm: 28bd502ee88617bd42c96ecc95b7926d2592c58e7e3a4a052bc438424850bf9e
-source: goldion/engine rnd/godot/transform-dragon-city/build/web @ release c761507 (punch Soft PASS 6c3238d)
-packed: 2026-10-10T09:04:00+00:00
+source: goldion/engine rnd/godot/transform-dragon-city/build/web @ release 6c76a00 (soft feel #23)
+packed: 2026-10-16T11:25:42+00:00
