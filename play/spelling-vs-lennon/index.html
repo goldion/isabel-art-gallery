@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Spelling vs Lennon</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="stage" aria-label="Spelling vs Lennon playfield"></canvas>
+    <header id="hud">
+      <div class="brand">Spelling vs Lennon</div>
+      <div id="place-name">School hallway</div>
+    </header>
+    <div id="goals" aria-live="polite">
+      <span id="goal-walker">Pick your walker</span>
+      <span id="goal-spell">Words 0/5</span>
+      <span id="goal-lennon">Lennon 0</span>
+    </div>
+    <p id="prompt" hidden></p>
+    <div id="spell-panel" hidden aria-live="polite">
+      <p class="spell-label">Spell the word!</p>
+      <p id="spell-hint"></p>
+      <div id="word-slots" aria-label="Your spelling"></div>
+      <p id="spell-typed" class="spell-typed"></p>
+      <div id="touch-letters" hidden></div>
+    </div>
+    <div id="onboarding" hidden>
+      <p class="onboarding-title">Spelling vs Lennon!</p>
+      <ul>
+        <li>A / D — pick your walker (Isabel, Maisie, Max, Harvey, 卓衡, teacher, Mr. Lun)</li>
+        <li>E — confirm walker, then walk to Lennon</li>
+        <li>WASD or arrows to walk in the hallway</li>
+        <li>Face Lennon and E — spelling fight!</li>
+        <li>Type the word (Backspace fixes · Enter submits)</li>
+        <li>Spell 5 words to win — 3 misses and Lennon wins</li>
+      </ul>
+      <p class="onboarding-hint">Pick a walker to start</p>
+    </div>
+    <div id="finish" hidden>
+      <p class="finish-title">You beat Lennon!</p>
+      <p class="finish-line">Great spelling in the hallway — high five from the crew!</p>
+      <button id="restart-btn" type="button">Spell again</button>
+    </div>
+    <div id="lose" hidden>
+      <p class="finish-title">Lennon wins this round</p>
+      <p class="finish-line">Keep practicing — you can try again!</p>
+      <button id="retry-btn" type="button">Try again</button>
+    </div>
+    <div id="loading">Opening the hallway…</div>
+    <div id="touch" hidden>
+      <div id="stick" aria-label="Move">
+        <div id="stick-knob"></div>
+      </div>
+      <button id="action-btn" type="button">E</button>
+      <button id="cycle-btn" type="button">A/D</button>
+    </div>
+  </div>
+  <script type="module" src="js/game.js?v=1"></script>
+</body>
+</html>
