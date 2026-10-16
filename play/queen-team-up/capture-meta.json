@@ -1,0 +1,184 @@
+{
+  "pack": "queen-team-up",
+  "verdict": "Soft PASS",
+  "source": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src",
+  "out": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass",
+  "file_count": 13,
+  "files": [
+    {
+      "rel": "backgrounds/bubble-bath.png",
+      "name": "bubble-bath.png",
+      "folder": "backgrounds",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 482359,
+      "sha256": "1ce1f08c29652dffa00166eff5c7bbbc420839d9ab9b5190fcf34c695b787d5d",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/backgrounds/bubble-bath.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/backgrounds/bubble-bath.png"
+    },
+    {
+      "rel": "backgrounds/full-pond.png",
+      "name": "full-pond.png",
+      "folder": "backgrounds",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 298492,
+      "sha256": "d89b0b292ba2b8e591c1e83ef0837f17d780150f440090f6c630317470924c3c",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/backgrounds/full-pond.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/backgrounds/full-pond.png"
+    },
+    {
+      "rel": "backgrounds/stage.png",
+      "name": "stage.png",
+      "folder": "backgrounds",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 477393,
+      "sha256": "22318601d731f0d8cdf13311c2ebcdd73268842455d2c31501a3c36bde8639e6",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/backgrounds/stage.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/backgrounds/stage.png"
+    },
+    {
+      "rel": "characters/dancing-queen.png",
+      "name": "dancing-queen.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 259205,
+      "sha256": "b548730e64deb8bad04bd7b7cad0b32d1a2be001f3daa0499a74b72e4969b159",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/characters/dancing-queen.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/characters/dancing-queen.png"
+    },
+    {
+      "rel": "characters/gugu.png",
+      "name": "gugu.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 158582,
+      "sha256": "af999a67df33b962f2a97159b4f48bc860d232f5a4ab1c2e3aae425e9713be56",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/characters/gugu.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/characters/gugu.png"
+    },
+    {
+      "rel": "characters/mermaid.png",
+      "name": "mermaid.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 149201,
+      "sha256": "8e21edeb1c1f88dbcbfa4ba25531f8837d118d69dbf3c04f2cc964941f88349c",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/characters/mermaid.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/characters/mermaid.png"
+    },
+    {
+      "rel": "characters/plant-queen.png",
+      "name": "plant-queen.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 184516,
+      "sha256": "a4eee66c80ae1718d3b820c6ecbee7487cd1b1d700d05ceabc5f5e93daee51c5",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/characters/plant-queen.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/characters/plant-queen.png"
+    },
+    {
+      "rel": "characters/sea-queen.png",
+      "name": "sea-queen.png",
+      "folder": "characters",
+      "w": 1024,
+      "h": 1024,
+      "mode": "RGB",
+      "bytes": 187477,
+      "sha256": "6a76c575fbf33383b1c6418eac150698fd416f683f69a3350da452b6f5ecfc08",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/characters/sea-queen.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/characters/sea-queen.png"
+    },
+    {
+      "rel": "characters/sky-queen.png",
+      "name": "sky-queen.png",
+      "folder": "characters",
+      "w": 1024,
+      "h": 1024,
+      "mode": "RGB",
+      "bytes": 226129,
+      "sha256": "82e3fd9566426c0434b80c5d402fb06fb8bedff7b737b4a66e1634fee6121b69",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/characters/sky-queen.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/characters/sky-queen.png"
+    },
+    {
+      "rel": "characters/star-director.png",
+      "name": "star-director.png",
+      "folder": "characters",
+      "w": 1024,
+      "h": 1024,
+      "mode": "RGB",
+      "bytes": 188809,
+      "sha256": "24b8e12b1e39376b3cf3c07fda755055bfcff2c820d1651816adcd90f2da1287",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/characters/star-director.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/characters/star-director.png"
+    },
+    {
+      "rel": "characters/teddy.png",
+      "name": "teddy.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 199765,
+      "sha256": "07df90ba646994fe063a4f7f01f6c5b7b7a35215acf43bddb18a395170ec2e27",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/characters/teddy.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/characters/teddy.png"
+    },
+    {
+      "rel": "elements/lily-pad.png",
+      "name": "lily-pad.png",
+      "folder": "elements",
+      "w": 1024,
+      "h": 1024,
+      "mode": "RGB",
+      "bytes": 216899,
+      "sha256": "4ed0e97e58f9e3bca912bb0cefc6e03e374c26fd497e969dc76f667c8194e77a",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/elements/lily-pad.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/elements/lily-pad.png"
+    },
+    {
+      "rel": "elements/lotus.png",
+      "name": "lotus.png",
+      "folder": "elements",
+      "w": 1024,
+      "h": 1024,
+      "mode": "RGB",
+      "bytes": 226447,
+      "sha256": "8979b8ee36e7a4b1036acd7908525dfb886c50cebcaa6684b5d48c92a950ec41",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/assets/elements/lotus.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/queen-team-up-src/elements/lotus.png"
+    }
+  ],
+  "stills": [
+    "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/stills/contact-backgrounds.png",
+    "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/stills/contact-characters.png",
+    "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/stills/contact-elements.png",
+    "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/stills/contact-full.png",
+    "/workspace/isabel-art/gsw-pipeline/queen-team-up-softpass/stills/soft-pass-annotate.png"
+  ],
+  "bars": {
+    "backgrounds_pond_bath_stage_crayon": "PASS",
+    "characters_readable_cast_6_plus_gugu_star": "PASS",
+    "elements_lily_lotus_crayon": "PASS",
+    "no_pink_placeholder": "PASS"
+  },
+  "soft_next": [
+    "star-director.png sheet reads as multi-queen lineup rather than director-only pose sheet \u2014 Soft Next if Demo needs dedicated director poses",
+    "bubble-bath pink scribbles are intentional suds (not missing-file pink)",
+    "GDD pick-three of 6 playables \u2014 all 6 Soft PASS so wire can pick",
+    "Soft feel residuals stay parked"
+  ]
+}
