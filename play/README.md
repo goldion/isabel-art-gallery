@@ -9,5 +9,6 @@ Built output only — no game source trees. Published for anonymous play at `/pl
 | `dragon-flight/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `9b3221d` | `rnd/threejs/dragon-flight` static root (blue princess fly/throw/cape billboards) |
 | `god-sisters-stroll/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `d111c68` | `rnd/threejs/god-sisters-stroll` static root |
 | `transform-dragon-city/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `c761507` (punch `6c3238d`, tip `101791e`) | Stamped Godot web export (`796e855f5328`) from `rnd/godot/transform-dragon-city/build/web` |
+| `dragon-ville-picnic/` | Isabel Art Gallery (Soft PASS pack) | attached `picnic-softpass-assets` | 2D hatch-and-shoo Demo · 17 PNG Soft PASS (no snow field) |
 
-Legacy picnic art assets may remain under `showcase/picnic/` but are not linked from the Demo hub.
+Legacy picnic showcase stickers remain under `showcase/picnic/`; Demo hub links `dragon-ville-picnic/` play slice only.

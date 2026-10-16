@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Dragon Ville Picnic</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="stage" aria-label="Dragon Ville Picnic playfield"></canvas>
+    <header id="hud">
+      <div class="brand">Dragon Ville</div>
+      <div id="place-name">Picnic tree park</div>
+      <div id="crumbs" aria-label="Places">
+        <span data-place="park">Park</span>
+        <span data-place="hatch">Hatch</span>
+        <span data-place="socket">Socket</span>
+        <span data-place="home">Home</span>
+      </div>
+    </header>
+    <div id="goals" aria-live="polite">
+      <span id="goal-eggs">Eggs 0/4</span>
+      <span id="goal-food">Food 0/3</span>
+      <span id="goal-gift">Gift safe</span>
+    </div>
+    <p id="prompt" hidden></p>
+    <div id="onboarding" hidden>
+      <p class="onboarding-title">Dragon Ville Picnic</p>
+      <ul>
+        <li>WASD or arrows to walk</li>
+        <li>Hatch field: E on each egg</li>
+        <li>Park: hold E near food to mind-move it onto the blanket</li>
+        <li>F shooes the gift-thief bird — no theft!</li>
+        <li>Portal opens when eggs, food, and gift are ready</li>
+      </ul>
+      <p class="onboarding-hint">Walk to start</p>
+    </div>
+    <div id="finish" hidden>
+      <p class="finish-title">Portal home!</p>
+      <p class="finish-line">Picnic crew made it to campsite. No theft!</p>
+      <button id="restart-btn" type="button">Picnic again</button>
+    </div>
+    <div id="loading">Spreading the picnic blanket…</div>
+    <div id="touch" hidden>
+      <div id="stick" aria-label="Move">
+        <div id="stick-knob"></div>
+      </div>
+      <button id="action-btn" type="button">E</button>
+      <button id="shoo-btn" type="button">F</button>
+    </div>
+  </div>
+  <script type="module" src="js/game.js?v=1"></script>
+</body>
+</html>
