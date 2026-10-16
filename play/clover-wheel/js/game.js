@@ -24,6 +24,9 @@ const RIVAL_SPEED = 14.2;
 const RIVAL_RIDER_H = 3.55;
 /** Small deck under 小花's stance (not full prop scale). */
 const RIVAL_SKATE_H = 0.58;
+/** Level deck art so wheels sit on the sprite anchor (Soft Next residual). */
+const SKATE_DECK_LEVEL_RAD = 0.27;
+const SKATE_DECK_WHEELS_DOWN_BIAS = 0.055;
 
 const view = document.getElementById("view");
 const lapEl = document.getElementById("lap");
@@ -211,8 +214,8 @@ function composeQueenOnCloverWheel(queenCanvas, wheelCanvas) {
   const queenDrawW = Math.round(wheelW * QUEEN_ON_WHEEL_FRAC);
   const queenDrawH = Math.round((queenH / queenW) * queenDrawW);
   const padX = 36;
-  const padTop = 22;
-  const wheelOverlap = wheelH * 0.17;
+  const padTop = 19;
+  const wheelOverlap = wheelH * 0.19;
   const out = document.createElement("canvas");
   out.width = wheelW + padX * 2;
   out.height = padTop + queenDrawH + wheelH - wheelOverlap;
@@ -229,14 +232,14 @@ function composeQueenOnCloverWheel(queenCanvas, wheelCanvas) {
 /** Level the crayon skate art: wheels down, deck horizontal for a billboard read. */
 function makeLevelSkateDeck(img) {
   const src = chromaAndTrim(cutFull(img));
-  const angle = 0.27;
   const size = Math.ceil(Math.hypot(src.width, src.height) * 1.08);
   const stage = document.createElement("canvas");
   stage.width = size;
   stage.height = size;
   const ctx = stage.getContext("2d");
   ctx.translate(size / 2, size / 2);
-  ctx.rotate(angle);
+  ctx.rotate(SKATE_DECK_LEVEL_RAD);
+  ctx.translate(0, src.height * SKATE_DECK_WHEELS_DOWN_BIAS);
   ctx.drawImage(src, -src.width / 2, -src.height / 2);
   return chromaAndTrim(stage);
 }
@@ -654,7 +657,7 @@ async function boot() {
   const riderH = 2.9;
   const rideH = 4.6;
   const you = mountRider(player.group, textures.queenStand, textures.wheel, riderH, 2.85, 0.34, false);
-  you.rider.position.y = 0.05;
+  you.rider.position.y = 0;
   const her = mountRider(
     rival.group,
     textures.xiaohua,
@@ -669,13 +672,13 @@ async function boot() {
   her.board.userData.cast = "skateboard";
   you.board.visible = false;
   her.board.visible = true;
-  her.board.position.y = 0.13;
+  her.board.position.y = 0.1;
   her.board.material.rotation = 0;
   const deckImg = textures.skateDeck.image;
   const deckW = RIVAL_SKATE_H * (deckImg.width / deckImg.height) * 0.82;
   her.board.scale.set(deckW, RIVAL_SKATE_H, 1);
-  const deckTopY = her.board.position.y + RIVAL_SKATE_H * 0.5;
-  her.rider.position.y = deckTopY - RIVAL_RIDER_H * 0.125;
+  const deckTopY = her.board.position.y + RIVAL_SKATE_H * 0.56;
+  her.rider.position.y = deckTopY - RIVAL_RIDER_H * 0.14;
   player.board = null;
   rival.board = her.board;
   player.rider = you.rider;
