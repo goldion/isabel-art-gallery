@@ -193,6 +193,17 @@ const DEMOS = [
     iframeTitle: "Picnic at Dragon Ville",
   },
   {
+    id: "queen-team-up",
+    title: "Queen Team-Up!",
+    kid: "Queen Team-Up!",
+    parent: "Pick a queen · pond lily & lotus · bath · star stage",
+    blurb: "",
+    kind: "play",
+    playPath: "play/queen-team-up/?v=1",
+    shelfCover: "10_game_assets/demo/queen-team-up.png?v=24",
+    iframeTitle: "Queen Team-Up",
+  },
+  {
     id: "transform-dragon-city",
     title: "Transform Dragon City!",
     kid: "Transform Dragon City!",
