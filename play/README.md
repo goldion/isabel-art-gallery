@@ -11,5 +11,6 @@ Built output only — no game source trees. Published for anonymous play at `/pl
 | `transform-dragon-city/` | [goldion/engine](https://github.com/goldion/engine) | `release` @ `c761507` (punch `6c3238d`, tip `101791e`) | Stamped Godot web export (`796e855f5328`) from `rnd/godot/transform-dragon-city/build/web` |
 | `dragon-ville-picnic/` | Isabel Art Gallery (Soft PASS pack) | attached `picnic-softpass-assets` | 2D hatch-and-shoo Demo · 17 PNG Soft PASS (no snow field) |
 | `queen-team-up/` | Isabel Art Gallery (Soft PASS pack) | attached `queen-team-up-softpass-assets` | 2D pond / bath / stage Demo · 13 PNG Soft PASS #2 |
+| `spelling-vs-lennon/` | Isabel Art Gallery (Soft PASS pack) | attached `spelling-vs-lennon-softpass-assets` | 2D hallway spelling Demo · 9 PNG Soft PASS #3 |
 
-Legacy picnic showcase stickers remain under `showcase/picnic/`; Demo hub links `dragon-ville-picnic/` and `queen-team-up/` play slices only.
+Legacy picnic showcase stickers remain under `showcase/picnic/`; Demo hub links `dragon-ville-picnic/`, `queen-team-up/`, and `spelling-vs-lennon/` play slices only.

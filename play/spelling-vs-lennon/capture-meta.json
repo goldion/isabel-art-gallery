@@ -1,0 +1,136 @@
+{
+  "pack": "spelling-vs-lennon",
+  "verdict": "Soft PASS",
+  "source": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-src",
+  "out": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass",
+  "file_count": 9,
+  "files": [
+    {
+      "rel": "backgrounds/school-hallway.png",
+      "name": "school-hallway.png",
+      "folder": "backgrounds",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 256749,
+      "sha256": "bff30010580470ce0ad19387dc0efba198ec27a4445674dab64725d2fc174bf9",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/assets/backgrounds/school-hallway.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-src/backgrounds/school-hallway.png"
+    },
+    {
+      "rel": "characters/harvey.png",
+      "name": "harvey.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 139055,
+      "sha256": "531b20b878cebf7a4a6cf2a97dca526e7694f9e52404f293d2362c9f6b241b62",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/assets/characters/harvey.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-src/characters/harvey.png"
+    },
+    {
+      "rel": "characters/isabel.png",
+      "name": "isabel.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 142691,
+      "sha256": "de92771e8935187a570e67e2ecf7a814ff46ced7526e0cd71fde9304d77c9bb8",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/assets/characters/isabel.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-src/characters/isabel.png"
+    },
+    {
+      "rel": "characters/lennon.png",
+      "name": "lennon.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 140500,
+      "sha256": "f025942dff08f055ee889e8ae1c7eed88deba033043a5595f462708eb1dabcf3",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/assets/characters/lennon.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-src/characters/lennon.png"
+    },
+    {
+      "rel": "characters/maisie.png",
+      "name": "maisie.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 150090,
+      "sha256": "1acbc70ba09bbd5886f0c8708c6d7729415e83c04987474c960e8f83895de33a",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/assets/characters/maisie.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-src/characters/maisie.png"
+    },
+    {
+      "rel": "characters/max.png",
+      "name": "max.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 146735,
+      "sha256": "6d81922bbe99467bc2ff36a476b5660fc4058b5c66f1a9b79f75459ca6557c2b",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/assets/characters/max.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-src/characters/max.png"
+    },
+    {
+      "rel": "characters/mr-lun.png",
+      "name": "mr-lun.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 134113,
+      "sha256": "33198dd69e7df30b5e546c90f4f7dda299873e506c1464f97246c61fcee8859b",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/assets/characters/mr-lun.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-src/characters/mr-lun.png"
+    },
+    {
+      "rel": "characters/teacher.png",
+      "name": "teacher.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 128684,
+      "sha256": "549dd59f7ed2ae1ed73dc6846a1601a9d812454dc68b844bb3e44156b5ebafa9",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/assets/characters/teacher.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-src/characters/teacher.png"
+    },
+    {
+      "rel": "characters/zhuoheng.png",
+      "name": "zhuoheng.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 128556,
+      "sha256": "e1b34b05f03cb222fb8736baf70b82026dcc514accebec0b798b7c9cc9111dbe",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/assets/characters/zhuoheng.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-src/characters/zhuoheng.png"
+    }
+  ],
+  "stills": [
+    "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/stills/contact-backgrounds.png",
+    "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/stills/contact-characters.png",
+    "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/stills/contact-elements.png",
+    "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/stills/contact-full.png",
+    "/workspace/isabel-art/gsw-pipeline/spelling-vs-lennon-softpass/stills/soft-pass-annotate.png"
+  ],
+  "bars": {
+    "crayon_isabel_no_pink_placeholder": "PASS",
+    "background_school_hallway_crayon_readable": "PASS",
+    "cast_readable_8_characters": "PASS",
+    "soft_next_parked": "PASS"
+  },
+  "soft_next": [
+    "school-hallway is B&W pencil on notebook paper while cast sheets are color crayon \u2014 intentional Isabel notebook look; Soft Next only if Demo wants a color hallway variant",
+    "Maisie sheet uses intentional pink crayon (dance/magic/cape) \u2014 not missing-file pink",
+    "No elements/ folder in source \u2014 walker + spelling fight uses BG + cast only; Soft Next if Demo needs desk/word-card props as art",
+    "Soft feel residuals stay parked"
+  ]
+}

@@ -204,6 +204,17 @@ const DEMOS = [
     iframeTitle: "Queen Team-Up",
   },
   {
+    id: "spelling-vs-lennon",
+    title: "Spelling vs Lennon!",
+    kid: "Spelling vs Lennon!",
+    parent: "School hallway · spell words · face Lennon",
+    blurb: "",
+    kind: "play",
+    playPath: "play/spelling-vs-lennon/?v=1",
+    shelfCover: "10_game_assets/demo/spelling-vs-lennon.png?v=25",
+    iframeTitle: "Spelling vs Lennon",
+  },
+  {
     id: "transform-dragon-city",
     title: "Transform Dragon City!",
     kid: "Transform Dragon City!",
