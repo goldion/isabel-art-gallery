@@ -204,6 +204,17 @@ body,
   z-index: 6;
 }
 
+#onboarding[hidden],
+#loading[hidden],
+#finish[hidden],
+#lose[hidden],
+#prompt[hidden],
+#spell-panel[hidden],
+#touch[hidden],
+#touch-letters[hidden] {
+  display: none;
+}
+
 #onboarding ul {
   text-align: left;
   max-width: 520px;
