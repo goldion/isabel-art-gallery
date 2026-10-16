@@ -182,6 +182,17 @@ const DEMOS = [
     iframeTitle: "Walk with your god sister",
   },
   {
+    id: "dragon-ville-picnic",
+    title: "Picnic at Dragon Ville!",
+    kid: "Picnic at Dragon Ville!",
+    parent: "Hatch eggs · mind-move food · shoo the bird · portal home",
+    blurb: "",
+    kind: "play",
+    playPath: "play/dragon-ville-picnic/?v=1",
+    shelfCover: "10_game_assets/demo/dragon-ville-picnic.png?v=23",
+    iframeTitle: "Picnic at Dragon Ville",
+  },
+  {
     id: "transform-dragon-city",
     title: "Transform Dragon City!",
     kid: "Transform Dragon City!",
