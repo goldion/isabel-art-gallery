@@ -6,7 +6,7 @@ const WORLD = { w: 1280, h: 720 };
 const ASSET_PATHS = {
   backgrounds: {
     park: "assets/backgrounds/picnic-tree.png",
-    hatch: "assets/backgrounds/hatch-field.png",
+    hatch: "assets/backgrounds/snow-field.png",
     socket: "assets/backgrounds/socket-space.png",
     home: "assets/backgrounds/campsite.png",
   },
@@ -31,7 +31,7 @@ const ASSET_PATHS = {
 
 const PLACES = {
   park: { name: "Picnic tree park", bg: "park" },
-  hatch: { name: "Hatch field", bg: "hatch" },
+  hatch: { name: "Snow hatch field", bg: "hatch" },
   socket: { name: "Socket space", bg: "socket" },
   home: { name: "Campsite home", bg: "home" },
 };
