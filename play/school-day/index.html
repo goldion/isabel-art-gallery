@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>School day!</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="stage" aria-label="School day playfield"></canvas>
+    <header id="hud">
+      <div class="brand">School day!</div>
+      <div id="place-name">Classroom</div>
+      <div id="crumbs" aria-label="Places">
+        <span data-place="classroom">Classroom</span>
+        <span data-place="hallway">Hallway</span>
+      </div>
+    </header>
+    <div id="goals" aria-live="polite">
+      <span id="goal-walker">Pick your walker</span>
+      <span id="goal-visit">Places 0/2</span>
+      <span id="goal-friends">Friends 0/2</span>
+    </div>
+    <p id="prompt" hidden></p>
+    <div id="onboarding" hidden>
+      <p class="onboarding-title">School day!</p>
+      <ul>
+        <li>A / D — pick who you walk as (Isabel, Maisie, Max, Harvey, 卓衡, teacher, Mr. Lun)</li>
+        <li>E — confirm, then walk with WASD or arrows</li>
+        <li>Classroom and hallway — walk off the left or right edge to travel</li>
+        <li>E near the school girl and the janitor to say hi</li>
+        <li>Visit both places and meet both friends to finish your day</li>
+      </ul>
+      <p class="onboarding-hint">Pick a walker to start</p>
+    </div>
+    <div id="finish" hidden>
+      <p class="finish-title">What a school day!</p>
+      <p class="finish-line">You visited the classroom and hallway and said hi to everyone. See you tomorrow!</p>
+      <button id="restart-btn" type="button">School day again</button>
+    </div>
+    <div id="loading">Opening the classroom…</div>
+    <div id="touch" hidden>
+      <div id="stick" aria-label="Move">
+        <div id="stick-knob"></div>
+      </div>
+      <button id="action-btn" type="button">E</button>
+      <button id="cycle-btn" type="button">A/D</button>
+    </div>
+  </div>
+  <script type="module" src="js/game.js?v=1"></script>
+</body>
+</html>
