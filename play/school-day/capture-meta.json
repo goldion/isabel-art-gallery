@@ -1,0 +1,168 @@
+{
+  "pack": "school-day-softpass",
+  "verdict": "Soft PASS",
+  "source": "/workspace/isabel-art/gsw-pipeline/school-day-src",
+  "out": "/workspace/isabel-art/gsw-pipeline/school-day-softpass",
+  "file_count": 12,
+  "files": [
+    {
+      "rel": "backgrounds/classroom.png",
+      "name": "classroom.png",
+      "folder": "backgrounds",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 292383,
+      "sha256": "0f861bec7ee18f26e91fcb95372c3d14f6ef275178d0aaeb66c9f005e8ff8035",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/backgrounds/classroom.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/backgrounds/classroom.png"
+    },
+    {
+      "rel": "backgrounds/school-hallway.png",
+      "name": "school-hallway.png",
+      "folder": "backgrounds",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 256749,
+      "sha256": "bff30010580470ce0ad19387dc0efba198ec27a4445674dab64725d2fc174bf9",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/backgrounds/school-hallway.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/backgrounds/school-hallway.png"
+    },
+    {
+      "rel": "characters/harvey.png",
+      "name": "harvey.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 139055,
+      "sha256": "531b20b878cebf7a4a6cf2a97dca526e7694f9e52404f293d2362c9f6b241b62",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/characters/harvey.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/characters/harvey.png"
+    },
+    {
+      "rel": "characters/isabel.png",
+      "name": "isabel.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 142691,
+      "sha256": "de92771e8935187a570e67e2ecf7a814ff46ced7526e0cd71fde9304d77c9bb8",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/characters/isabel.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/characters/isabel.png"
+    },
+    {
+      "rel": "characters/janitor.png",
+      "name": "janitor.png",
+      "folder": "characters",
+      "w": 1024,
+      "h": 1024,
+      "mode": "RGB",
+      "bytes": 134749,
+      "sha256": "70611469f25e4389ab48053e95458daeb2675cbc6d9dfaec9d4d8eee41036909",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/characters/janitor.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/characters/janitor.png"
+    },
+    {
+      "rel": "characters/lennon.png",
+      "name": "lennon.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 140500,
+      "sha256": "f025942dff08f055ee889e8ae1c7eed88deba033043a5595f462708eb1dabcf3",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/characters/lennon.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/characters/lennon.png"
+    },
+    {
+      "rel": "characters/maisie.png",
+      "name": "maisie.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 150090,
+      "sha256": "1acbc70ba09bbd5886f0c8708c6d7729415e83c04987474c960e8f83895de33a",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/characters/maisie.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/characters/maisie.png"
+    },
+    {
+      "rel": "characters/max.png",
+      "name": "max.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 146735,
+      "sha256": "6d81922bbe99467bc2ff36a476b5660fc4058b5c66f1a9b79f75459ca6557c2b",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/characters/max.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/characters/max.png"
+    },
+    {
+      "rel": "characters/mr-lun.png",
+      "name": "mr-lun.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 134113,
+      "sha256": "33198dd69e7df30b5e546c90f4f7dda299873e506c1464f97246c61fcee8859b",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/characters/mr-lun.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/characters/mr-lun.png"
+    },
+    {
+      "rel": "characters/school-girl.png",
+      "name": "school-girl.png",
+      "folder": "characters",
+      "w": 1024,
+      "h": 1024,
+      "mode": "RGB",
+      "bytes": 321442,
+      "sha256": "189ca784f8b371dd8cb398cb3ef1413f9e350702b9c1ebe142af57a5a8231f09",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/characters/school-girl.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/characters/school-girl.png"
+    },
+    {
+      "rel": "characters/teacher.png",
+      "name": "teacher.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 128684,
+      "sha256": "549dd59f7ed2ae1ed73dc6846a1601a9d812454dc68b844bb3e44156b5ebafa9",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/characters/teacher.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/characters/teacher.png"
+    },
+    {
+      "rel": "characters/zhuoheng.png",
+      "name": "zhuoheng.png",
+      "folder": "characters",
+      "w": 1280,
+      "h": 720,
+      "mode": "RGB",
+      "bytes": 128556,
+      "sha256": "e1b34b05f03cb222fb8736baf70b82026dcc514accebec0b798b7c9cc9111dbe",
+      "assets_path": "/workspace/isabel-art/gsw-pipeline/school-day-softpass/assets/characters/zhuoheng.png",
+      "source_path": "/workspace/isabel-art/gsw-pipeline/school-day-src/characters/zhuoheng.png"
+    }
+  ],
+  "stills": [
+    "/workspace/isabel-art/gsw-pipeline/school-day-softpass/stills/contact-backgrounds.png",
+    "/workspace/isabel-art/gsw-pipeline/school-day-softpass/stills/contact-characters.png",
+    "/workspace/isabel-art/gsw-pipeline/school-day-softpass/stills/soft-pass-annotate.png"
+  ],
+  "bars": {
+    "crayon_no_pink": "PASS",
+    "classroom_bg": "PASS",
+    "beyond_spelling_cast": "PASS",
+    "sha_match_spelling": "PASS"
+  },
+  "soft_next": [
+    "B&W classroom/hallway vs color cast",
+    "B&W school-girl/janitor if Demo wants color"
+  ]
+}

@@ -215,6 +215,17 @@ const DEMOS = [
     iframeTitle: "Spelling vs Lennon",
   },
   {
+    id: "school-day",
+    title: "School day!",
+    kid: "School day!",
+    parent: "Classroom & hallway · meet school friends",
+    blurb: "",
+    kind: "play",
+    playPath: "play/school-day/?v=1",
+    shelfCover: "10_game_assets/demo/school-day.png?v=26",
+    iframeTitle: "School day",
+  },
+  {
     id: "transform-dragon-city",
     title: "Transform Dragon City!",
     kid: "Transform Dragon City!",
