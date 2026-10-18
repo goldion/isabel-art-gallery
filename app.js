@@ -199,7 +199,7 @@ const DEMOS = [
     parent: "Pick a queen · pond lily & lotus · bath · star stage",
     blurb: "",
     kind: "play",
-    playPath: "play/queen-team-up/?v=2",
+    playPath: "play/queen-team-up/?v=3",
     shelfCover: "10_game_assets/demo/queen-team-up.png?v=24",
     iframeTitle: "Queen Team-Up",
   },

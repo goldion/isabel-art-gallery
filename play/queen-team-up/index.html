@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Queen Team-Up</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css?v=3" />
 </head>
 <body>
   <div id="app">
@@ -36,9 +36,11 @@
       <p class="onboarding-hint">Pick a queen to start</p>
     </div>
     <div id="finish" hidden>
-      <p class="finish-title">Queen team-up!</p>
-      <p class="finish-line">Your queen, Gugu, and the pond crew take a bow on stage.</p>
-      <button id="restart-btn" type="button">Team up again</button>
+      <div class="finish-panel">
+        <p class="finish-title">Queen team-up!</p>
+        <p class="finish-line">Your queen, Gugu, and the pond crew take a bow on stage.</p>
+        <button id="restart-btn" type="button">Team up again</button>
+      </div>
     </div>
     <div id="loading">Setting up the pond…</div>
     <div id="touch" hidden>
@@ -49,6 +51,6 @@
       <button id="cycle-btn" type="button">A/D</button>
     </div>
   </div>
-  <script type="module" src="js/game.js?v=2"></script>
+  <script type="module" src="js/game.js?v=3"></script>
 </body>
 </html>
