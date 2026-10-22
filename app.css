@@ -722,12 +722,77 @@ figcaption {
   border-radius: calc(var(--radius-lg) - 0.25rem);
 }
 
-#gallery-caption {
+.gallery-focus-foot {
   margin-top: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+#gallery-caption {
+  margin: 0;
   color: var(--mute);
   font-size: 0.9rem;
   text-align: center;
   font-weight: 500;
+}
+
+.gallery-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 2px solid var(--line);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(245, 215, 110, 0.22));
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--ink);
+  border-radius: 999px;
+  box-shadow: 0 2px 0 rgba(61, 52, 40, 0.08);
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+
+.gallery-like:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(244, 164, 184, 0.35));
+}
+
+.gallery-like:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgba(61, 52, 40, 0.08);
+}
+
+.gallery-like[aria-pressed="true"] {
+  background: linear-gradient(135deg, rgba(244, 164, 184, 0.72), rgba(245, 215, 110, 0.55));
+  border-color: rgba(107, 48, 64, 0.28);
+}
+
+.gallery-like[aria-pressed="true"] .gallery-like-icon {
+  color: #c44d6a;
+}
+
+.gallery-like-icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+#gallery-grid button.is-liked .grid-thumb-slot::after {
+  content: "♥";
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  font-size: 0.85rem;
+  color: #c44d6a;
+  text-shadow: 0 0 3px #fff, 0 0 6px #fff;
+  pointer-events: none;
+}
+
+#gallery-grid .grid-thumb-slot {
+  position: relative;
 }
 
 body.section-gallery #pager {
