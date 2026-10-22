@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="app.css?v=21" />
+  <link rel="stylesheet" href="app.css?v=22" />
 </head>
 <body class="section-comics mode-comic">
   <nav id="topnav" aria-label="Isabel Art">
@@ -80,7 +80,20 @@
         <div class="gallery-preview-dock" id="gallery-focus-panel" aria-live="polite" hidden>
           <figure class="gallery-focus hidden" id="gallery-focus">
             <img id="gallery-page" alt="" />
-            <figcaption id="gallery-caption"></figcaption>
+            <figcaption class="gallery-focus-foot">
+              <p id="gallery-caption"></p>
+              <button
+                type="button"
+                id="gallery-like"
+                class="gallery-like"
+                hidden
+                aria-pressed="false"
+                aria-label="Like this art"
+              >
+                <span class="gallery-like-icon" aria-hidden="true">♡</span>
+                <span class="gallery-like-text">Like</span>
+              </button>
+            </figcaption>
           </figure>
         </div>
         <div class="gallery-scroll">
@@ -91,6 +104,6 @@
     </div>
   </main>
 
-  <script src="app.js?v=43"></script>
+  <script src="app.js?v=44"></script>
 </body>
 </html>

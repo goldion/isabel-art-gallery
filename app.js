@@ -322,6 +322,61 @@ const GALLERY_CHIP = {
   styles: "styles",
 };
 
+const GALLERY_LIKE_PREFIX = "isabel-art.gallery.like.";
+
+function galleryArtKey(art) {
+  if (!art) return "";
+  if (art.id) return art.id;
+  const file = art.file || "";
+  const base = file.split("/").pop() || file;
+  return base.replace(/\.[^.]+$/, "");
+}
+
+function galleryLikeStorageKey(art) {
+  const id = galleryArtKey(art);
+  return id ? `${GALLERY_LIKE_PREFIX}${id}` : "";
+}
+
+function isGalleryArtLiked(art) {
+  const key = galleryLikeStorageKey(art);
+  if (!key) return false;
+  try {
+    return localStorage.getItem(key) === "1";
+  } catch (err) {
+    return false;
+  }
+}
+
+function setGalleryArtLiked(art, liked) {
+  const key = galleryLikeStorageKey(art);
+  if (!key) return;
+  try {
+    if (liked) localStorage.setItem(key, "1");
+    else localStorage.removeItem(key);
+  } catch (err) {
+    /* ignore quota / private mode */
+  }
+}
+
+function syncGalleryLikeButton(art) {
+  if (!galleryLikeBtn) return;
+  if (!art) {
+    galleryLikeBtn.hidden = true;
+    galleryLikeBtn.setAttribute("aria-pressed", "false");
+    return;
+  }
+  galleryLikeBtn.hidden = false;
+  const liked = isGalleryArtLiked(art);
+  const name = artName(art);
+  galleryLikeBtn.setAttribute("aria-pressed", liked ? "true" : "false");
+  galleryLikeBtn.setAttribute(
+    "aria-label",
+    liked ? `Unlike ${name}` : `Like ${name}`
+  );
+  if (galleryLikeIcon) galleryLikeIcon.textContent = liked ? "♥" : "♡";
+  if (galleryLikeText) galleryLikeText.textContent = liked ? "Liked" : "Like";
+}
+
 function bookCover(book) {
   if (book.shelfCover) return urlFromRoot(book.shelfCover);
   const conv = book.converted && book.converted[0];
@@ -426,6 +481,9 @@ const galleryScroll = document.querySelector("#stage-gallery .gallery-scroll");
 const galleryFocus = document.getElementById("gallery-focus");
 const galleryPage = document.getElementById("gallery-page");
 const galleryCaption = document.getElementById("gallery-caption");
+const galleryLikeBtn = document.getElementById("gallery-like");
+const galleryLikeIcon = galleryLikeBtn && galleryLikeBtn.querySelector(".gallery-like-icon");
+const galleryLikeText = galleryLikeBtn && galleryLikeBtn.querySelector(".gallery-like-text");
 const galleryGrid = document.getElementById("gallery-grid");
 const songPicture = document.getElementById("song-picture");
 const songLyrics = document.getElementById("song-lyrics");
@@ -843,6 +901,7 @@ function showGallery() {
     galleryPage.removeAttribute("src");
     galleryPage.alt = "";
     galleryGrid.innerHTML = "";
+    syncGalleryLikeButton(null);
     setGalleryFocusVisible(false);
     pos.textContent = "0 / 0";
     prev.disabled = true;
@@ -876,6 +935,7 @@ function showGallery() {
     galleryPage.removeAttribute("src");
     galleryPage.alt = "";
     galleryGrid.innerHTML = "";
+    syncGalleryLikeButton(null);
     setGalleryFocusVisible(false);
     pos.textContent = "0 / 0";
     prev.disabled = true;
@@ -885,6 +945,7 @@ function showGallery() {
   galleryPage.src = ASSET + art.file;
   galleryPage.alt = artName(art);
   galleryCaption.textContent = art.note ? `${artName(art)} · ${art.note}` : artName(art);
+  syncGalleryLikeButton(art);
   setGalleryFocusVisible(true);
   pos.textContent = `${pageIndex + 1} / ${arts.length}`;
   prev.disabled = pageIndex <= 0;
@@ -894,6 +955,7 @@ function showGallery() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = i === pageIndex ? "active" : "";
+    if (isGalleryArtLiked(item)) btn.classList.add("is-liked");
     btn.setAttribute("role", "listitem");
     const slot = document.createElement("span");
     slot.className = "grid-thumb-slot";
@@ -1011,6 +1073,19 @@ document.getElementById("tab-characters").addEventListener("click", () => setGal
 document.getElementById("tab-elements").addEventListener("click", () => setGalleryKind("elements"));
 document.getElementById("tab-backgrounds").addEventListener("click", () => setGalleryKind("backgrounds"));
 document.getElementById("tab-styles").addEventListener("click", () => setGalleryKind("styles"));
+if (galleryLikeBtn) {
+  galleryLikeBtn.addEventListener("click", () => {
+    if (section !== "gallery") return;
+    const arts = currentGalleryArts();
+    const art = arts[pageIndex];
+    if (!art) return;
+    const nextLiked = !isGalleryArtLiked(art);
+    setGalleryArtLiked(art, nextLiked);
+    syncGalleryLikeButton(art);
+    const gridBtn = galleryGrid.querySelector(`button:nth-child(${pageIndex + 1})`);
+    if (gridBtn) gridBtn.classList.toggle("is-liked", nextLiked);
+  });
+}
 prev.addEventListener("click", () => stepPage(-1));
 next.addEventListener("click", () => stepPage(1));
 document.addEventListener("keydown", (event) => {
