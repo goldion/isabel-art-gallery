@@ -1205,8 +1205,9 @@ if (galleryLikeBtn) {
       void postGallerySharedLike(id).then(() => {
         if (section !== "gallery") return;
         const artsNow = currentGalleryArts();
-        if (artsNow[pageIndex] !== art) return;
-        syncGalleryLikeButton(art);
+        const focused = artsNow[pageIndex];
+        if (!focused || galleryArtKey(focused) !== id) return;
+        syncGalleryLikeButton(focused);
       });
     }
   });
