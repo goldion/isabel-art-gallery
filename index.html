@@ -45,6 +45,18 @@
           <button type="button" id="tab-backgrounds" role="tab" aria-selected="false">Backgrounds</button>
           <button type="button" id="tab-styles" role="tab" aria-selected="false">Styles</button>
         </div>
+        <button
+          type="button"
+          id="item-like"
+          class="gallery-like hidden"
+          hidden
+          aria-pressed="false"
+          aria-label="Like this item"
+        >
+          <span class="gallery-like-icon" aria-hidden="true">♡</span>
+          <span class="gallery-like-text">Like</span>
+          <span class="gallery-like-count" id="item-like-count" hidden></span>
+        </button>
         <div class="pager" id="pager">
           <button type="button" id="prev" aria-label="Previous">←</button>
           <span id="pos">0 / 0</span>
@@ -105,6 +117,6 @@
     </div>
   </main>
 
-  <script src="app.js?v=51"></script>
+  <script src="app.js?v=52"></script>
 </body>
 </html>
