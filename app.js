@@ -404,6 +404,37 @@ async function postGallerySharedLike(id) {
   }
 }
 
+async function deleteGallerySharedLike(id) {
+  if (!isGalleryWorkerArtId(id)) return null;
+  try {
+    const res = await fetch(
+      `${GALLERY_SHARED_LIKES_URL}?id=${encodeURIComponent(id)}`,
+      { method: "DELETE", mode: "cors" }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (typeof data.count === "number") {
+      gallerySharedCounts[id] = data.count;
+      writeCachedGallerySharedCount(id, data.count);
+    }
+    return data;
+  } catch (err) {
+    return null;
+  }
+}
+
+function bumpGallerySharedCountLocal(id, delta) {
+  if (!id || !isGalleryWorkerArtId(id) || !delta) return;
+  const prev =
+    typeof gallerySharedCounts[id] === "number"
+      ? gallerySharedCounts[id]
+      : readCachedGallerySharedCount(id);
+  if (typeof prev !== "number") return;
+  const next = Math.max(0, prev + delta);
+  gallerySharedCounts[id] = next;
+  writeCachedGallerySharedCount(id, next);
+}
+
 function prefetchGallerySharedCounts(arts) {
   const ids = [];
   const seen = new Set();
@@ -1196,19 +1227,23 @@ if (galleryLikeBtn) {
     const art = arts[pageIndex];
     if (!art) return;
     const nextLiked = !isGalleryArtLiked(art);
+    const id = galleryArtKey(art);
     setGalleryArtLiked(art, nextLiked);
+    if (!nextLiked) bumpGallerySharedCountLocal(id, -1);
     syncGalleryLikeButton(art);
     const gridBtn = galleryGrid.querySelector(`button:nth-child(${pageIndex + 1})`);
     if (gridBtn) gridBtn.classList.toggle("is-liked", nextLiked);
+    const syncAfterShared = () => {
+      if (section !== "gallery") return;
+      const artsNow = currentGalleryArts();
+      const focused = artsNow[pageIndex];
+      if (!focused || galleryArtKey(focused) !== id) return;
+      syncGalleryLikeButton(focused);
+    };
     if (nextLiked) {
-      const id = galleryArtKey(art);
-      void postGallerySharedLike(id).then(() => {
-        if (section !== "gallery") return;
-        const artsNow = currentGalleryArts();
-        const focused = artsNow[pageIndex];
-        if (!focused || galleryArtKey(focused) !== id) return;
-        syncGalleryLikeButton(focused);
-      });
+      void postGallerySharedLike(id).then(syncAfterShared);
+    } else {
+      void deleteGallerySharedLike(id).then(syncAfterShared);
     }
   });
 }
