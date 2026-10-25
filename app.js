@@ -622,7 +622,6 @@ const stageDemo = document.getElementById("stage-demo");
 const demoPlay = document.getElementById("demo-play");
 const demoIframe = document.getElementById("demo-iframe");
 const galleryFocusPanel = document.getElementById("gallery-focus-panel");
-const galleryScroll = document.querySelector("#stage-gallery .gallery-scroll");
 const galleryFocus = document.getElementById("gallery-focus");
 const galleryPage = document.getElementById("gallery-page");
 const galleryCaption = document.getElementById("gallery-caption");
@@ -1039,7 +1038,7 @@ function showDemo() {
   pager.classList.add("hidden");
 }
 
-function showGallery() {
+function showGallery(opts = {}) {
   if (galleryKind !== "styles" && !galleryPack) {
     title.textContent = "Gallery";
     kicker.textContent = "Loading…";
@@ -1130,20 +1129,21 @@ function showGallery() {
     });
     galleryGrid.appendChild(btn);
   });
-  const active = galleryGrid.querySelector("button.active");
-  if (active && galleryScroll) {
-    const top = active.offsetTop - Math.max(0, (galleryScroll.clientHeight - active.offsetHeight) / 2);
-    galleryScroll.scrollTo({ top, behavior: "smooth" });
+  if (opts.scrollGalleryShelf) {
+    const active = galleryGrid.querySelector("button.active");
+    if (active) {
+      active.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+    }
   }
   prefetchGallerySharedCounts(arts);
 }
 
-function showItem() {
+function showItem(opts = {}) {
   renderList();
   if (section === "songs") return showSong();
   if (section === "novels") return showNovel();
   if (section === "demo") return showDemo();
-  if (section === "gallery") return showGallery();
+  if (section === "gallery") return showGallery(opts);
   showComics();
 }
 
@@ -1210,7 +1210,7 @@ function stepPage(delta) {
     const nextIndex = pageIndex + delta;
     if (nextIndex < 0 || nextIndex >= arts.length) return;
     pageIndex = nextIndex;
-    showItem();
+    showItem({ scrollGalleryShelf: true });
   }
 }
 
