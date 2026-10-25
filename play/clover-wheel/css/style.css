@@ -72,6 +72,99 @@ body,
   line-height: 1.45;
 }
 
+#speed-meter {
+  position: absolute;
+  top: 52px;
+  right: 18px;
+  z-index: 2;
+  pointer-events: none;
+  width: 196px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(247, 241, 228, 0.92);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+#speed-track {
+  height: 12px;
+  background: #e4d8c4;
+  overflow: hidden;
+}
+
+#speed-fill {
+  height: 100%;
+  width: 0%;
+  background: #e0a04a;
+}
+
+#speed-value {
+  min-width: 1.6em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#speed-meter.boost #speed-fill {
+  background: var(--pink);
+}
+
+#speed-meter.grass {
+  background: rgba(214, 232, 150, 0.94);
+}
+
+#speed-meter.grass #speed-caption {
+  color: #2c6a28;
+}
+
+#speed-meter.grass #speed-fill {
+  background: #4e9a34;
+}
+
+#grass-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s linear;
+  background: radial-gradient(
+    ellipse at 50% 62%,
+    transparent 34%,
+    rgba(70, 130, 42, 0.22) 72%,
+    rgba(36, 84, 22, 0.48) 100%
+  );
+}
+
+#grass-veil.on {
+  opacity: 1;
+}
+
+#grass-veil.on::after {
+  content: "";
+  position: absolute;
+  inset: -20% 0;
+  background: repeating-linear-gradient(
+    -16deg,
+    transparent 0 34px,
+    rgba(186, 220, 110, 0.22) 34px 36px
+  );
+  animation: grass-streak 0.28s linear infinite;
+  mask-image: radial-gradient(ellipse at 50% 68%, transparent 50%, #000 82%);
+}
+
+@keyframes grass-streak {
+  from {
+    transform: translateY(-8%);
+  }
+  to {
+    transform: translateY(8%);
+  }
+}
+
 #onboarding,
 #loading,
 #finish {

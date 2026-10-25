@@ -18,8 +18,7 @@ const BOOST_MUL = 1.55;
 /** Hold Shift / Boost to build speed; release to stop (no idle cruise). */
 const ACCEL_RATE = 1;
 const DECEL_RATE = 4.2;
-const CAM_HEIGHT = 1.72;
-const CAM_LOOK_Y = 0.58;
+const TOP_SPEED = BASE_SPEED * BOOST_MUL;
 const RIVAL_SPEED = 14.2;
 const RIVAL_RIDER_H = 3.55;
 /** Small deck under 小花's stance (not full prop scale). */
@@ -31,6 +30,11 @@ const SKATE_DECK_WHEELS_DOWN_BIAS = 0.055;
 const view = document.getElementById("view");
 const lapEl = document.getElementById("lap");
 const placeEl = document.getElementById("place");
+const speedCaptionEl = document.getElementById("speed-caption");
+const speedFillEl = document.getElementById("speed-fill");
+const speedValueEl = document.getElementById("speed-value");
+const speedMeterEl = document.getElementById("speed-meter");
+const grassVeilEl = document.getElementById("grass-veil");
 const onboardingEl = document.getElementById("onboarding");
 const loadingEl = document.getElementById("loading");
 const finishEl = document.getElementById("finish");
@@ -62,6 +66,11 @@ scene.add(sun);
 const clock = new THREE.Clock();
 const sprites = [];
 const sidePages = [];
+const camDesired = new THREE.Vector3();
+const camLook = new THREE.Vector3();
+const grassBits = [];
+let grassSpawn = 0;
+let grassCursor = 0;
 
 const player = { u: 0, lat: -0.8, speed: 0, spin: 0, group: new THREE.Group() };
 const rival = { u: 0.07, lat: 1.2, spin: 0, group: new THREE.Group() };
@@ -412,6 +421,94 @@ function onRoad(lat) {
   return Math.abs(lat) <= ROAD_HALF;
 }
 
+function ridingGrass() {
+  return !onRoad(player.lat);
+}
+
+function buildGrassFx() {
+  const c = document.createElement("canvas");
+  c.width = 48;
+  c.height = 64;
+  const g = c.getContext("2d");
+  g.lineCap = "round";
+  g.lineWidth = 4;
+  const blades = [
+    ["#2f7a28", 24, 62, 8, 8],
+    ["#5eae3e", 24, 62, 24, 2],
+    ["#9ad85a", 24, 62, 40, 10],
+  ];
+  for (const [color, x, y, cx, cy] of blades) {
+    g.strokeStyle = color;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.quadraticCurveTo((x + cx) / 2, 28, cx, cy);
+    g.stroke();
+  }
+  const tex = canvasTexture(c);
+  for (let i = 0; i < 42; i++) {
+    const mat = new THREE.SpriteMaterial({
+      map: tex,
+      transparent: true,
+      depthWrite: false,
+      opacity: 0,
+    });
+    const sprite = new THREE.Sprite(mat);
+    sprite.visible = false;
+    sprite.center.set(0.5, 0);
+    sprite.userData = { life: 1, age: 1, vx: 0, vy: 0, vz: 0 };
+    scene.add(sprite);
+    grassBits.push(sprite);
+  }
+}
+
+function clearGrass() {
+  grassSpawn = 0;
+  for (const bit of grassBits) bit.visible = false;
+}
+
+function updateGrass(dt) {
+  const spraying = started && !finished && ridingGrass() && player.speed > 2;
+  if (spraying) {
+    grassSpawn += (16 + player.speed * 0.85) * dt;
+    const s = sample(player.u);
+    while (grassSpawn >= 1) {
+      grassSpawn -= 1;
+      const bit = grassBits[grassCursor % grassBits.length];
+      grassCursor += 1;
+      const side = (Math.random() - 0.5) * 1.6;
+      const back = 0.35 + Math.random() * 0.9;
+      bit.visible = true;
+      bit.position.set(
+        player.group.position.x - s.fx * 0.4 + s.rx * side * 0.35,
+        0.12,
+        player.group.position.z - s.fz * 0.4 + s.rz * side * 0.35
+      );
+      const h = 0.55 + Math.random() * 0.7;
+      bit.scale.set(h * 0.7, h, 1);
+      bit.material.opacity = 1;
+      bit.material.rotation = Math.random() * 0.6 - 0.3;
+      bit.userData.life = 0.38 + Math.random() * 0.28;
+      bit.userData.age = 0;
+      bit.userData.vx = -s.fx * player.speed * 0.22 * back + s.rx * side;
+      bit.userData.vy = 1.8 + Math.random() * 2.4;
+      bit.userData.vz = -s.fz * player.speed * 0.22 * back + s.rz * side;
+    }
+  }
+
+  for (const bit of grassBits) {
+    if (!bit.visible) continue;
+    const u = bit.userData;
+    u.age += dt;
+    u.vy -= 8.5 * dt;
+    bit.position.x += u.vx * dt;
+    bit.position.y += u.vy * dt;
+    bit.position.z += u.vz * dt;
+    const t = u.age / u.life;
+    bit.material.opacity = Math.max(0, 1 - t);
+    if (t >= 1 || bit.position.y < 0) bit.visible = false;
+  }
+}
+
 function steerInput() {
   // Chase cam looks along the track, so +lat is screen-left.
   let ix = -analog.x;
@@ -453,15 +550,14 @@ function resetRun() {
   playerWon = false;
   finishEl.hidden = true;
   onboardingEl.hidden = false;
-  rival.group.scale.setScalar(1);
   placeRacer(player);
   placeRacer(rival);
   const startFrame = sample(player.u);
   camForward.fx = startFrame.fx;
   camForward.fz = startFrame.fz;
+  clearGrass();
   updateQueenPose();
   updateCamera(0);
-  updateRivalReadability();
   updateHud();
 }
 
@@ -469,6 +565,14 @@ function updateHud() {
   const lap = Math.min(LAPS, Math.floor(player.u) + 1);
   lapEl.textContent = `Lap ${lap} / ${LAPS}`;
   placeEl.textContent = player.u + 0.01 >= rival.u ? "1st" : "2nd";
+  const off = ridingGrass();
+  speedCaptionEl.textContent = off ? "Grass" : "Speed";
+  speedValueEl.textContent = String(Math.round(player.speed));
+  const pct = Math.max(0, Math.min(1, player.speed / TOP_SPEED));
+  speedFillEl.style.width = `${pct * 100}%`;
+  speedMeterEl.classList.toggle("boost", keys.boost && !off);
+  speedMeterEl.classList.toggle("grass", off);
+  grassVeilEl.classList.toggle("on", off && player.speed > 2 && (started || finished));
 }
 
 function updateRace(dt) {
@@ -505,35 +609,17 @@ function updateCamera(dt) {
 
   const px = player.group.position.x;
   const pz = player.group.position.z;
-  const desired = new THREE.Vector3(px - camForward.fx * 6.8, CAM_HEIGHT, pz - camForward.fz * 6.8);
-  if (dt > 0) camera.position.lerp(desired, 1 - Math.exp(-4.8 * dt));
-  else camera.position.copy(desired);
-
-  const aheadX = px + camForward.fx * 5.6;
-  const aheadZ = pz + camForward.fz * 5.6;
-  let lookX = aheadX;
-  let lookZ = aheadZ;
-  if (player.u + 0.012 < rival.u) {
-    const gap = rival.u - player.u;
-    const t = THREE.MathUtils.clamp(gap * 10, 0.22, 0.52);
-    lookX = THREE.MathUtils.lerp(aheadX, rival.group.position.x, t);
-    lookZ = THREE.MathUtils.lerp(aheadZ, rival.group.position.z, t);
+  camDesired.set(px - camForward.fx * 8.2, 4.8, pz - camForward.fz * 8.2);
+  if (started && ridingGrass() && player.speed > 3) {
+    const j = 0.09;
+    camDesired.x += Math.sin(raceTime * 34) * j;
+    camDesired.y += Math.abs(Math.sin(raceTime * 46)) * j * 0.55;
+    camDesired.z += Math.cos(raceTime * 28) * j;
   }
-  camera.lookAt(lookX, CAM_LOOK_Y, lookZ);
-}
-
-function updateRivalReadability() {
-  const dx = player.group.position.x - rival.group.position.x;
-  const dz = player.group.position.z - rival.group.position.z;
-  const alongTrack = dx * rival.fx + dz * rival.fz;
-  const sep = Math.hypot(dx, dz);
-  const camDist = rival.group.position.distanceTo(camera.position);
-  const aheadBoost = alongTrack < -1.5 ? 0.24 : 0;
-  let scale = 1.18 + (camDist - 8) * 0.058 + aheadBoost;
-  if (alongTrack < -1.5 && sep < 22) {
-    scale = Math.max(scale, 1.95 + (22 - sep) * 0.055);
-  }
-  rival.group.scale.setScalar(THREE.MathUtils.clamp(scale, 1.18, 2.85));
+  if (dt > 0) camera.position.lerp(camDesired, 1 - Math.exp(-7.5 * dt));
+  else camera.position.copy(camDesired);
+  camLook.set(px + camForward.fx * 1.4, 1.35, pz + camForward.fz * 1.4);
+  camera.lookAt(camLook);
 }
 
 function resize() {
@@ -598,9 +684,15 @@ function tick() {
   updateRace(dt);
   placeRacer(player);
   placeRacer(rival);
-  updateRivalReadability();
+  if (started && !finished && ridingGrass()) {
+    player.group.position.y = Math.abs(Math.sin(raceTime * 18)) * 0.14;
+  }
+  updateGrass(dt);
   updateSidePages();
   if (rival.board?.userData.spins) rival.board.material.rotation = rival.spin;
+  if (player.rider) {
+    player.rider.material.rotation = ridingGrass() && player.speed > 2 ? Math.sin(raceTime * 22) * 0.14 : 0;
+  }
   updateQueenPose();
   updateCamera(dt);
   updateHud();
@@ -692,6 +784,7 @@ async function boot() {
     rivalVehicle: "skateboard",
   });
   buildWorld(textures);
+  buildGrassFx();
   resetRun();
   loadingEl.hidden = true;
   onboardingEl.hidden = false;
