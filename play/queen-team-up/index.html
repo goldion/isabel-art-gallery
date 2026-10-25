@@ -4,53 +4,59 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Queen Team-Up</title>
-  <link rel="stylesheet" href="css/style.css?v=3" />
+  <link rel="stylesheet" href="css/style.css?v=4" />
 </head>
 <body>
   <div id="app">
-    <canvas id="stage" aria-label="Queen Team-Up playfield"></canvas>
-    <header id="hud">
-      <div class="brand">Queen Team-Up</div>
-      <div id="place-name">Pond team</div>
-      <div id="crumbs" aria-label="Places">
-        <span data-place="pond">Pond</span>
-        <span data-place="bath">Bath</span>
-        <span data-place="stage">Stage</span>
+    <canvas id="stage" aria-label="Queen Team-Up lily-pad pond"></canvas>
+
+    <div id="screen-title" class="screen">
+      <h1>Queen Team-Up</h1>
+      <p>Jump the lily pads across the pond. Join the mermaid. Gugu is fire.</p>
+      <button type="button" id="btn-start">Play</button>
+      <p class="nav"><a href="../../#demo">Back to the gallery</a></p>
+    </div>
+
+    <div id="screen-pick" class="screen hidden">
+      <h1>Pick three friends</h1>
+      <p>The first friend is who you jump with. The other two are extra lives if you fall in.</p>
+      <div id="roster" class="roster"></div>
+      <button type="button" id="btn-pond" disabled>To the pond</button>
+    </div>
+
+    <header id="hud" class="hidden">
+      <div class="hud-brand">
+        <div class="brand">Queen Team-Up</div>
+        <div id="lives" aria-label="Team"></div>
       </div>
+      <p id="hint" aria-live="polite"></p>
     </header>
-    <div id="goals" aria-live="polite">
-      <span id="goal-queen">Pick your queen</span>
-      <span id="goal-visit">Places 0/3</span>
-      <span id="goal-props">Lily & lotus 0/2</span>
+
+    <div id="fight" class="hidden" aria-label="Elements">
+      <span>Gugu is fire</span>
+      <button type="button" data-el="air">1 Air</button>
+      <button type="button" data-el="water">2 Water</button>
+      <button type="button" data-el="plant">3 Plant</button>
     </div>
-    <p id="prompt" hidden></p>
-    <div id="onboarding" hidden>
-      <p class="onboarding-title">Queen Team-Up!</p>
-      <ul>
-        <li>A / D — pick your queen (then E to start)</li>
-        <li>WASD or arrows to walk</li>
-        <li>Pond, bubble bath, and stage — walk off the sides to travel</li>
-        <li>Pond: E near lily pad and lotus to place them on the water</li>
-        <li>Stage: E by the star director when everyone is ready</li>
-      </ul>
-      <p class="onboarding-hint">Pick a queen to start</p>
-    </div>
-    <div id="finish" hidden>
+
+    <div id="banner" class="hidden" aria-live="assertive"></div>
+
+    <div id="finish" class="hidden">
       <div class="finish-panel">
-        <p class="finish-title">Queen team-up!</p>
-        <p class="finish-line">Your queen, Gugu, and the pond crew take a bow on stage.</p>
-        <button id="restart-btn" type="button">Team up again</button>
+        <p class="finish-title" id="end-title">The end!</p>
+        <p class="finish-line" id="end-text"></p>
+        <button type="button" id="btn-again">Play again</button>
       </div>
     </div>
+
     <div id="loading">Setting up the pond…</div>
-    <div id="touch" hidden>
-      <div id="stick" aria-label="Move">
-        <div id="stick-knob"></div>
-      </div>
-      <button id="action-btn" type="button">E</button>
-      <button id="cycle-btn" type="button">A/D</button>
+
+    <div id="touch">
+      <button type="button" id="t-left" aria-label="Left">◀</button>
+      <button type="button" id="t-right" aria-label="Right">▶</button>
+      <button type="button" id="t-jump" aria-label="Jump">Jump</button>
     </div>
   </div>
-  <script type="module" src="js/game.js?v=3"></script>
+  <script type="module" src="js/game.js?v=4"></script>
 </body>
 </html>
