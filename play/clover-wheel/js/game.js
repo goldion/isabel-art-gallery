@@ -74,6 +74,8 @@ let grassSpawn = 0;
 let grassCursor = 0;
 
 const player = { u: 0, lat: -0.8, x: 0, z: 0, heading: 0, roadDist: 0, speed: 0, spin: 0, group: new THREE.Group() };
+const solids = [];
+const SOLID_BODY = 0.85;
 const rival = { u: 0.07, lat: 1.2, spin: 0, group: new THREE.Group() };
 /** Smoothed track forward vector for chase cam (avoids snapping on bends). */
 const camForward = { fx: 1, fz: 0 };
@@ -377,6 +379,7 @@ function tree(x, z) {
   g.add(trunk, top);
   g.position.set(x, 0, z);
   scene.add(g);
+  solids.push({ x, z, r: 1.35 });
 }
 
 function clay(color) {
@@ -583,6 +586,7 @@ function buildWorld() {
     house.lookAt(s.x, house.position.y + 1.2, s.z);
     house.rotateY(Math.PI);
     scene.add(house);
+    solids.push({ x: house.position.x, z: house.position.z, r: 2.35 });
   }
   for (let i = 0; i < 8; i++) {
     const s = sample(i / 8 + 0.05);
@@ -650,6 +654,31 @@ function placePlayer() {
 
 function ridingGrass() {
   return player.roadDist > ROAD_HALF;
+}
+
+function keepOutOfSolids() {
+  const fx = Math.sin(player.heading);
+  const fz = Math.cos(player.heading);
+  for (let pass = 0; pass < 2; pass++) {
+    for (const o of solids) {
+      let dx = player.x - o.x;
+      let dz = player.z - o.z;
+      const min = o.r + SOLID_BODY;
+      let d = Math.hypot(dx, dz);
+      if (d >= min) continue;
+      if (d < 1e-4) {
+        dx = 1;
+        dz = 0;
+        d = 1;
+      }
+      const nx = dx / d;
+      const nz = dz / d;
+      player.x = o.x + nx * min;
+      player.z = o.z + nz * min;
+      const into = fx * nx + fz * nz;
+      if (into < 0) player.speed *= Math.max(0, 1 + into);
+    }
+  }
 }
 
 function buildGrassFx() {
@@ -816,6 +845,7 @@ function updateRace(dt) {
   player.speed += (target - player.speed) * Math.min(1, rate * dt);
   player.x += Math.sin(player.heading) * player.speed * dt;
   player.z += Math.cos(player.heading) * player.speed * dt;
+  keepOutOfSolids();
   const near = nearestOnTrack(player.x, player.z, player.u);
   player.roadDist = near.dist;
   const along = Math.sin(player.heading) * near.fx + Math.cos(player.heading) * near.fz;
