@@ -292,12 +292,8 @@ function setSpriteTexture(sprite, tex, height) {
 }
 
 function updateQueenPose() {
-  if (!player.rider || !player.queenPoses) return;
-  const { stand, riding, wave } = player.queenPoses;
-  const h = player.riderH;
-  if (finished) setSpriteTexture(player.rider, wave, h);
-  else if (!started) setSpriteTexture(player.rider, stand, h);
-  else setSpriteTexture(player.rider, riding, player.rideH);
+  if (!player.waveArm) return;
+  player.waveArm.rotation.z = finished ? -1.15 : 0.2;
 }
 
 function buildRoad() {
@@ -382,19 +378,202 @@ function tree(x, z) {
   scene.add(g);
 }
 
-function buildWorld(textures) {
+function clay(color) {
+  return new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.9 });
+}
+
+function buildHouse(wall, roofColor) {
+  const g = new THREE.Group();
+  const w = 3.4;
+  const h = 2.5;
+  const d = 2.8;
+  const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), clay(wall));
+  body.position.y = h / 2;
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(2.35, 1.5, 4), clay(roofColor));
+  roof.position.y = h + 0.65;
+  roof.rotation.y = Math.PI / 4;
+  const door = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.15, 0.08), clay(0x6b3a22));
+  door.position.set(0, 0.58, d / 2 + 0.02);
+  const glass = clay(0xc5e4f7);
+  const frontWin = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.55, 0.06), glass);
+  frontWin.position.set(0.95, 1.45, d / 2 + 0.02);
+  const sideWin = new THREE.BoxGeometry(0.06, 0.55, 0.7);
+  const leftWin = new THREE.Mesh(sideWin, glass);
+  leftWin.position.set(-w / 2 - 0.01, 1.45, 0);
+  const rightWin = new THREE.Mesh(sideWin, glass);
+  rightWin.position.set(w / 2 + 0.01, 1.45, 0);
+  g.add(body, roof, door, frontWin, leftWin, rightWin);
+  return g;
+}
+
+function buildScooter() {
+  const g = new THREE.Group();
+  const metal = clay(0x4a4a4a);
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.06, 1.05), clay(0xd45b7a));
+  deck.position.y = 0.22;
+  const stem = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.85, 0.06), metal);
+  stem.position.set(0, 0.64, 0.42);
+  const bars = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.06, 0.06), metal);
+  bars.position.set(0, 1.05, 0.42);
+  for (const z of [-0.38, 0.42]) {
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.08, 8), metal);
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(0, 0.16, z);
+    g.add(wheel);
+  }
+  g.add(deck, stem, bars);
+  return g;
+}
+
+function buildCloverLeaf() {
+  const g = new THREE.Group();
+  const leafMat = clay(0x3f9a32);
+  for (const [x, y] of [[0.16, 0], [-0.16, 0], [0, 0.16], [0, -0.1]]) {
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.14, 6, 5), leafMat);
+    leaf.position.set(x, y, 0);
+    leaf.scale.set(1, 0.72, 0.45);
+    g.add(leaf);
+  }
+  return g;
+}
+
+function buildCloverWheel() {
+  const g = new THREE.Group();
+  const wood = clay(0x8a5a32);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.14, 6, 20), wood);
+  rim.rotation.y = Math.PI / 2;
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.22, 8), clay(0xc4a06a));
+  hub.rotation.z = Math.PI / 2;
+  g.add(rim, hub);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI;
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.0, 0.08), wood);
+    spoke.position.set(0, Math.cos(a) * 0.55, Math.sin(a) * 0.55);
+    spoke.rotation.x = a;
+    g.add(spoke);
+  }
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + 0.4;
+    const clover = buildCloverLeaf();
+    clover.position.set(0, Math.cos(a) * 1.15, Math.sin(a) * 1.15);
+    clover.rotation.y = Math.PI / 2;
+    g.add(clover);
+  }
+  g.position.y = 1.15;
+  return g;
+}
+
+function buildQueen() {
+  const q = new THREE.Group();
+  const skin = clay(0xf6e7cf);
+  const green = clay(0x2f8a32);
+  const lime = clay(0x9ad85a);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), skin);
+  head.position.y = 1.42;
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), lime);
+  hair.position.set(0, 1.48, -0.02);
+  hair.scale.set(1.05, 0.78, 1.08);
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.36, 0.22), green);
+  torso.position.y = 0.98;
+  const skirt = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.42, 7), green);
+  skirt.position.y = 0.62;
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.28, 5), green);
+  stem.position.y = 1.78;
+  q.add(head, hair, torso, skirt, stem);
+  for (const side of [-1, 1]) {
+    const curl = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 5), lime);
+    curl.position.set(side * 0.24, 1.28, 0.06);
+    curl.scale.set(0.7, 1.1, 0.7);
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.16, 5), lime);
+    ear.position.set(side * 0.16, 1.68, 0);
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 4), lime);
+    leaf.scale.set(1.5, 0.4, 0.55);
+    leaf.position.set(side * 0.12, 1.94, 0);
+    leaf.rotation.z = side * -0.6;
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.42, 0.08), green);
+    arm.position.set(side * 0.28, 0.92, 0.04);
+    arm.geometry.translate(0, -0.16, 0);
+    arm.position.y += 0.16;
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.48, 5), green);
+    leg.position.set(side * 0.1, 0.24, 0);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.05, 0.2), green);
+    foot.position.set(side * 0.1, 0.03, 0.04);
+    q.add(curl, ear, leaf, arm, leg, foot);
+    if (side === 1) q.userData.waveArm = arm;
+  }
+  const eyeMat = clay(0x16331a);
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 5), eyeMat);
+    eye.position.set(side * 0.09, 1.44, 0.24);
+    q.add(eye);
+  }
+  q.position.y = 2.28;
+  return q;
+}
+
+function buildXiaohua() {
+  const g = new THREE.Group();
+  const skin = clay(0xf3b7b0);
+  const black = clay(0x1c1c1c);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), skin);
+  head.position.y = 1.28;
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 6), clay(0xf7c6c0));
+  hair.position.set(0, 1.34, -0.02);
+  hair.scale.set(1.05, 0.8, 1.05);
+  const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.55, 3, 6), clay(0xf7c6c0));
+  tail.position.set(0.18, 1.05, -0.08);
+  tail.rotation.z = -0.5;
+  const dress = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.34, 0.55, 6), black);
+  dress.position.y = 0.78;
+  g.add(head, hair, tail, dress);
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.5, 5), skin);
+    leg.position.set(side * 0.1, 0.28, 0);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.36, 0.07), skin);
+    arm.position.set(side * 0.24, 0.9, 0);
+    const lens = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.07, 0.04), black);
+    lens.position.set(side * 0.08, 1.3, 0.22);
+    g.add(leg, arm, lens);
+  }
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.06, 0.95), clay(0xc4a574));
+  deck.position.y = 0.08;
+  g.add(deck);
+  const wheelMat = clay(0x333333);
+  for (const x of [-0.14, 0.14]) {
+    for (const z of [-0.28, 0.28]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 8), wheelMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(x, 0.07, z);
+      wheel.userData.skateWheel = true;
+      g.add(wheel);
+    }
+  }
+  return g;
+}
+
+function buildWorld() {
   buildRoad();
-  addSidePage(textures.neighborhood, 0.18, 4.6);
-  addSidePage(textures.neighborhood, 0.68, 4.2);
-  addSidePage(textures.mall, 0.42, 4.4);
-  addSidePage(textures.mall, 0.9, 4.2);
+  const walls = [0xf4e4c4, 0xf7f1e4, 0xf2d2c4, 0xe7eef5, 0xf6e3b4];
+  const roofs = [0xc45b4a, 0x4a7ab5, 0x3f8f3a, 0xd45b7a, 0x8a5a32];
+  for (let i = 0; i < 10; i++) {
+    const s = sample(i / 10 + 0.03);
+    const side = i % 2 === 0 ? 1 : -1;
+    const house = buildHouse(walls[i % walls.length], roofs[i % roofs.length]);
+    const dist = 11 + (i % 3) * 1.4;
+    house.position.set(s.x + s.rx * side * dist, 0, s.z + s.rz * side * dist);
+    house.lookAt(s.x, house.position.y + 1.2, s.z);
+    house.rotateY(Math.PI);
+    scene.add(house);
+  }
   for (let i = 0; i < 8; i++) {
     const s = sample(i / 8 + 0.05);
-    tree(s.x - s.rx * 11, s.z - s.rz * 11);
+    tree(s.x - s.rx * 12, s.z - s.rz * 12);
+    tree(s.x + s.rx * 14, s.z + s.rz * 14);
   }
-  const scooter = makeSprite(textures.scooter, 1.6);
+  const scooter = buildScooter();
   const spot = sample(0.22);
-  scooter.position.set(spot.x + spot.rx * 8, 0, spot.z + spot.rz * 8);
+  scooter.position.set(spot.x + spot.rx * 9, 0, spot.z + spot.rz * 9);
+  scooter.lookAt(spot.x, 0, spot.z);
   scene.add(scooter);
 }
 
@@ -413,6 +592,7 @@ function mountRider(group, riderTex, boardTex, riderH, boardH, foot, boardSpin =
 function placeRacer(racer) {
   const s = sample(racer.u);
   racer.group.position.set(s.x + s.rx * racer.lat, 0, s.z + s.rz * racer.lat);
+  racer.group.rotation.y = Math.atan2(s.fx, s.fz);
   racer.fx = s.fx;
   racer.fz = s.fz;
 }
@@ -609,7 +789,12 @@ function updateCamera(dt) {
 
   const px = player.group.position.x;
   const pz = player.group.position.z;
-  camDesired.set(px - camForward.fx * 8.2, 4.8, pz - camForward.fz * 8.2);
+  const shoulder = 9.2;
+  camDesired.set(
+    px - camForward.fx * 5.2 + camForward.fz * shoulder,
+    3.6,
+    pz - camForward.fz * 5.2 - camForward.fx * shoulder
+  );
   if (started && ridingGrass() && player.speed > 3) {
     const j = 0.09;
     camDesired.x += Math.sin(raceTime * 34) * j;
@@ -690,8 +875,9 @@ function tick() {
   updateGrass(dt);
   updateSidePages();
   if (rival.board?.userData.spins) rival.board.material.rotation = rival.spin;
-  if (player.rider) {
-    player.rider.material.rotation = ridingGrass() && player.speed > 2 ? Math.sin(raceTime * 22) * 0.14 : 0;
+  if (player.wheel) player.wheel.rotation.x = -player.spin;
+  if (player.queen) {
+    player.queen.rotation.z = ridingGrass() && player.speed > 2 ? Math.sin(raceTime * 22) * 0.08 : 0;
   }
   updateQueenPose();
   updateCamera(dt);
@@ -711,79 +897,21 @@ async function boot() {
   });
   bindStick();
 
-  const jobs = {
-    queenStand: "assets/characters/greenness-queen-stand.png",
-    queenWave: "assets/characters/greenness-queen-wave.png",
-    xiaohuaSkate: "assets/characters/xiaohua-sunglasses-skate.png",
-    wheel: "assets/elements/clover-wheel.png",
-    skate: "assets/elements/skateboard.png",
-    scooter: "assets/elements/scooter.png",
-    neighborhood: "assets/backgrounds/neighborhood.png",
-    mall: "assets/backgrounds/mall-city.png",
-  };
-  const imgs = {};
-  await Promise.all(
-    Object.entries(jobs).map(async ([key, src]) => {
-      imgs[key] = await loadImage(src);
-    })
-  );
-
-  const queenStandCanvas = cutFull(imgs.queenStand);
-  const queenStand = canvasTexture(queenStandCanvas);
-  const queenRidingCanvas = composeQueenOnCloverWheel(queenStandCanvas, cutFull(imgs.wheel));
-  const queenRiding = canvasTexture(queenRidingCanvas);
-  const queenWave = canvasTexture(cutFull(imgs.queenWave));
-  const textures = {
-    queenStand,
-    queenRiding,
-    queenWave,
-    xiaohua: canvasTexture(cutFull(imgs.xiaohuaSkate)),
-    wheel: canvasTexture(cutFull(imgs.wheel)),
-    skate: canvasTexture(cutFull(imgs.skate)),
-    skateDeck: canvasTexture(makeLevelSkateDeck(imgs.skate)),
-    scooter: canvasTexture(cutFull(imgs.scooter)),
-    neighborhood: imageTexture(imgs.neighborhood),
-    mall: imageTexture(imgs.mall),
-  };
-
-  const riderH = 2.9;
-  const rideH = 4.6;
-  const you = mountRider(player.group, textures.queenStand, textures.wheel, riderH, 2.85, 0.34, false);
-  you.rider.position.y = 0;
-  const her = mountRider(
-    rival.group,
-    textures.xiaohua,
-    textures.skateDeck,
-    RIVAL_RIDER_H,
-    RIVAL_SKATE_H,
-    0.74,
-    false
-  );
-  you.rider.userData.cast = "greenness-queen-on-clover-wheel";
-  her.rider.userData.cast = "xiaohua-sunglasses-skate";
-  her.board.userData.cast = "skateboard";
-  you.board.visible = false;
-  her.board.visible = true;
-  her.board.position.y = 0.1;
-  her.board.material.rotation = 0;
-  const deckImg = textures.skateDeck.image;
-  const deckW = RIVAL_SKATE_H * (deckImg.width / deckImg.height) * 0.82;
-  her.board.scale.set(deckW, RIVAL_SKATE_H, 1);
-  const deckTopY = her.board.position.y + RIVAL_SKATE_H * 0.56;
-  her.rider.position.y = deckTopY - RIVAL_RIDER_H * 0.14;
-  player.board = null;
-  rival.board = her.board;
-  player.rider = you.rider;
-  player.riderH = riderH;
-  player.rideH = rideH;
-  player.queenPoses = { stand: queenStand, riding: queenRiding, wave: queenWave };
-  rival.rider = her.rider;
+  const wheel = buildCloverWheel();
+  const queen = buildQueen();
+  player.group.add(wheel, queen);
+  player.wheel = wheel;
+  player.queen = queen;
+  player.waveArm = queen.userData.waveArm;
+  const xiaohua = buildXiaohua();
+  rival.group.add(xiaohua);
+  rival.rider = xiaohua;
   window.__cloverWheelRacerCast = () => ({
-    player: started && !finished ? player.rider.userData.cast : "greenness-queen",
-    rival: rival.rider.userData.cast,
+    player: "greenness-queen-on-clover-wheel",
+    rival: "xiaohua-sunglasses-skate",
     rivalVehicle: "skateboard",
   });
-  buildWorld(textures);
+  buildWorld();
   buildGrassFx();
   resetRun();
   loadingEl.hidden = true;
