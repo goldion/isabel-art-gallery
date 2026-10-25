@@ -627,6 +627,49 @@ function syncLikeButtons() {
     galleryTarget
   );
   syncLikeButtonElement(itemLikeBtn, itemLikeIcon, itemLikeText, itemLikeCount, itemTarget);
+  syncShelfLikeCounts();
+}
+
+function shelfLikeMeta(item) {
+  if (section !== "comics" && section !== "songs" && section !== "novels") return null;
+  if (!item || !item.id) return null;
+  return {
+    workerId: `${section}:${item.id}`,
+    localKey: `${sectionLikeLocalPrefix(section)}${item.id}`,
+  };
+}
+
+function fillShelfLikeBadge(badge) {
+  if (!badge) return;
+  const workerId = badge.dataset.likeId;
+  const localKey = badge.dataset.likeKey;
+  if (!workerId || !localKey) {
+    badge.hidden = true;
+    return;
+  }
+  const liked = isLikeTargetLiked({ localKey });
+  const count = sharedCountForWorkerId(workerId);
+  const iconEl = badge.querySelector(".shelf-like-icon");
+  const countEl = badge.querySelector(".shelf-like-count");
+  badge.classList.toggle("is-liked", liked);
+  if (iconEl) iconEl.textContent = liked ? "♥" : "♡";
+  if (typeof count === "number") {
+    if (countEl) countEl.textContent = String(count);
+    badge.hidden = false;
+    const noun = count === 1 ? "like" : "likes";
+    badge.setAttribute("aria-label", `${count} ${noun}`);
+    badge.title = `${count} ${noun}`;
+  } else {
+    badge.hidden = true;
+    badge.removeAttribute("aria-label");
+    badge.removeAttribute("title");
+    if (countEl) countEl.textContent = "";
+  }
+}
+
+function syncShelfLikeCounts() {
+  if (!listEl) return;
+  listEl.querySelectorAll(".shelf-like").forEach((badge) => fillShelfLikeBadge(badge));
 }
 
 function toggleCurrentLike() {
@@ -1098,7 +1141,27 @@ function renderList() {
     titleSpan.textContent = section === "demo" && item.kid ? item.kid : item.title;
     const small = document.createElement("small");
     small.textContent = extra;
-    text.appendChild(titleSpan);
+    const likeMeta = shelfLikeMeta(item);
+    if (likeMeta) {
+      const row = document.createElement("span");
+      row.className = "shelf-title-row";
+      const badge = document.createElement("span");
+      badge.className = "shelf-like";
+      badge.dataset.likeId = likeMeta.workerId;
+      badge.dataset.likeKey = likeMeta.localKey;
+      badge.hidden = true;
+      const icon = document.createElement("span");
+      icon.className = "shelf-like-icon";
+      icon.setAttribute("aria-hidden", "true");
+      const count = document.createElement("span");
+      count.className = "shelf-like-count";
+      badge.append(icon, count);
+      row.append(titleSpan, badge);
+      text.appendChild(row);
+      fillShelfLikeBadge(badge);
+    } else {
+      text.appendChild(titleSpan);
+    }
     text.appendChild(small);
 
     btn.appendChild(thumb);
