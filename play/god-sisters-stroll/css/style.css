@@ -72,6 +72,12 @@ body,
   font-weight: 800;
 }
 
+#credit {
+  font-size: 0.72rem;
+  color: #7a6a5c;
+  font-weight: 600;
+}
+
 #prompt {
   position: absolute;
   left: 50%;

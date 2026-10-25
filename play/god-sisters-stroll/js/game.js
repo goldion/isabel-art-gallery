@@ -7,6 +7,10 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 const ANGEL_URL = "assets/characters/isabel-angel.glb";
 const ANGEL_SCALE = 1.65;
 const FEET = 0.179;
+const MAISIE_URL = "assets/characters/maisie-school.glb?v=15";
+const MAISIE_HEIGHT = 1.68;
+const MERMAID_URL = "assets/characters/mermaid-invite.glb?v=15";
+const MERMAID_HEIGHT = 1.55;
 
 const ASSETS = {
   maisie: { src: "assets/characters/maisie.png", cols: 8 },
@@ -117,6 +121,8 @@ const state = {
 };
 
 let angel;
+let maisieTemplate;
+let mermaidTemplate;
 let mixer;
 let clips = {};
 let currentClip = "";
@@ -376,6 +382,218 @@ function addPortal(x, z, to, spawnKey, label) {
   });
 }
 
+const MAISIE_SHADER = /* glsl */ `
+vec3 maisieEye(vec3 p, vec3 color, vec2 c) {
+  vec2 d = (p.xy - c) / vec2(0.058, 0.046);
+  float r = length(d);
+  float browY = c.y + 0.072 - 0.004 * d.x * d.x;
+  if (r > 1.2 && abs(d.x) < 0.85 && abs(p.y - browY) < 0.0045 && p.z > 0.16) {
+    return vec3(0.12, 0.07, 0.08);
+  }
+  if (r > 1.02) return color;
+  vec2 iris = (p.xy - c + vec2(0.0, 0.004)) / vec2(0.030, 0.028);
+  if (length(iris) > 1.0) return vec3(0.99, 0.97, 0.95);
+  vec2 pupil = (p.xy - c + vec2(0.0, 0.006)) / vec2(0.013, 0.014);
+  if (length(pupil) < 1.0) {
+    vec2 shine = (p.xy - c - vec2(-0.010, 0.012)) / vec2(0.006, 0.005);
+    if (length(shine) < 1.0) return vec3(1.0);
+    return vec3(0.08, 0.05, 0.05);
+  }
+  return vec3(0.42, 0.22, 0.11);
+}
+
+vec3 maisieSchool(vec3 p) {
+  float t = (p.y + 0.9507954) / 1.8983955;
+  vec3 skin = vec3(0.98, 0.74, 0.60);
+  vec3 hair = vec3(0.09, 0.06, 0.07);
+  vec3 color = skin;
+  if (t < 0.058) color = vec3(0.99, 0.78, 0.14);
+  else if (t < 0.395) color = vec3(0.24, 0.45, 0.86);
+  else if (t < 0.63) color = vec3(0.98, 0.36, 0.55);
+
+  float ax = p.x + 0.08;
+  float bangLine = 0.622 + ax * ax * 0.7;
+  bool face = p.z > 0.16 && p.y < bangLine && p.y > 0.38 && abs(ax) < 0.15;
+  bool bangs = p.y > bangLine && p.z > -0.08 && abs(ax) < 0.32;
+  bool tail = p.z < -0.05;
+  bool sides = abs(ax) > 0.12 && abs(ax) < 0.34 && p.y > 0.40 && p.y < 0.78 && p.z > -0.08 && p.z < 0.24;
+  if ((bangs || tail || sides || p.y > 0.76) && !face) color = hair;
+  vec3 tieQ = (p - vec3(0.05, 0.90, -0.11)) / vec3(0.04, 0.016, 0.028);
+  if (dot(tieQ, tieQ) < 1.0) color = vec3(0.98, 0.42, 0.62);
+  if (t > 0.40 && t < 0.52 && (p.x < -0.22 || p.x > 0.04) && p.z > -0.02) color = skin;
+  if (t > 0.32 && t < 0.43 && (p.x < -0.26 || p.x > 0.07) && p.z > 0.02) color = skin;
+
+  if (p.z > 0.18) {
+    color = maisieEye(p, color, vec2(-0.168, 0.568));
+    color = maisieEye(p, color, vec2(-0.050, 0.568));
+    float u = (p.x + 0.11) / 0.078;
+    if (abs(u) < 1.05 && p.z > 0.23) {
+      float smileY = 0.448 + 0.020 * u * u;
+      float band = abs(p.y - smileY);
+      if (band < 0.0075) color = vec3(0.70, 0.28, 0.32);
+    }
+    vec2 cheekA = (p.xy - vec2(-0.205, 0.505)) / vec2(0.032, 0.020);
+    vec2 cheekB = (p.xy - vec2(-0.015, 0.505)) / vec2(0.032, 0.020);
+    float blush = max(1.0 - dot(cheekA, cheekA), 1.0 - dot(cheekB, cheekB));
+    if (blush > 0.0 && p.z > 0.20) color = mix(color, vec3(0.96, 0.45, 0.50), clamp(blush, 0.0, 1.0) * 0.45);
+  }
+  return color;
+}
+`;
+
+function maisieMaterial() {
+  const material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace("#include <common>", "#include <common>\nvarying vec3 vMaisiePos;")
+      .replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+vMaisiePos = position;
+float hairBack = smoothstep(-0.02, -0.10, position.z);
+float hairDrop = smoothstep(0.88, 0.28, position.y);
+float hairBow = hairDrop * (1.0 - hairDrop);
+transformed.x += hairBack * (0.20 * hairDrop + 0.10 * hairBow);
+transformed.z += hairBack * 0.14 * hairDrop;`
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", `#include <common>\nvarying vec3 vMaisiePos;\n${MAISIE_SHADER}`)
+      .replace("#include <color_fragment>", "diffuseColor.rgb = maisieSchool(vMaisiePos);");
+  };
+  return material;
+}
+
+function addMaisie(x, z, who, lines) {
+  const model = maisieTemplate.clone(true);
+  model.traverse((obj) => {
+    if (!obj.isMesh) return;
+    obj.geometry = obj.geometry.clone();
+    obj.material = maisieMaterial();
+  });
+  const box = new THREE.Box3().setFromObject(model);
+  const scale = MAISIE_HEIGHT / Math.max(0.001, box.max.y - box.min.y);
+  model.scale.setScalar(scale);
+  model.position.y = -box.min.y * scale;
+  const spawn = PLACES.garden.spawn;
+  model.rotation.y = Math.atan2(spawn.x - x, spawn.z - z);
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  g.add(model);
+  world.add(g);
+  interactables.push({
+    type: "npc",
+    x,
+    z,
+    r: 2.1,
+    mesh: g,
+    label: `E — talk to ${who}`,
+    use() {
+      openTalk(who, typeof lines === "function" ? lines() : lines);
+    },
+  });
+}
+
+const MERMAID_SHADER = /* glsl */ `
+vec3 mermaidEye(vec3 p, vec3 color, vec2 c) {
+  vec2 d = (p.xy - c) / vec2(0.032, 0.048);
+  float r = length(d);
+  float browY = c.y + 0.064;
+  if (abs(d.x) < 1.0 && abs(p.y - browY) < 0.005 && p.z > 0.12) return vec3(0.15, 0.10, 0.09);
+  if (r > 1.0 || p.z < 0.12) return color;
+  vec2 shine = (p.xy - c - vec2(-0.008, 0.016)) / vec2(0.008, 0.008);
+  if (length(shine) < 1.0) return vec3(1.0);
+  return vec3(0.07, 0.05, 0.06);
+}
+
+vec3 mermaidInvite(vec3 p) {
+  float ax = p.x + 0.10;
+  vec3 skin = vec3(0.99, 0.73, 0.60);
+  vec3 hair = vec3(0.95, 0.89, 0.74);
+  vec3 horn = vec3(0.76, 0.58, 0.38);
+  vec3 cream = vec3(0.97, 0.92, 0.84);
+  vec3 color = skin;
+
+  if (p.y < 0.025 && p.x > -0.32) {
+    color = cream;
+    float band = fract(p.y * -12.0);
+    if (band < 0.12 && p.x < 0.20) color = vec3(0.62, 0.52, 0.42);
+    color = mix(color, cream, smoothstep(0.16, 0.44, p.x));
+  }
+
+  bool face = p.z > 0.0 && p.y > 0.40 && p.y < 0.76 && abs(ax) < 0.20;
+  bool arm = p.y > 0.15 && p.y < 0.46 && abs(ax) > 0.16 && p.z > -0.10;
+  bool bangs = p.y > 0.72 && p.y < 0.84 && p.z > -0.08 && abs(ax) < 0.24;
+  bool back = p.z < -0.015 && p.y > 0.02 && p.y < 0.80 && abs(ax) < 0.36;
+  bool sides = abs(ax) > 0.18 && abs(ax) < 0.34 && p.y > 0.0 && p.y < 0.78 && p.z < 0.16;
+  if ((bangs || back || sides) && !face && !arm) color = hair;
+  if (p.y > 0.805 && abs(ax) > 0.06 && abs(ax) < 0.32) color = horn;
+  if (p.y > 0.02 && p.y < 0.30 && abs(ax) < 0.115 && !arm) color = vec3(0.10, 0.09, 0.10);
+
+  if (face && p.z > 0.10) {
+    color = mermaidEye(p, color, vec2(-0.180, 0.600));
+    color = mermaidEye(p, color, vec2(-0.020, 0.600));
+    float u = (p.x + 0.10) / 0.072;
+    if (abs(u) < 1.05 && p.z > 0.14) {
+      float smileY = 0.448 + 0.018 * u * u;
+      if (abs(p.y - smileY) < 0.007) color = vec3(0.62, 0.24, 0.30);
+    }
+    vec2 cheekA = (p.xy - vec2(-0.210, 0.530)) / vec2(0.028, 0.018);
+    vec2 cheekB = (p.xy - vec2(0.010, 0.530)) / vec2(0.028, 0.018);
+    float blush = max(1.0 - dot(cheekA, cheekA), 1.0 - dot(cheekB, cheekB));
+    if (blush > 0.0 && p.z > 0.14) color = mix(color, vec3(0.96, 0.48, 0.52), clamp(blush, 0.0, 1.0) * 0.40);
+  }
+  return color;
+}
+`;
+
+function mermaidMaterial() {
+  const material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <common>",
+      "#include <common>\nvarying vec3 vMermaidPos;"
+    ).replace(
+      "#include <begin_vertex>",
+      "#include <begin_vertex>\nvMermaidPos = position;"
+    );
+    shader.fragmentShader = shader.fragmentShader
+      .replace("#include <common>", `#include <common>\nvarying vec3 vMermaidPos;\n${MERMAID_SHADER}`)
+      .replace("#include <color_fragment>", "diffuseColor.rgb = mermaidInvite(vMermaidPos);");
+  };
+  return material;
+}
+
+function addMermaid(x, z, who, lines) {
+  const model = mermaidTemplate.clone(true);
+  model.traverse((obj) => {
+    if (!obj.isMesh) return;
+    obj.geometry = obj.geometry.clone();
+    obj.material = mermaidMaterial();
+  });
+  const box = new THREE.Box3().setFromObject(model);
+  const scale = MERMAID_HEIGHT / Math.max(0.001, box.max.y - box.min.y);
+  model.scale.setScalar(scale);
+  model.position.y = 0.1 - box.min.y * scale;
+  const spawn = PLACES.pond.spawn;
+  model.rotation.y = Math.atan2(spawn.x - x, spawn.z - z);
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  g.add(model);
+  world.add(g);
+  interactables.push({
+    type: "npc",
+    x,
+    z,
+    r: 2.1,
+    mesh: g,
+    label: `E — talk to ${who}`,
+    use() {
+      openTalk(who, typeof lines === "function" ? lines() : lines);
+      state.flags.mermaid = true;
+    },
+  });
+}
+
 function addNpc(poseTex, x, z, height, who, lines, flag) {
   const mesh = makeBillboard(poseTex, height);
   const g = new THREE.Group();
@@ -441,7 +659,7 @@ function buildPlace(id, spawnKey) {
     addFlower(5.1, 3.2, 0xc45ad6);
     addFlower(4.4, 5.1, 0xf2d14a);
     addFlower(7.2, -2.4, 0xef4d7a);
-    addNpc(poses.maisie.school, -3.6, 2.6, 1.7, "Maisie", maisieLines);
+    addMaisie(-3.6, 2.6, "Maisie", maisieLines);
     addPortal(5.4, 6.8, "park", "fromGarden", "E — Park");
   }
 
@@ -472,10 +690,10 @@ function buildPlace(id, spawnKey) {
     const lotus = makeDecal(textures.lotus, 2.4);
     lotus.position.set(0, 0.08, -0.5);
     world.add(lotus);
-    addNpc(poses.mermaid.invite, 0, 4.3, 1.55, "Mermaid", [
+    addMermaid(0, 4.3, "Mermaid", [
       "Join our team — YAY!",
       "This is the full-size pond. Come back when you want to jump.",
-    ], "mermaid");
+    ]);
     addPortal(8.2, 6.6, "park", "fromPond", "E — Park");
   }
 
@@ -861,7 +1079,21 @@ async function boot() {
       textures[key] = canvasTexture(cutFull(img));
     }
   });
-  const angelGltf = await new GLTFLoader().loadAsync(ANGEL_URL);
+  const [angelGltf, maisieGltf, mermaidGltf] = await Promise.all([
+    new GLTFLoader().loadAsync(ANGEL_URL),
+    new GLTFLoader().loadAsync(MAISIE_URL),
+    new GLTFLoader().loadAsync(MERMAID_URL),
+  ]);
+  maisieTemplate = maisieGltf.scene;
+  maisieTemplate.traverse((obj) => {
+    if (!obj.isMesh) return;
+    obj.material = maisieMaterial();
+  });
+  mermaidTemplate = mermaidGltf.scene;
+  mermaidTemplate.traverse((obj) => {
+    if (!obj.isMesh) return;
+    obj.material = mermaidMaterial();
+  });
   angel = angelGltf.scene;
   flatten(angel);
   angel.scale.setScalar(ANGEL_SCALE);
