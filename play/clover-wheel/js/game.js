@@ -73,7 +73,7 @@ const grassBits = [];
 let grassSpawn = 0;
 let grassCursor = 0;
 
-const player = { u: 0, lat: -0.8, speed: 0, spin: 0, group: new THREE.Group() };
+const player = { u: 0, lat: -0.8, x: 0, z: 0, heading: 0, roadDist: 0, speed: 0, spin: 0, group: new THREE.Group() };
 const rival = { u: 0.07, lat: 1.2, spin: 0, group: new THREE.Group() };
 /** Smoothed track forward vector for chase cam (avoids snapping on bends). */
 const camForward = { fx: 1, fz: 0 };
@@ -616,12 +616,40 @@ function placeRacer(racer) {
   racer.fz = s.fz;
 }
 
-function onRoad(lat) {
-  return Math.abs(lat) <= ROAD_HALF;
+function nearestOnTrack(x, z, hint) {
+  let bestU = hint;
+  let bestD = Infinity;
+  for (let i = -12; i <= 12; i++) {
+    const u = hint + i * 0.004;
+    if (u < 0) continue;
+    const s = sample(u);
+    const d = (s.x - x) ** 2 + (s.z - z) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      bestU = u;
+    }
+  }
+  const s = sample(bestU);
+  return { u: bestU, dist: Math.sqrt(bestD), fx: s.fx, fz: s.fz };
+}
+
+function syncPlayerToRoad() {
+  const s = sample(player.u);
+  player.x = s.x + s.rx * player.lat;
+  player.z = s.z + s.rz * player.lat;
+  player.heading = Math.atan2(s.fx, s.fz);
+  player.roadDist = Math.abs(player.lat);
+}
+
+function placePlayer() {
+  player.group.position.set(player.x, 0, player.z);
+  player.group.rotation.y = player.heading;
+  player.fx = Math.sin(player.heading);
+  player.fz = Math.cos(player.heading);
 }
 
 function ridingGrass() {
-  return !onRoad(player.lat);
+  return player.roadDist > ROAD_HALF;
 }
 
 function buildGrassFx() {
@@ -749,7 +777,8 @@ function resetRun() {
   playerWon = false;
   finishEl.hidden = true;
   onboardingEl.hidden = false;
-  placeRacer(player);
+  syncPlayerToRoad();
+  placePlayer();
   placeRacer(rival);
   const startFrame = sample(player.u);
   camForward.fx = startFrame.fx;
@@ -779,15 +808,20 @@ function updateRace(dt) {
   if (ix !== 0 || keys.boost) startRace();
   if (!started || finished) return;
   raceTime += dt;
-  player.lat = Math.max(-LAT_MAX, Math.min(LAT_MAX, player.lat + ix * 6.6 * dt));
-  const grip = onRoad(player.lat) ? 1 : 0.42;
+  const turn = 0.6 + Math.min(player.speed, TOP_SPEED) * 0.08;
+  player.heading += ix * turn * dt;
+  const grip = player.roadDist > ROAD_HALF ? 0.42 : 1;
   const target = keys.boost ? BASE_SPEED * BOOST_MUL * grip : 0;
   const rate = keys.boost ? ACCEL_RATE : DECEL_RATE;
   player.speed += (target - player.speed) * Math.min(1, rate * dt);
-  player.u += (player.speed * dt) / TRACK_LEN;
+  player.x += Math.sin(player.heading) * player.speed * dt;
+  player.z += Math.cos(player.heading) * player.speed * dt;
+  const near = nearestOnTrack(player.x, player.z, player.u);
+  player.roadDist = near.dist;
+  const along = Math.sin(player.heading) * near.fx + Math.cos(player.heading) * near.fz;
+  if (along > 0.35 && near.u > player.u - 0.01) player.u = Math.max(player.u, near.u);
   player.spin += (player.speed * dt) / WHEEL_RADIUS;
 
-  rival.lat = Math.sin(raceTime * 0.42 + 0.6) * 0.75;
   rival.u += (RIVAL_SPEED * dt) / TRACK_LEN;
   rival.spin += RIVAL_SPEED * dt * 0.28;
 
@@ -798,10 +832,9 @@ function updateRace(dt) {
 }
 
 function updateCamera(dt) {
-  const s = sample(player.u);
   const blend = dt > 0 ? 1 - Math.exp(-4.2 * dt) : 1;
-  camForward.fx += (s.fx - camForward.fx) * blend;
-  camForward.fz += (s.fz - camForward.fz) * blend;
+  camForward.fx += (player.fx - camForward.fx) * blend;
+  camForward.fz += (player.fz - camForward.fz) * blend;
   const fLen = Math.hypot(camForward.fx, camForward.fz) || 1;
   camForward.fx /= fLen;
   camForward.fz /= fLen;
@@ -881,7 +914,7 @@ function bindStick() {
 function tick() {
   const dt = Math.min(clock.getDelta(), 0.05);
   updateRace(dt);
-  placeRacer(player);
+  placePlayer();
   placeRacer(rival);
   if (started && !finished && ridingGrass()) {
     player.group.position.y = Math.abs(Math.sin(raceTime * 18)) * 0.14;
