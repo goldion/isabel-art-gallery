@@ -16,7 +16,7 @@ const LAT_MAX = 5.4;
 const BASE_SPEED = 16;
 const BOOST_MUL = 1.55;
 /** Hold Shift / Boost to build speed; release to stop (no idle cruise). */
-const ACCEL_RATE = 2.6;
+const ACCEL_RATE = 1;
 const DECEL_RATE = 4.2;
 const CAM_HEIGHT = 1.72;
 const CAM_LOOK_Y = 0.58;
