@@ -199,7 +199,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/transform-dragon-city/?v=25",
-    shelfCover: "10_game_assets/demo/transform-dragon-city.png?v=29",
+    shelfCover: "10_game_assets/demo/transform-dragon-city.png?v=30",
     iframeTitle: "Transform Dragon City",
   },
   {
