@@ -9,4 +9,4 @@ Vendored from attached `queen-team-up-softpass-assets` pack; see `../VERDICT.md`
 
 **Soft Next:** `star-director.png` is a multi-queen lineup sheet — used as-is on stage; dedicated director-only poses are out of scope for this pack.
 
-`js/game.js` loads the paths above.
+`js/game.js` is the lily-pad pond jumper and loads the paths above.
