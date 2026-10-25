@@ -130,6 +130,8 @@ let waving = false;
 let interactables = [];
 let waters = [];
 let pads = [];
+let blockers = [];
+const BODY = 0.34;
 let clock = new THREE.Clock();
 
 function mat(color, opts = {}) {
@@ -270,6 +272,29 @@ function clearWorld() {
   interactables = [];
   waters = [];
   pads = [];
+  blockers = [];
+}
+
+function blockCircle(x, z, r) {
+  blockers.push({ x, z, r });
+}
+
+function blockBox(x, z, hx, hz) {
+  blockers.push({ x, z, hx, hz });
+}
+
+function hitsBlocker(x, z) {
+  for (const b of blockers) {
+    const dx = x - b.x;
+    const dz = z - b.z;
+    if (b.hx != null) {
+      if (Math.abs(dx) < b.hx + BODY && Math.abs(dz) < b.hz + BODY) return true;
+    } else {
+      const reach = b.r + BODY;
+      if (dx * dx + dz * dz < reach * reach) return true;
+    }
+  }
+  return false;
 }
 
 function addTree(x, z, scale = 1) {
@@ -291,6 +316,7 @@ function addTree(x, z, scale = 1) {
     g.add(foliage);
   }
   world.add(g);
+  blockCircle(x, z, 0.95 * scale);
 }
 
 function addFlower(x, z, color) {
@@ -380,6 +406,7 @@ function addBush(x, z, scale = 1) {
     g.add(puff);
   }
   world.add(g);
+  blockCircle(x, z, 0.72 * scale);
 }
 
 function addBirdhouse(x, z) {
@@ -397,6 +424,7 @@ function addBirdhouse(x, z) {
   hole.position.set(0, 2.0, 0.29);
   g.add(hole);
   world.add(g);
+  blockCircle(x, z, 0.4);
 }
 
 function addWindow(parent, x, y, z) {
@@ -418,6 +446,7 @@ function addGardenHouse(x, z) {
   addWindow(g, -1.9, 1.72, 2.16);
   addWindow(g, 1.9, 1.72, 2.16);
   world.add(g);
+  blockBox(x, z, 3.3, 2.1);
 }
 
 function addTuft(x, z, scale = 1) {
@@ -487,6 +516,7 @@ function addRock(x, z) {
   nub.position.set(0.35, 0.22, 0.1);
   g.add(nub);
   world.add(g);
+  blockCircle(x, z, 0.75);
 }
 
 function addBackdrop(key, radius) {
@@ -621,6 +651,7 @@ function addMaisie(x, z, who, lines) {
   g.position.set(x, 0, z);
   g.add(model);
   world.add(g);
+  blockCircle(x, z, 0.42);
   interactables.push({
     type: "npc",
     x,
@@ -721,6 +752,7 @@ function addMermaid(x, z, who, lines) {
   g.position.set(x, 0, z);
   g.add(model);
   world.add(g);
+  blockCircle(x, z, 0.5);
   interactables.push({
     type: "npc",
     x,
@@ -1034,9 +1066,18 @@ function movePlayer(dt) {
   const nx = playerGroup.position.x + mx * speed * dt;
   const nz = playerGroup.position.z + mz * speed * dt;
   const place = PLACES[state.place];
-  const waterHit = waters.some((w) => insideEllipse(nx, nz, w));
-  if (inBounds(nx, nz, place.radius) && !(waterHit && !onPad(nx, nz))) {
+  const x = playerGroup.position.x;
+  const z = playerGroup.position.z;
+  const free = (px, pz) =>
+    inBounds(px, pz, place.radius) &&
+    !(waters.some((w) => insideEllipse(px, pz, w)) && !onPad(px, pz)) &&
+    !hitsBlocker(px, pz);
+  if (free(nx, nz)) {
     playerGroup.position.x = nx;
+    playerGroup.position.z = nz;
+  } else if (free(nx, z)) {
+    playerGroup.position.x = nx;
+  } else if (free(x, nz)) {
     playerGroup.position.z = nz;
   }
   const face = Math.atan2(mx, mz);
