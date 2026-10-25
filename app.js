@@ -333,12 +333,13 @@ const GALLERY_CHIP = {
 };
 
 const GALLERY_LIKE_PREFIX = "isabel-art.gallery.like.";
-const GALLERY_SHARED_COUNT_PREFIX = "isabel-art.gallery.shared-count.";
-const GALLERY_SHARED_LIKES_URL =
+const SHARED_COUNT_PREFIX = "isabel-art.shared-count.";
+const GALLERY_SHARED_COUNT_PREFIX_LEGACY = "isabel-art.gallery.shared-count.";
+const SHARED_LIKES_URL =
   "https://isabel-art-likes.isabel-art-goldion.workers.dev";
-const gallerySharedCounts = Object.create(null);
+const sharedLikeCounts = Object.create(null);
 
-function isGalleryWorkerArtId(id) {
+function isWorkerArtId(id) {
   return (
     typeof id === "string" &&
     id.length > 0 &&
@@ -347,47 +348,50 @@ function isGalleryWorkerArtId(id) {
   );
 }
 
-function readCachedGallerySharedCount(id) {
+function readCachedSharedCount(id) {
   if (!id) return null;
   try {
-    const raw = localStorage.getItem(`${GALLERY_SHARED_COUNT_PREFIX}${id}`);
-    if (raw == null || raw === "") return null;
-    const n = Number(raw);
-    return Number.isFinite(n) && n >= 0 ? n : null;
+    const keys = [`${SHARED_COUNT_PREFIX}${id}`, `${GALLERY_SHARED_COUNT_PREFIX_LEGACY}${id}`];
+    for (const key of keys) {
+      const raw = localStorage.getItem(key);
+      if (raw == null || raw === "") continue;
+      const n = Number(raw);
+      if (Number.isFinite(n) && n >= 0) return n;
+    }
+    return null;
   } catch (err) {
     return null;
   }
 }
 
-function writeCachedGallerySharedCount(id, count) {
+function writeCachedSharedCount(id, count) {
   if (!id || typeof count !== "number" || !Number.isFinite(count) || count < 0) return;
   try {
-    localStorage.setItem(`${GALLERY_SHARED_COUNT_PREFIX}${id}`, String(count));
+    localStorage.setItem(`${SHARED_COUNT_PREFIX}${id}`, String(count));
   } catch (err) {
     /* ignore quota / private mode */
   }
 }
 
-function gallerySharedCountForArt(art) {
-  const id = galleryArtKey(art);
+function sharedCountForWorkerId(id) {
   if (!id) return null;
-  const live = gallerySharedCounts[id];
+  const live = sharedLikeCounts[id];
   if (typeof live === "number") return live;
-  return readCachedGallerySharedCount(id);
+  return readCachedSharedCount(id);
 }
 
-async function fetchGallerySharedLike(id) {
-  if (!isGalleryWorkerArtId(id)) return null;
+async function fetchSharedLike(id) {
+  if (!isWorkerArtId(id)) return null;
   try {
-    const res = await fetch(
-      `${GALLERY_SHARED_LIKES_URL}?id=${encodeURIComponent(id)}`,
-      { method: "GET", mode: "cors" }
-    );
+    const res = await fetch(`${SHARED_LIKES_URL}?id=${encodeURIComponent(id)}`, {
+      method: "GET",
+      mode: "cors",
+    });
     if (!res.ok) return null;
     const data = await res.json();
     if (typeof data.count === "number") {
-      gallerySharedCounts[id] = data.count;
-      writeCachedGallerySharedCount(id, data.count);
+      sharedLikeCounts[id] = data.count;
+      writeCachedSharedCount(id, data.count);
     }
     return data;
   } catch (err) {
@@ -395,18 +399,18 @@ async function fetchGallerySharedLike(id) {
   }
 }
 
-async function postGallerySharedLike(id) {
-  if (!isGalleryWorkerArtId(id)) return null;
+async function postSharedLike(id) {
+  if (!isWorkerArtId(id)) return null;
   try {
-    const res = await fetch(
-      `${GALLERY_SHARED_LIKES_URL}?id=${encodeURIComponent(id)}`,
-      { method: "POST", mode: "cors" }
-    );
+    const res = await fetch(`${SHARED_LIKES_URL}?id=${encodeURIComponent(id)}`, {
+      method: "POST",
+      mode: "cors",
+    });
     if (!res.ok) return null;
     const data = await res.json();
     if (typeof data.count === "number") {
-      gallerySharedCounts[id] = data.count;
-      writeCachedGallerySharedCount(id, data.count);
+      sharedLikeCounts[id] = data.count;
+      writeCachedSharedCount(id, data.count);
     }
     return data;
   } catch (err) {
@@ -414,18 +418,18 @@ async function postGallerySharedLike(id) {
   }
 }
 
-async function deleteGallerySharedLike(id) {
-  if (!isGalleryWorkerArtId(id)) return null;
+async function deleteSharedLike(id) {
+  if (!isWorkerArtId(id)) return null;
   try {
-    const res = await fetch(
-      `${GALLERY_SHARED_LIKES_URL}?id=${encodeURIComponent(id)}`,
-      { method: "DELETE", mode: "cors" }
-    );
+    const res = await fetch(`${SHARED_LIKES_URL}?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      mode: "cors",
+    });
     if (!res.ok) return null;
     const data = await res.json();
     if (typeof data.count === "number") {
-      gallerySharedCounts[id] = data.count;
-      writeCachedGallerySharedCount(id, data.count);
+      sharedLikeCounts[id] = data.count;
+      writeCachedSharedCount(id, data.count);
     }
     return data;
   } catch (err) {
@@ -433,34 +437,128 @@ async function deleteGallerySharedLike(id) {
   }
 }
 
-function bumpGallerySharedCountLocal(id, delta) {
-  if (!id || !isGalleryWorkerArtId(id) || !delta) return;
+function bumpSharedCountLocal(id, delta) {
+  if (!id || !isWorkerArtId(id) || !delta) return;
   const prev =
-    typeof gallerySharedCounts[id] === "number"
-      ? gallerySharedCounts[id]
-      : readCachedGallerySharedCount(id);
+    typeof sharedLikeCounts[id] === "number" ? sharedLikeCounts[id] : readCachedSharedCount(id);
   if (typeof prev !== "number") return;
   const next = Math.max(0, prev + delta);
-  gallerySharedCounts[id] = next;
-  writeCachedGallerySharedCount(id, next);
+  sharedLikeCounts[id] = next;
+  writeCachedSharedCount(id, next);
 }
 
-function prefetchGallerySharedCounts(arts) {
-  const ids = [];
-  const seen = new Set();
-  for (const art of arts) {
-    const id = galleryArtKey(art);
-    if (!id || seen.has(id) || !isGalleryWorkerArtId(id)) continue;
-    seen.add(id);
-    ids.push(id);
+function sectionLikeLocalPrefix(sec) {
+  if (sec === "gallery") return GALLERY_LIKE_PREFIX;
+  return `isabel-art.${sec}.like.`;
+}
+
+function currentLikeTarget() {
+  if (section === "gallery") {
+    const arts = currentGalleryArts();
+    const art = arts[pageIndex];
+    if (!art) return null;
+    const artKey = galleryArtKey(art);
+    if (!artKey) return null;
+    return {
+      workerId: artKey,
+      label: artName(art),
+      localKey: `${GALLERY_LIKE_PREFIX}${artKey}`,
+      art,
+    };
   }
+  if (section === "comics") {
+    const book = BOOKS[itemIndex];
+    if (!book || !book.id) return null;
+    return {
+      workerId: `comics:${book.id}`,
+      label: book.title,
+      localKey: `${sectionLikeLocalPrefix("comics")}${book.id}`,
+    };
+  }
+  if (section === "songs") {
+    const song = SONGS[itemIndex];
+    if (!song || !song.id) return null;
+    return {
+      workerId: `songs:${song.id}`,
+      label: song.title,
+      localKey: `${sectionLikeLocalPrefix("songs")}${song.id}`,
+    };
+  }
+  if (section === "novels") {
+    const novel = NOVELS[itemIndex];
+    if (!novel || !novel.id) return null;
+    return {
+      workerId: `novels:${novel.id}`,
+      label: novel.title,
+      localKey: `${sectionLikeLocalPrefix("novels")}${novel.id}`,
+    };
+  }
+  if (section === "demo") {
+    const entry = DEMOS[itemIndex];
+    if (!entry || !entry.id) return null;
+    return {
+      workerId: `demo:${entry.id}`,
+      label: entry.title,
+      localKey: `${sectionLikeLocalPrefix("demo")}${entry.id}`,
+    };
+  }
+  return null;
+}
+
+function workerIdsForCurrentSection() {
+  if (section === "comics") {
+    return BOOKS.map((book) => (book.id ? `comics:${book.id}` : "")).filter(Boolean);
+  }
+  if (section === "songs") {
+    return SONGS.map((song) => (song.id ? `songs:${song.id}` : "")).filter(Boolean);
+  }
+  if (section === "novels") {
+    return NOVELS.map((novel) => (novel.id ? `novels:${novel.id}` : "")).filter(Boolean);
+  }
+  if (section === "demo") {
+    return DEMOS.map((entry) => (entry.id ? `demo:${entry.id}` : "")).filter(Boolean);
+  }
+  if (section === "gallery") {
+    const ids = [];
+    const seen = new Set();
+    for (const art of currentGalleryArts()) {
+      const id = galleryArtKey(art);
+      if (!id || seen.has(id) || !isWorkerArtId(id)) continue;
+      seen.add(id);
+      ids.push(id);
+    }
+    return ids;
+  }
+  return [];
+}
+
+function prefetchSharedCountsForSection() {
+  const ids = workerIdsForCurrentSection();
   if (!ids.length) return;
-  void Promise.all(ids.map((id) => fetchGallerySharedLike(id))).then(() => {
-    if (section !== "gallery") return;
-    const artsNow = currentGalleryArts();
-    const art = artsNow[pageIndex];
-    if (art) syncGalleryLikeButton(art);
+  const sec = section;
+  void Promise.all(ids.map((id) => fetchSharedLike(id))).then(() => {
+    if (section !== sec) return;
+    syncLikeButtons();
   });
+}
+
+function isLikeTargetLiked(target) {
+  if (!target || !target.localKey) return false;
+  try {
+    return localStorage.getItem(target.localKey) === "1";
+  } catch (err) {
+    return false;
+  }
+}
+
+function setLikeTargetLiked(target, liked) {
+  if (!target || !target.localKey) return;
+  try {
+    if (liked) localStorage.setItem(target.localKey, "1");
+    else localStorage.removeItem(target.localKey);
+  } catch (err) {
+    /* ignore quota / private mode */
+  }
 }
 
 function galleryArtKey(art) {
@@ -471,65 +569,85 @@ function galleryArtKey(art) {
   return base.replace(/\.[^.]+$/, "");
 }
 
-function galleryLikeStorageKey(art) {
-  const id = galleryArtKey(art);
-  return id ? `${GALLERY_LIKE_PREFIX}${id}` : "";
-}
-
 function isGalleryArtLiked(art) {
-  const key = galleryLikeStorageKey(art);
-  if (!key) return false;
-  try {
-    return localStorage.getItem(key) === "1";
-  } catch (err) {
-    return false;
-  }
+  const artKey = galleryArtKey(art);
+  if (!artKey) return false;
+  return isLikeTargetLiked({ localKey: `${GALLERY_LIKE_PREFIX}${artKey}` });
 }
 
-function setGalleryArtLiked(art, liked) {
-  const key = galleryLikeStorageKey(art);
-  if (!key) return;
-  try {
-    if (liked) localStorage.setItem(key, "1");
-    else localStorage.removeItem(key);
-  } catch (err) {
-    /* ignore quota / private mode */
-  }
-}
-
-function syncGalleryLikeButton(art) {
-  if (!galleryLikeBtn) return;
-  if (!art) {
-    galleryLikeBtn.hidden = true;
-    galleryLikeBtn.setAttribute("aria-pressed", "false");
-    if (galleryLikeCount) {
-      galleryLikeCount.hidden = true;
-      galleryLikeCount.textContent = "";
+function syncLikeButtonElement(btn, iconEl, textEl, countEl, target) {
+  if (!btn) return;
+  if (!target) {
+    btn.hidden = true;
+    btn.classList.add("hidden");
+    btn.setAttribute("aria-pressed", "false");
+    if (countEl) {
+      countEl.hidden = true;
+      countEl.textContent = "";
     }
     return;
   }
-  galleryLikeBtn.hidden = false;
-  const liked = isGalleryArtLiked(art);
-  const name = artName(art);
-  const sharedCount = gallerySharedCountForArt(art);
-  galleryLikeBtn.setAttribute("aria-pressed", liked ? "true" : "false");
+  btn.hidden = false;
+  btn.classList.remove("hidden");
+  const liked = isLikeTargetLiked(target);
+  const sharedCount = sharedCountForWorkerId(target.workerId);
+  const name = target.label || "this item";
+  btn.setAttribute("aria-pressed", liked ? "true" : "false");
   const countPhrase =
     typeof sharedCount === "number" ? `, ${sharedCount} shared likes` : "";
-  galleryLikeBtn.setAttribute(
+  btn.setAttribute(
     "aria-label",
     liked ? `Unlike ${name}${countPhrase}` : `Like ${name}${countPhrase}`
   );
-  if (galleryLikeIcon) galleryLikeIcon.textContent = liked ? "♥" : "♡";
-  if (galleryLikeText) galleryLikeText.textContent = liked ? "Liked" : "Like";
-  if (galleryLikeCount) {
+  if (iconEl) iconEl.textContent = liked ? "♥" : "♡";
+  if (textEl) textEl.textContent = liked ? "Liked" : "Like";
+  if (countEl) {
     if (typeof sharedCount === "number") {
-      galleryLikeCount.textContent = String(sharedCount);
-      galleryLikeCount.hidden = false;
+      countEl.textContent = String(sharedCount);
+      countEl.hidden = false;
     } else {
-      galleryLikeCount.hidden = true;
-      galleryLikeCount.textContent = "";
+      countEl.hidden = true;
+      countEl.textContent = "";
     }
   }
+}
+
+function syncLikeButtons() {
+  const target = currentLikeTarget();
+  const galleryTarget = section === "gallery" ? target : null;
+  const itemTarget =
+    section === "comics" || section === "songs" || section === "novels" || section === "demo"
+      ? target
+      : null;
+  syncLikeButtonElement(
+    galleryLikeBtn,
+    galleryLikeIcon,
+    galleryLikeText,
+    galleryLikeCount,
+    galleryTarget
+  );
+  syncLikeButtonElement(itemLikeBtn, itemLikeIcon, itemLikeText, itemLikeCount, itemTarget);
+}
+
+function toggleCurrentLike() {
+  const target = currentLikeTarget();
+  if (!target) return;
+  const nextLiked = !isLikeTargetLiked(target);
+  const { workerId } = target;
+  setLikeTargetLiked(target, nextLiked);
+  if (!nextLiked) bumpSharedCountLocal(workerId, -1);
+  syncLikeButtons();
+  if (section === "gallery") {
+    const gridBtn = galleryGrid.querySelector(`button:nth-child(${pageIndex + 1})`);
+    if (gridBtn) gridBtn.classList.toggle("is-liked", nextLiked);
+  }
+  const syncAfterShared = () => {
+    const now = currentLikeTarget();
+    if (!now || now.workerId !== workerId) return;
+    syncLikeButtons();
+  };
+  if (nextLiked) void postSharedLike(workerId).then(syncAfterShared);
+  else void deleteSharedLike(workerId).then(syncAfterShared);
 }
 
 function bookCover(book) {
@@ -639,6 +757,10 @@ const galleryLikeBtn = document.getElementById("gallery-like");
 const galleryLikeIcon = galleryLikeBtn && galleryLikeBtn.querySelector(".gallery-like-icon");
 const galleryLikeText = galleryLikeBtn && galleryLikeBtn.querySelector(".gallery-like-text");
 const galleryLikeCount = document.getElementById("gallery-like-count");
+const itemLikeBtn = document.getElementById("item-like");
+const itemLikeIcon = itemLikeBtn && itemLikeBtn.querySelector(".gallery-like-icon");
+const itemLikeText = itemLikeBtn && itemLikeBtn.querySelector(".gallery-like-text");
+const itemLikeCount = document.getElementById("item-like-count");
 const galleryGrid = document.getElementById("gallery-grid");
 const songPicture = document.getElementById("song-picture");
 const songLyrics = document.getElementById("song-lyrics");
@@ -1002,6 +1124,8 @@ function showComics() {
   pos.textContent = `${pageIndex + 1} / ${pages.length}`;
   prev.disabled = pageIndex <= 0;
   next.disabled = pageIndex >= pages.length - 1;
+  syncLikeButtons();
+  prefetchSharedCountsForSection();
 }
 
 async function showSong() {
@@ -1017,6 +1141,8 @@ async function showSong() {
   } catch (err) {
     songLyrics.textContent = "Could not load lyrics.";
   }
+  syncLikeButtons();
+  prefetchSharedCountsForSection();
 }
 
 async function showNovel() {
@@ -1032,6 +1158,8 @@ async function showNovel() {
   } catch (err) {
     stageNovel.innerHTML = "<p>Could not load this novel.</p>";
   }
+  syncLikeButtons();
+  prefetchSharedCountsForSection();
 }
 
 function galleryChipKind() {
@@ -1046,6 +1174,8 @@ function showDemo() {
   const src = urlFromRoot(entry.playPath);
   if (demoIframe.getAttribute("src") !== src) demoIframe.src = src;
   pager.classList.add("hidden");
+  syncLikeButtons();
+  prefetchSharedCountsForSection();
 }
 
 function showGallery(opts = {}) {
@@ -1056,7 +1186,7 @@ function showGallery(opts = {}) {
     galleryPage.removeAttribute("src");
     galleryPage.alt = "";
     galleryGrid.innerHTML = "";
-    syncGalleryLikeButton(null);
+    syncLikeButtons();
     setGalleryFocusVisible(false);
     pos.textContent = "0 / 0";
     prev.disabled = true;
@@ -1090,7 +1220,7 @@ function showGallery(opts = {}) {
     galleryPage.removeAttribute("src");
     galleryPage.alt = "";
     galleryGrid.innerHTML = "";
-    syncGalleryLikeButton(null);
+    syncLikeButtons();
     setGalleryFocusVisible(false);
     pos.textContent = "0 / 0";
     prev.disabled = true;
@@ -1100,7 +1230,7 @@ function showGallery(opts = {}) {
   galleryPage.src = ASSET + art.file;
   galleryPage.alt = artName(art);
   galleryCaption.textContent = art.note ? `${artName(art)} · ${art.note}` : artName(art);
-  syncGalleryLikeButton(art);
+  syncLikeButtons();
   setGalleryFocusVisible(true);
   pos.textContent = `${pageIndex + 1} / ${arts.length}`;
   prev.disabled = pageIndex <= 0;
@@ -1145,7 +1275,7 @@ function showGallery(opts = {}) {
       active.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
     }
   }
-  prefetchGallerySharedCounts(arts);
+  prefetchSharedCountsForSection();
 }
 
 function showItem(opts = {}) {
@@ -1230,33 +1360,8 @@ document.getElementById("tab-characters").addEventListener("click", () => setGal
 document.getElementById("tab-elements").addEventListener("click", () => setGalleryKind("elements"));
 document.getElementById("tab-backgrounds").addEventListener("click", () => setGalleryKind("backgrounds"));
 document.getElementById("tab-styles").addEventListener("click", () => setGalleryKind("styles"));
-if (galleryLikeBtn) {
-  galleryLikeBtn.addEventListener("click", () => {
-    if (section !== "gallery") return;
-    const arts = currentGalleryArts();
-    const art = arts[pageIndex];
-    if (!art) return;
-    const nextLiked = !isGalleryArtLiked(art);
-    const id = galleryArtKey(art);
-    setGalleryArtLiked(art, nextLiked);
-    if (!nextLiked) bumpGallerySharedCountLocal(id, -1);
-    syncGalleryLikeButton(art);
-    const gridBtn = galleryGrid.querySelector(`button:nth-child(${pageIndex + 1})`);
-    if (gridBtn) gridBtn.classList.toggle("is-liked", nextLiked);
-    const syncAfterShared = () => {
-      if (section !== "gallery") return;
-      const artsNow = currentGalleryArts();
-      const focused = artsNow[pageIndex];
-      if (!focused || galleryArtKey(focused) !== id) return;
-      syncGalleryLikeButton(focused);
-    };
-    if (nextLiked) {
-      void postGallerySharedLike(id).then(syncAfterShared);
-    } else {
-      void deleteGallerySharedLike(id).then(syncAfterShared);
-    }
-  });
-}
+if (galleryLikeBtn) galleryLikeBtn.addEventListener("click", () => toggleCurrentLike());
+if (itemLikeBtn) itemLikeBtn.addEventListener("click", () => toggleCurrentLike());
 prev.addEventListener("click", () => stepPage(-1));
 next.addEventListener("click", () => stepPage(1));
 document.addEventListener("keydown", (event) => {
