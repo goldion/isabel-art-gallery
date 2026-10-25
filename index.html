@@ -117,6 +117,40 @@
     </div>
   </main>
 
-  <script src="app.js?v=63"></script>
+  <script src="app.js?v=62"></script>
+  <script>
+    (function () {
+      var frame = document.getElementById("demo-iframe");
+      var list = document.getElementById("list");
+      var queenLine = "Pick three friends \u00b7 jump the lily pads \u00b7 join the mermaid";
+      function siteRoot() {
+        var path = location.pathname;
+        if (path.endsWith("/")) return path;
+        var leaf = path.split("/").pop() || "";
+        if (/\./.test(leaf)) return path.slice(0, path.lastIndexOf("/") + 1);
+        return path + "/";
+      }
+      function retarget() {
+        if (!frame) return;
+        var src = frame.getAttribute("src") || "";
+        if (src.indexOf("play/queen-team-up/") === -1 || src.indexOf("?v=4") !== -1) return;
+        frame.setAttribute("src", siteRoot() + "play/queen-team-up/?v=4");
+      }
+      function retitle() {
+        if (!list) return;
+        var titles = list.querySelectorAll(".shelf-title");
+        for (var i = 0; i < titles.length; i++) {
+          if (titles[i].textContent !== "Queen Team-Up!") continue;
+          var button = titles[i].closest("button");
+          var small = button && button.querySelector("small");
+          if (small && small.textContent !== queenLine) small.textContent = queenLine;
+        }
+      }
+      if (frame) new MutationObserver(retarget).observe(frame, { attributes: true, attributeFilter: ["src"] });
+      if (list) new MutationObserver(retitle).observe(list, { childList: true, subtree: true });
+      retarget();
+      retitle();
+    })();
+  </script>
 </body>
 </html>
