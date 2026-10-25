@@ -214,12 +214,54 @@ body.section-demo #list .shelf-thumb {
   min-width: 0;
 }
 
+#list .shelf-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
 #list .shelf-title {
   display: block;
+  flex: 1 1 auto;
+  min-width: 0;
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.95rem;
   line-height: 1.25;
+}
+
+#list .shelf-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12rem;
+  flex: 0 0 auto;
+  margin-top: 0.06rem;
+  padding: 0.02rem 0.34rem 0.05rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1.5px solid rgba(220, 201, 176, 0.95);
+  color: var(--mute);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.72rem;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+#list .shelf-like[hidden] {
+  display: none !important;
+}
+
+#list .shelf-like-icon {
+  font-size: 0.78rem;
+  line-height: 1;
+}
+
+#list .shelf-like.is-liked {
+  color: #c44d6a;
+  border-color: rgba(196, 77, 106, 0.35);
+  background: rgba(244, 164, 184, 0.28);
 }
 
 #list small {
@@ -881,9 +923,21 @@ body.section-gallery #pager {
     height: 4.1rem;
   }
 
+  #list .shelf-title-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.12rem;
+  }
+
   #list .shelf-title {
     font-size: 0.78rem;
     line-height: 1.2;
+  }
+
+  #list .shelf-like {
+    margin-top: 0;
+    font-size: 0.68rem;
+    padding: 0 0.28rem 0.02rem;
   }
 
   #list small {
