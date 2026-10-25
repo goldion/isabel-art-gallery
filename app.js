@@ -44,11 +44,21 @@ const BOOKS = [
   },
   {
     id: "cats",
-    title: "Cat kingdom",
-    blurb: "Ivi is a cat",
-    shelfCover: "07_comics/converted/cats-1.png",
+    title: "Maisie and Isabel's Cat Journey",
+    blurb: "Cat Ivi, Isabel, Maisie, and the Cat Kingdom",
+    shelfCover: "07_comics/converted/cats-cover.png",
     original: imgs([957, 958, 959, 960, 961]),
-    converted: [conv("cats-1.png", "Ivi is a cat")],
+    converted: [
+      conv("cats-cover.png", "Maisie and Isabel's Cat Journey"),
+      conv("cats-1.png", "Meadow opener — Ivy and pet"),
+      conv("cats-2.png", "Yes, she is a CAT"),
+      conv("cats-3.png", "Meet Cat Jan, Ivi, and friends"),
+      conv("cats-4.png", "Battles"),
+      conv("cats-5.png", "Trash Monster"),
+      conv("cats-6.png", "Mystery Cat King"),
+      conv("cats-7.png", "King Mr R"),
+      conv("cats-8.png", "Goodnight — The End"),
+    ],
   },
   {
     id: "dragon-ville",
@@ -308,7 +318,7 @@ const ART_NAMES = {
 
 const NOVEL_COVERS = {
   "god-sisters": `${CONV}cover-isabel-art.png`,
-  cats: `${CONV}cats-1.png`,
+  cats: `${CONV}cats-cover.png`,
   dragons: `${CONV}dragon-ville-1.png`,
   water: `${CONV}water-1.png`,
   "next-door": `${CONV}next-door-1.png`,
