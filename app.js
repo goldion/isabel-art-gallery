@@ -187,7 +187,7 @@ const DEMOS = [
     parent: "Garden, park, pond · F waves · E talks",
     blurb: "",
     kind: "play",
-    playPath: "play/god-sisters-stroll/?v=15",
+    playPath: "play/god-sisters-stroll/?v=19",
     shelfCover: "10_game_assets/demo/god-sisters-stroll.png?v=22",
     iframeTitle: "Walk with your god sister",
   },

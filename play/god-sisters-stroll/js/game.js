@@ -348,6 +348,147 @@ function inBounds(x, z, radius) {
   return x * x + z * z < radius * radius * 0.92;
 }
 
+function gableGeometry(width, depth, height) {
+  const shape = new THREE.Shape();
+  shape.moveTo(-width / 2, 0);
+  shape.lineTo(width / 2, 0);
+  shape.lineTo(0, height);
+  const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false });
+  geo.translate(0, 0, -depth / 2);
+  return geo;
+}
+
+function addBox(parent, w, h, d, color, x, y, z) {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color));
+  mesh.position.set(x, y, z);
+  parent.add(mesh);
+  return mesh;
+}
+
+function addBush(x, z, scale = 1) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const leaf = mat(0x3f8f3a);
+  const puffs = [
+    [0, 0.42, 0, 0.55],
+    [-0.38, 0.34, 0.08, 0.38],
+    [0.36, 0.32, -0.06, 0.36],
+  ];
+  for (const [ox, oy, oz, r] of puffs) {
+    const puff = new THREE.Mesh(new THREE.SphereGeometry(r * scale, 8, 8), leaf);
+    puff.position.set(ox * scale, oy * scale, oz * scale);
+    g.add(puff);
+  }
+  world.add(g);
+}
+
+function addBirdhouse(x, z) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 1.7, 6), mat(0x6b4226));
+  post.position.y = 0.85;
+  g.add(post);
+  addBox(g, 0.72, 0.64, 0.56, 0xc4894a, 0, 1.95, 0);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.5, 4), mat(0xd24a3a));
+  roof.position.y = 2.5;
+  roof.rotation.y = Math.PI / 4;
+  g.add(roof);
+  const hole = new THREE.Mesh(new THREE.CircleGeometry(0.1, 10), mat(0x1c140f));
+  hole.position.set(0, 2.0, 0.29);
+  g.add(hole);
+  world.add(g);
+}
+
+function addWindow(parent, x, y, z) {
+  addBox(parent, 1.2, 1.08, 0.08, 0x6b3a22, x, y, z);
+  addBox(parent, 0.96, 0.84, 0.06, 0x7eb6e0, x, y, z + 0.04);
+  addBox(parent, 0.06, 0.84, 0.04, 0x6b3a22, x, y, z + 0.08);
+  addBox(parent, 0.96, 0.06, 0.04, 0x6b3a22, x, y, z + 0.08);
+}
+
+function addGardenHouse(x, z) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  addBox(g, 6.6, 2.7, 4.2, 0xf0d36a, 0, 1.35, 0);
+  const roof = new THREE.Mesh(gableGeometry(7.4, 5.0, 1.6), mat(0x8d4e28));
+  roof.position.y = 2.7;
+  g.add(roof);
+  addBox(g, 1.15, 1.95, 0.12, 0x7a4a2a, 0, 0.98, 2.16);
+  addBox(g, 0.1, 0.1, 0.08, 0x2a241c, 0.38, 0.95, 2.26);
+  addWindow(g, -1.9, 1.72, 2.16);
+  addWindow(g, 1.9, 1.72, 2.16);
+  world.add(g);
+}
+
+function addTuft(x, z, scale = 1) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const green = mat(0x4e9a45);
+  for (let i = 0; i < 3; i++) {
+    const blade = new THREE.Mesh(new THREE.ConeGeometry(0.08 * scale, 0.4 * scale, 4), green);
+    blade.position.set((i - 1) * 0.12 * scale, 0.18 * scale, 0);
+    blade.rotation.z = (i - 1) * 0.4;
+    g.add(blade);
+  }
+  world.add(g);
+}
+
+function addSun(x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  const sunMat = mat(0xffe066, { emissive: 0xffcc33, emissiveIntensity: 0.55 });
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.9, 14, 14), sunMat));
+  for (let i = 0; i < 8; i++) {
+    const ray = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.72, 0.08), sunMat);
+    const angle = (i / 8) * Math.PI * 2;
+    ray.position.set(Math.cos(angle) * 1.4, Math.sin(angle) * 1.4, 0);
+    ray.rotation.z = angle + Math.PI / 2;
+    g.add(ray);
+  }
+  world.add(g);
+}
+
+function addPathThrough(points) {
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i];
+    const b = points[i + 1];
+    const dx = b[0] - a[0];
+    const dz = b[1] - a[1];
+    const path = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.04, Math.hypot(dx, dz) + 0.4), mat(0xc4955a));
+    path.position.set((a[0] + b[0]) / 2, 0.03, (a[1] + b[1]) / 2);
+    path.rotation.y = Math.atan2(dx, dz);
+    world.add(path);
+  }
+}
+
+function addReed(x, z) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const leaf = mat(0x2f7a3a);
+  for (let i = 0; i < 4; i++) {
+    const blade = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.9 + i * 0.12, 4), leaf);
+    blade.position.set((i - 1.5) * 0.12, 0.45, (i % 2) * 0.08);
+    blade.rotation.z = (i - 1.5) * 0.18;
+    g.add(blade);
+  }
+  world.add(g);
+}
+
+function addRock(x, z) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const stone = mat(0x8d867c);
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.55, 8, 6), stone);
+  body.scale.set(1.3, 0.7, 1);
+  body.position.y = 0.28;
+  g.add(body);
+  const nub = new THREE.Mesh(new THREE.SphereGeometry(0.32, 7, 6), stone);
+  nub.scale.set(1.1, 0.75, 0.9);
+  nub.position.set(0.35, 0.22, 0.1);
+  g.add(nub);
+  world.add(g);
+}
+
 function addBackdrop(key, radius) {
   const tex = textures[key];
   const img = tex.image;
@@ -644,7 +785,6 @@ function buildPlace(id, spawnKey) {
   rim.position.y = -0.02;
   world.add(rim);
 
-  addBackdrop(place.backdrop, place.radius);
   if (place.water) addWater(place.water);
 
   if (id === "garden") {
@@ -652,6 +792,12 @@ function buildPlace(id, spawnKey) {
     path.position.set(-1.1, 0.02, 2.8);
     path.rotation.y = 0.28;
     world.add(path);
+    addGardenHouse(-0.2, -6.6);
+    addBirdhouse(4.6, -4.8);
+    addBush(-4.2, -5.4, 1.15);
+    addBush(3.4, -3.6, 0.9);
+    addBush(-5.6, -3.4, 0.75);
+    addTree(-7.4, -6.2, 1.35);
     addTree(-7.2, -3.2, 1.15);
     addFlower(-3.4, 5.2, 0xef4d7a);
     addFlower(-5.1, 3.4, 0xf2d14a);
@@ -664,12 +810,24 @@ function buildPlace(id, spawnKey) {
   }
 
   if (id === "park") {
+    addPathThrough([
+      [0.5, 5.4],
+      [-0.5, 2.6],
+      [0.55, -0.2],
+      [-0.35, -3.2],
+      [0.25, -6.2],
+    ]);
+    addTuft(-2.2, 2.4, 1);
+    addTuft(1.6, 1.2, 0.8);
+    addTuft(-1.8, -1.2, 0.9);
+    addTuft(2.2, -3.6, 1.1);
+    addTuft(-2.6, -6.2, 0.85);
+    addTree(-6.4, -7.6, 1.7);
+    addTree(6.6, -6.8, 1.45);
     addTree(-5.8, -2.4, 1.45);
     addTree(6.2, -1.6, 1.2);
     addTree(-2.4, 4.8, 0.85);
-    const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(0.85, 12, 12), mat(0xffe066, { emissive: 0xffcc33, emissiveIntensity: 0.4 }));
-    sunMesh.position.set(8.5, 9.5, -8);
-    world.add(sunMesh);
+    addSun(4.8, 6.5, -8.2);
     addPortal(-8.4, 5.6, "garden", "fromPark", "E — Garden");
     addPortal(8.4, 5.6, "pond", "fromPark", "E — Pond");
   }
@@ -694,6 +852,16 @@ function buildPlace(id, spawnKey) {
       "Join our team — YAY!",
       "This is the full-size pond. Come back when you want to jump.",
     ]);
+    const bank = new THREE.Mesh(new THREE.SphereGeometry(3.2, 10, 8), mat(0x9bbf72));
+    bank.scale.set(2.4, 0.16, 0.65);
+    bank.position.set(-1.2, 0.12, -8.4);
+    world.add(bank);
+    addReed(-4.6, -6.4);
+    addReed(-3.6, -6.8);
+    addRock(-2.2, -6.6);
+    addTuft(1.4, -6.8, 0.9);
+    addTuft(3.2, -6.2, 0.75);
+    addTuft(-6.2, -5.6, 0.7);
     addPortal(8.2, 6.6, "park", "fromPond", "E — Park");
   }
 
