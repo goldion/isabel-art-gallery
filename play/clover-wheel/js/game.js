@@ -1,6 +1,6 @@
 /**
  * Clover-wheel Race — one neighborhood loop, Greenness Queen vs 小花.
- * Crayon sprites stay billboards. The road is the only 3D mesh that matters.
+ * The queen, 小花, and the neighborhood are solid shapes. Hold Shift to roll.
  */
 import * as THREE from "three";
 
@@ -19,6 +19,7 @@ const BOOST_MUL = 1.55;
 const ACCEL_RATE = 1;
 const DECEL_RATE = 4.2;
 const TOP_SPEED = BASE_SPEED * BOOST_MUL;
+const WHEEL_RADIUS = 1.15;
 const RIVAL_SPEED = 14.2;
 const RIVAL_RIDER_H = 3.55;
 /** Small deck under 小花's stance (not full prop scale). */
@@ -438,29 +439,34 @@ function buildCloverLeaf() {
 }
 
 function buildCloverWheel() {
-  const g = new THREE.Group();
+  const root = new THREE.Group();
+  const spin = new THREE.Group();
   const wood = clay(0x8a5a32);
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.14, 6, 20), wood);
+  const radius = WHEEL_RADIUS;
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.16, 8, 32), wood);
   rim.rotation.y = Math.PI / 2;
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.22, 8), clay(0xc4a06a));
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.26, 12), clay(0xc4a06a));
   hub.rotation.z = Math.PI / 2;
-  g.add(rim, hub);
+  spin.add(rim, hub);
+  const spokeLen = radius * 2 - 0.18;
   for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI;
-    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.0, 0.08), wood);
-    spoke.position.set(0, Math.cos(a) * 0.55, Math.sin(a) * 0.55);
-    spoke.rotation.x = a;
-    g.add(spoke);
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.07, spokeLen, 0.07), wood);
+    spoke.rotation.x = (i / 6) * Math.PI;
+    spin.add(spoke);
   }
   for (let i = 0; i < 4; i++) {
-    const a = (i / 4) * Math.PI * 2 + 0.4;
+    const a = (i / 4) * Math.PI * 2 + 0.35;
     const clover = buildCloverLeaf();
-    clover.position.set(0, Math.cos(a) * 1.15, Math.sin(a) * 1.15);
+    clover.position.set(0, Math.cos(a) * radius, Math.sin(a) * radius);
     clover.rotation.y = Math.PI / 2;
-    g.add(clover);
+    spin.add(clover);
   }
-  g.position.y = 1.15;
-  return g;
+  root.add(spin);
+  root.position.y = radius;
+  // Open the clover face toward a camera sitting behind the queen.
+  root.rotation.y = 0.72;
+  root.userData.spin = spin;
+  return root;
 }
 
 function buildQueen() {
@@ -766,7 +772,7 @@ function updateRace(dt) {
   const rate = keys.boost ? ACCEL_RATE : DECEL_RATE;
   player.speed += (target - player.speed) * Math.min(1, rate * dt);
   player.u += (player.speed * dt) / TRACK_LEN;
-  player.spin += player.speed * dt * 0.35;
+  player.spin += (player.speed * dt) / WHEEL_RADIUS;
 
   rival.lat = Math.sin(raceTime * 0.42 + 0.6) * 0.75;
   rival.u += (RIVAL_SPEED * dt) / TRACK_LEN;
@@ -789,12 +795,7 @@ function updateCamera(dt) {
 
   const px = player.group.position.x;
   const pz = player.group.position.z;
-  const shoulder = 9.2;
-  camDesired.set(
-    px - camForward.fx * 5.2 + camForward.fz * shoulder,
-    3.6,
-    pz - camForward.fz * 5.2 - camForward.fx * shoulder
-  );
+  camDesired.set(px - camForward.fx * 8.2, 4.8, pz - camForward.fz * 8.2);
   if (started && ridingGrass() && player.speed > 3) {
     const j = 0.09;
     camDesired.x += Math.sin(raceTime * 34) * j;
@@ -875,7 +876,7 @@ function tick() {
   updateGrass(dt);
   updateSidePages();
   if (rival.board?.userData.spins) rival.board.material.rotation = rival.spin;
-  if (player.wheel) player.wheel.rotation.x = -player.spin;
+  if (player.wheel?.userData.spin) player.wheel.userData.spin.rotation.x = player.spin;
   if (player.queen) {
     player.queen.rotation.z = ridingGrass() && player.speed > 2 ? Math.sin(raceTime * 22) * 0.08 : 0;
   }
