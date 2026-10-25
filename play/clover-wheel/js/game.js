@@ -19,7 +19,7 @@ const BOOST_MUL = 1.55;
 const ACCEL_RATE = 1;
 const DECEL_RATE = 4.2;
 const TOP_SPEED = BASE_SPEED * BOOST_MUL;
-const WHEEL_RADIUS = 1.15;
+const WHEEL_RADIUS = 0.72;
 const RIVAL_SPEED = 14.2;
 const RIVAL_RIDER_H = 3.55;
 /** Small deck under 小花's stance (not full prop scale). */
@@ -443,28 +443,27 @@ function buildCloverWheel() {
   const spin = new THREE.Group();
   const wood = clay(0x8a5a32);
   const radius = WHEEL_RADIUS;
-  const rim = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.16, 8, 32), wood);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.1, 8, 28), wood);
   rim.rotation.y = Math.PI / 2;
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.26, 12), clay(0xc4a06a));
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.18, 12), clay(0xc4a06a));
   hub.rotation.z = Math.PI / 2;
   spin.add(rim, hub);
-  const spokeLen = radius * 2 - 0.18;
+  const spokeLen = radius * 2 - 0.12;
   for (let i = 0; i < 6; i++) {
-    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.07, spokeLen, 0.07), wood);
+    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.05, spokeLen, 0.05), wood);
     spoke.rotation.x = (i / 6) * Math.PI;
     spin.add(spoke);
   }
   for (let i = 0; i < 4; i++) {
     const a = (i / 4) * Math.PI * 2 + 0.35;
     const clover = buildCloverLeaf();
+    clover.scale.setScalar(0.72);
     clover.position.set(0, Math.cos(a) * radius, Math.sin(a) * radius);
     clover.rotation.y = Math.PI / 2;
     spin.add(clover);
   }
   root.add(spin);
   root.position.y = radius;
-  // Open the clover face toward a camera sitting behind the queen.
-  root.rotation.y = 0.72;
   root.userData.spin = spin;
   return root;
 }
@@ -513,44 +512,58 @@ function buildQueen() {
     eye.position.set(side * 0.09, 1.44, 0.24);
     q.add(eye);
   }
-  q.position.y = 2.28;
+  q.position.y = WHEEL_RADIUS * 2;
   return q;
 }
 
 function buildXiaohua() {
   const g = new THREE.Group();
-  const skin = clay(0xf3b7b0);
-  const black = clay(0x1c1c1c);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 8), skin);
-  head.position.y = 1.28;
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 6), clay(0xf7c6c0));
-  hair.position.set(0, 1.34, -0.02);
-  hair.scale.set(1.05, 0.8, 1.05);
-  const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.55, 3, 6), clay(0xf7c6c0));
-  tail.position.set(0.18, 1.05, -0.08);
-  tail.rotation.z = -0.5;
-  const dress = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.34, 0.55, 6), black);
-  dress.position.y = 0.78;
+  const skin = clay(0xf6b7b4);
+  const black = clay(0x1a1a1a);
+  const hairMat = clay(0xf7c0c6);
+  const glasses = new THREE.MeshStandardMaterial({ color: 0x141414, roughness: 0.35, flatShading: true });
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 10), skin);
+  head.position.y = 1.52;
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 8), hairMat);
+  hair.position.set(0, 1.58, -0.05);
+  hair.scale.set(1.06, 0.78, 1.05);
+  const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.11, 0.92, 4, 8), hairMat);
+  tail.position.set(0, 0.98, -0.2);
+  tail.rotation.x = 0.22;
+  const dress = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.48, 0.64, 8), black);
+  dress.position.y = 0.88;
   g.add(head, hair, tail, dress);
+
   for (const side of [-1, 1]) {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.5, 5), skin);
-    leg.position.set(side * 0.1, 0.28, 0);
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.36, 0.07), skin);
-    arm.position.set(side * 0.24, 0.9, 0);
-    const lens = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.07, 0.04), black);
-    lens.position.set(side * 0.08, 1.3, 0.22);
-    g.add(leg, arm, lens);
+    const lens = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.15, 0.08), glasses);
+    lens.position.set(side * 0.26, 1.54, 0.14);
+    lens.rotation.y = side * 0.35;
+    const temple = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.04, 0.46), glasses);
+    temple.position.set(side * 0.34, 1.55, -0.08);
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.64, 6), skin);
+    leg.position.set(side * 0.13, 0.44, 0.02);
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.4, 3, 6), skin);
+    arm.position.set(side * 0.34, 1.08, 0.02);
+    arm.rotation.z = side * 0.12;
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.05, 0.24), skin);
+    foot.position.set(side * 0.13, 0.18, 0.06);
+    g.add(lens, temple, leg, arm, foot);
   }
-  const deck = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.06, 0.95), clay(0xc4a574));
-  deck.position.y = 0.08;
+  const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.045, 0.05), glasses);
+  bridge.position.set(0, 1.58, 0.26);
+  g.add(bridge);
+  g.scale.setScalar(1.2);
+
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.07, 1.25), clay(0xd7b07a));
+  deck.position.y = 0.14;
   g.add(deck);
-  const wheelMat = clay(0x333333);
-  for (const x of [-0.14, 0.14]) {
-    for (const z of [-0.28, 0.28]) {
-      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.05, 8), wheelMat);
+  const wheelMat = clay(0x2a2a2a);
+  for (const x of [-0.2, 0.2]) {
+    for (const z of [-0.4, 0.4]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.07, 10), wheelMat);
       wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(x, 0.07, z);
-      wheel.userData.skateWheel = true;
+      wheel.position.set(x, 0.1, z);
       g.add(wheel);
     }
   }
