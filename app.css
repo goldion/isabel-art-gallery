@@ -780,6 +780,24 @@ figcaption {
   line-height: 1;
 }
 
+.gallery-like-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  color: var(--mute);
+  min-width: 0.5rem;
+}
+
+.gallery-like-count:not([hidden])::before {
+  content: "·";
+  margin-right: 0.35rem;
+  font-weight: 600;
+  color: rgba(61, 52, 40, 0.35);
+}
+
+.gallery-like[aria-pressed="true"] .gallery-like-count {
+  color: rgba(107, 48, 64, 0.85);
+}
+
 #gallery-grid button.is-liked .grid-thumb-slot::after {
   content: "♥";
   position: absolute;

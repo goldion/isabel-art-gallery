@@ -323,6 +323,104 @@ const GALLERY_CHIP = {
 };
 
 const GALLERY_LIKE_PREFIX = "isabel-art.gallery.like.";
+const GALLERY_SHARED_COUNT_PREFIX = "isabel-art.gallery.shared-count.";
+const GALLERY_SHARED_LIKES_URL =
+  "https://isabel-art-likes.isabel-art-goldion.workers.dev";
+const gallerySharedCounts = Object.create(null);
+
+function isGalleryWorkerArtId(id) {
+  return (
+    typeof id === "string" &&
+    id.length > 0 &&
+    id.length <= 128 &&
+    /^[A-Za-z0-9._:-]+$/.test(id)
+  );
+}
+
+function readCachedGallerySharedCount(id) {
+  if (!id) return null;
+  try {
+    const raw = localStorage.getItem(`${GALLERY_SHARED_COUNT_PREFIX}${id}`);
+    if (raw == null || raw === "") return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? n : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+function writeCachedGallerySharedCount(id, count) {
+  if (!id || typeof count !== "number" || !Number.isFinite(count) || count < 0) return;
+  try {
+    localStorage.setItem(`${GALLERY_SHARED_COUNT_PREFIX}${id}`, String(count));
+  } catch (err) {
+    /* ignore quota / private mode */
+  }
+}
+
+function gallerySharedCountForArt(art) {
+  const id = galleryArtKey(art);
+  if (!id) return null;
+  const live = gallerySharedCounts[id];
+  if (typeof live === "number") return live;
+  return readCachedGallerySharedCount(id);
+}
+
+async function fetchGallerySharedLike(id) {
+  if (!isGalleryWorkerArtId(id)) return null;
+  try {
+    const res = await fetch(
+      `${GALLERY_SHARED_LIKES_URL}?id=${encodeURIComponent(id)}`,
+      { method: "GET", mode: "cors" }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (typeof data.count === "number") {
+      gallerySharedCounts[id] = data.count;
+      writeCachedGallerySharedCount(id, data.count);
+    }
+    return data;
+  } catch (err) {
+    return null;
+  }
+}
+
+async function postGallerySharedLike(id) {
+  if (!isGalleryWorkerArtId(id)) return null;
+  try {
+    const res = await fetch(
+      `${GALLERY_SHARED_LIKES_URL}?id=${encodeURIComponent(id)}`,
+      { method: "POST", mode: "cors" }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (typeof data.count === "number") {
+      gallerySharedCounts[id] = data.count;
+      writeCachedGallerySharedCount(id, data.count);
+    }
+    return data;
+  } catch (err) {
+    return null;
+  }
+}
+
+function prefetchGallerySharedCounts(arts) {
+  const ids = [];
+  const seen = new Set();
+  for (const art of arts) {
+    const id = galleryArtKey(art);
+    if (!id || seen.has(id) || !isGalleryWorkerArtId(id)) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+  if (!ids.length) return;
+  void Promise.all(ids.map((id) => fetchGallerySharedLike(id))).then(() => {
+    if (section !== "gallery") return;
+    const artsNow = currentGalleryArts();
+    const art = artsNow[pageIndex];
+    if (art) syncGalleryLikeButton(art);
+  });
+}
 
 function galleryArtKey(art) {
   if (!art) return "";
@@ -363,18 +461,34 @@ function syncGalleryLikeButton(art) {
   if (!art) {
     galleryLikeBtn.hidden = true;
     galleryLikeBtn.setAttribute("aria-pressed", "false");
+    if (galleryLikeCount) {
+      galleryLikeCount.hidden = true;
+      galleryLikeCount.textContent = "";
+    }
     return;
   }
   galleryLikeBtn.hidden = false;
   const liked = isGalleryArtLiked(art);
   const name = artName(art);
+  const sharedCount = gallerySharedCountForArt(art);
   galleryLikeBtn.setAttribute("aria-pressed", liked ? "true" : "false");
+  const countPhrase =
+    typeof sharedCount === "number" ? `, ${sharedCount} shared likes` : "";
   galleryLikeBtn.setAttribute(
     "aria-label",
-    liked ? `Unlike ${name}` : `Like ${name}`
+    liked ? `Unlike ${name}${countPhrase}` : `Like ${name}${countPhrase}`
   );
   if (galleryLikeIcon) galleryLikeIcon.textContent = liked ? "♥" : "♡";
   if (galleryLikeText) galleryLikeText.textContent = liked ? "Liked" : "Like";
+  if (galleryLikeCount) {
+    if (typeof sharedCount === "number") {
+      galleryLikeCount.textContent = String(sharedCount);
+      galleryLikeCount.hidden = false;
+    } else {
+      galleryLikeCount.hidden = true;
+      galleryLikeCount.textContent = "";
+    }
+  }
 }
 
 function bookCover(book) {
@@ -484,6 +598,7 @@ const galleryCaption = document.getElementById("gallery-caption");
 const galleryLikeBtn = document.getElementById("gallery-like");
 const galleryLikeIcon = galleryLikeBtn && galleryLikeBtn.querySelector(".gallery-like-icon");
 const galleryLikeText = galleryLikeBtn && galleryLikeBtn.querySelector(".gallery-like-text");
+const galleryLikeCount = document.getElementById("gallery-like-count");
 const galleryGrid = document.getElementById("gallery-grid");
 const songPicture = document.getElementById("song-picture");
 const songLyrics = document.getElementById("song-lyrics");
@@ -989,6 +1104,7 @@ function showGallery() {
     const top = active.offsetTop - Math.max(0, (galleryScroll.clientHeight - active.offsetHeight) / 2);
     galleryScroll.scrollTo({ top, behavior: "smooth" });
   }
+  prefetchGallerySharedCounts(arts);
 }
 
 function showItem() {
@@ -1084,6 +1200,16 @@ if (galleryLikeBtn) {
     syncGalleryLikeButton(art);
     const gridBtn = galleryGrid.querySelector(`button:nth-child(${pageIndex + 1})`);
     if (gridBtn) gridBtn.classList.toggle("is-liked", nextLiked);
+    if (nextLiked) {
+      const id = galleryArtKey(art);
+      void postGallerySharedLike(id).then(() => {
+        if (section !== "gallery") return;
+        const artsNow = currentGalleryArts();
+        const focused = artsNow[pageIndex];
+        if (!focused || galleryArtKey(focused) !== id) return;
+        syncGalleryLikeButton(focused);
+      });
+    }
   });
 }
 prev.addEventListener("click", () => stepPage(-1));
