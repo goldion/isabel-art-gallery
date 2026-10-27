@@ -7,6 +7,6 @@ Vendored from attached `queen-team-up-softpass-assets` pack; see `../VERDICT.md`
 - `characters/` — six playable queens (mermaid, sea-queen, sky-queen, plant-queen, dancing-queen, teddy), plus gugu and star-director  
 - `elements/` — lily-pad, lotus  
 
-**Soft Next:** `star-director.png` is a multi-queen lineup sheet — used as-is on stage; dedicated director-only poses are out of scope for this pack.
+**Soft PASS:** `star-director.png` is the solo 512×512 director sprite loaded on stage. The multi-queen lineup sheet lives as archive-only `star-director-lineup.png` (not used by `game.js`).
 
 `js/game.js` is the lily-pad pond jumper and loads the paths above.
