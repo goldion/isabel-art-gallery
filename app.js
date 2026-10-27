@@ -88,7 +88,13 @@ const BOOKS = [
     blurb: "Dragons and transformations",
     shelfCover: "07_comics/converted/dragon-city-1.png",
     original: imgs([970, 971, 972, 973, 974, 975, 976, 977, 1008, 1010]),
-    converted: [conv("dragon-city-1.png", "In Dragon City")],
+    converted: [
+      conv("dragon-city-1.png", "In Dragon City"),
+      conv("dragon-city-2.png", "Help! Friends!"),
+      conv("dragon-city-3.png", "Morning in Dragon City"),
+      conv("dragon-city-4.png", "Sky · Earth · Sea"),
+      conv("dragon-city-5.png", "Friends forever"),
+    ],
   },
   {
     id: "next-door",
