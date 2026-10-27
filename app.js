@@ -215,8 +215,8 @@ const DEMOS = [
     parent: "Classroom & hallway · meet school friends",
     blurb: "",
     kind: "play",
-    playPath: "play/school-day/?v=2",
-    shelfCover: "10_game_assets/demo/school-day.png?v=27",
+    playPath: "play/school-day/?v=3",
+    shelfCover: "10_game_assets/demo/school-day.png?v=28",
     iframeTitle: "School day",
   },
   {
