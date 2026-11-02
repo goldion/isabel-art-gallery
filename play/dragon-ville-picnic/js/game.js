@@ -173,7 +173,19 @@ function checkPortalReady() {
   const ready = eggCount() >= 4 && foodOnBlanket() >= 3 && state.giftSafe;
   state.portalOpen = ready;
   state.portal.active = ready && state.place === "park";
+  refreshCrumbAffordance();
   return ready;
+}
+
+function refreshCrumbAffordance() {
+  crumbsEl.querySelectorAll("[data-place]").forEach((el) => {
+    const place = el.dataset.place;
+    let locked = false;
+    if (place === "socket" && !state.portalOpen) locked = true;
+    if (place === "home" && !state.won) locked = true;
+    el.classList.toggle("locked", locked);
+    el.setAttribute("aria-disabled", locked ? "true" : "false");
+  });
 }
 
 function setPrompt(text) {
@@ -208,14 +220,21 @@ function setPlace(id) {
     finishEl.hidden = false;
   }
   setPrompt(null);
+  refreshCrumbAffordance();
 }
 
 function tryTravel() {
-  const { x, y } = state.player;
-  if (state.place === "park" && x > WORLD.w - 80) {
-    if (state.portalOpen) setPlace("socket");
-    else setPrompt("Hatch, food, and gift first!");
-    return;
+  const { x } = state.player;
+  if (state.place === "park") {
+    if (x < 80) {
+      setPlace("hatch");
+      return;
+    }
+    if (x > WORLD.w - 80) {
+      if (state.portalOpen) setPlace("socket");
+      else setPrompt("Hatch, food, and gift first!");
+      return;
+    }
   }
   if (state.place === "hatch" && x < 80) {
     setPlace("park");

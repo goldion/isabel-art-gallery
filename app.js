@@ -226,7 +226,7 @@ const DEMOS = [
     parent: "Hatch eggs · mind-move food · shoo the bird · portal home",
     blurb: "",
     kind: "play",
-    playPath: "play/dragon-ville-picnic/?v=3",
+    playPath: "play/dragon-ville-picnic/?v=4",
     shelfCover: "10_game_assets/demo/dragon-ville-picnic.png?v=24",
     iframeTitle: "Picnic at Dragon Ville",
   },
