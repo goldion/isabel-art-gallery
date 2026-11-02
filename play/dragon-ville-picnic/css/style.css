@@ -60,11 +60,22 @@ body,
   gap: 10px;
   font-size: 0.88rem;
   color: #7a6a5c;
+  pointer-events: auto;
+}
+
+#crumbs span[data-place] {
+  cursor: pointer;
 }
 
 #crumbs span[aria-current="true"] {
   color: var(--pink);
   font-weight: 800;
+}
+
+#crumbs span.locked {
+  color: #b8aea4;
+  opacity: 0.55;
+  cursor: default;
 }
 
 #goals {
