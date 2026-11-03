@@ -243,7 +243,7 @@ function spawnPlayer() {
     safe: 0.35,
   };
   const mPad = PADS.find((p) => p.mermaid);
-  mermaid = { x: mPad.x + mPad.w * 0.55, y: mPad.y, w: 54, h: 86 };
+  mermaid = { x: mPad.x + mPad.w * 0.32, y: mPad.y, w: 54, h: 86 };
   const gPad = PADS.find((p) => p.gugu);
   gugu = {
     x: gPad.x + 40,
@@ -272,6 +272,14 @@ function startPond() {
   $("touch").classList.add("play-touch");
   renderLives();
   hint("Jump the pads. Don’t fall in.");
+}
+
+/** Lily land bounds aligned to draw (lw = pad.w, no V-cut overhang in hit). */
+function padLandX(pad) {
+  if (pad.bank) return { left: pad.x + 8, right: pad.x + pad.w - 8 };
+  const insetL = 4;
+  const insetR = pad.lotus ? 20 : 14;
+  return { left: pad.x + insetL, right: pad.x + pad.w - insetR };
 }
 
 function overlaps(a, b) {
@@ -390,13 +398,14 @@ function physics(dt) {
   player.onGround = false;
   if (player.vy >= 0) {
     for (const pad of PADS) {
-      const left = player.x - player.w * 0.28;
-      const right = player.x + player.w * 0.28;
+      const feetL = player.x - player.w * 0.28;
+      const feetR = player.x + player.w * 0.28;
+      const { left: padL, right: padR } = padLandX(pad);
       const landed =
         prevBottom <= pad.y + 12 &&
         player.y >= pad.y &&
-        right > pad.x + 8 &&
-        left < pad.x + pad.w - 8;
+        feetR > padL &&
+        feetL < padR;
       if (landed) {
         if (!player.onGround) player.squash = 0.78;
         player.y = pad.y;
@@ -485,11 +494,11 @@ function drawCover(img, parallax) {
   const scale = Math.max(vw / img.width, vh / img.height);
   const dw = img.width * scale;
   const dh = img.height * scale;
-  const shift = parallax % dw;
   const y = (vh - dh) / 2;
-  for (let x = -shift - dw; x < vw + dw; x += dw) {
-    ctx.drawImage(img, x, y, dw, dh);
-  }
+  const slack = Math.max(0, dw - vw);
+  const parallaxPx = parallax * viewScale();
+  const shift = slack > 0 ? ((parallaxPx % slack) + slack) % slack : 0;
+  ctx.drawImage(img, -shift, y, dw, dh);
 }
 
 function drawSpriteFeet(canvas, worldX, feetY, height, flip, squash = 1) {
@@ -563,24 +572,23 @@ function drawPads() {
       ctx.stroke();
     } else {
       const lily = sprites.lily;
-      const lw = w + 18;
+      const lw = w;
       const lh = lw * 0.58;
-      ctx.drawImage(lily, x - 9, y - lh * 0.16, lw, lh);
+      ctx.drawImage(lily, x, y - lh * 0.16, lw, lh);
     }
     if (pad.lotus) {
       const lotus = sprites.lotus;
-      const lh = 70 * s;
+      const lh = (pad.mermaid ? 48 : 58) * s;
       const lw = lh * (lotus.width / lotus.height);
-      ctx.drawImage(lotus, x + w * 0.62 - lw / 2, y - lh * 0.78, lw, lh);
+      const lotusAnchor = pad.mermaid ? 0.1 : 0.62;
+      ctx.drawImage(lotus, x + w * lotusAnchor - lw / 2, y - lh * 0.65, lw, lh);
     }
   }
 }
 
 function drawActors() {
-  if (mermaid && !team.includes("mermaid")) {
-    drawSpriteFeet(sprites.mermaid, mermaid.x, mermaid.y, 92, false);
-  } else if (mermaid && joined) {
-    drawSpriteFeet(sprites.mermaid, mermaid.x, mermaid.y, 92, false);
+  if (mermaid && !joined && !team.includes("mermaid")) {
+    drawSpriteFeet(sprites.mermaid, mermaid.x, mermaid.y, 88, false);
   }
 
   if (gugu && !guguDown) {
