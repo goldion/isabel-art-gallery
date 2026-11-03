@@ -243,11 +243,11 @@ function spawnPlayer() {
     safe: 0.35,
   };
   const mPad = PADS.find((p) => p.mermaid);
-  mermaid = { x: mPad.x + mPad.w * 0.32, y: mPad.y, w: 54, h: 86 };
+  mermaid = { x: mPad.x + mPad.w * 0.32, y: padLandY(mPad), w: 54, h: 86 };
   const gPad = PADS.find((p) => p.gugu);
   gugu = {
     x: gPad.x + 40,
-    y: gPad.y,
+    y: padLandY(gPad),
     w: 70,
     h: 78,
     vx: 78,
@@ -274,12 +274,30 @@ function startPond() {
   hint("Jump the pads. Don’t fall in.");
 }
 
-/** Lily land bounds aligned to draw (lw = pad.w, no V-cut overhang in hit). */
+function lilyLeafH(pad) {
+  return pad.w * 0.58;
+}
+
+/** Feet line on opaque green (draw uses y - lh*0.16; crayon lip is not landable). */
+function padLandY(pad) {
+  if (pad.bank) return pad.y;
+  const lh = lilyLeafH(pad);
+  return pad.y + lh * 0.08;
+}
+
+/** Lily land bounds aligned to draw (lw = pad.w, inset past crayon lips / V-cut). */
 function padLandX(pad) {
   if (pad.bank) return { left: pad.x + 8, right: pad.x + pad.w - 8 };
-  const insetL = 4;
+  const insetL = Math.max(16, Math.round(pad.w * 0.12));
   const insetR = pad.lotus ? 20 : 14;
   return { left: pad.x + insetL, right: pad.x + pad.w - insetR };
+}
+
+/** Keep bank→first hops on opaque green, not the left crayon lip. */
+function snapLilyStand(pad) {
+  if (pad.bank) return;
+  const minX = pad.x + pad.w * 0.22;
+  if (player.x < minX) player.x = minX;
 }
 
 function overlaps(a, b) {
@@ -321,7 +339,7 @@ function splash() {
   }
   team.pop();
   player.x = lastPad.x + lastPad.w * 0.45;
-  player.y = lastPad.y - 4;
+  player.y = padLandY(lastPad);
   player.vx = 0;
   player.vy = 0;
   player.onGround = true;
@@ -400,15 +418,17 @@ function physics(dt) {
     for (const pad of PADS) {
       const feetL = player.x - player.w * 0.28;
       const feetR = player.x + player.w * 0.28;
+      const landY = padLandY(pad);
       const { left: padL, right: padR } = padLandX(pad);
       const landed =
-        prevBottom <= pad.y + 12 &&
-        player.y >= pad.y &&
+        prevBottom <= landY + 10 &&
+        player.y >= landY - 4 &&
         feetR > padL &&
         feetL < padR;
       if (landed) {
         if (!player.onGround) player.squash = 0.78;
-        player.y = pad.y;
+        player.y = landY;
+        snapLilyStand(pad);
         player.vy = 0;
         player.onGround = true;
         lastPad = pad;
@@ -441,7 +461,7 @@ function physics(dt) {
     const maxX = gugu.pad.x + gugu.pad.w - 46;
     if (gugu.x < minX || gugu.x > maxX) gugu.vx *= -1;
     gugu.x = Math.max(minX, Math.min(maxX, gugu.x));
-    gugu.y = gugu.pad.y;
+    gugu.y = padLandY(gugu.pad);
     const head =
       player.vy > 40 &&
       prevBottom < gugu.y - gugu.h + 28 &&
@@ -547,7 +567,8 @@ function drawPads() {
   const s = viewScale();
   for (const pad of PADS) {
     const x = (pad.x - camX) * s;
-    const y = pad.y * s;
+    const footY = padLandY(pad) * s;
+    const y = pad.bank ? pad.y * s : footY;
     const w = pad.w * s;
     if (pad.bank) {
       const hill = 56 * s;
@@ -576,12 +597,12 @@ function drawPads() {
       const lh = lw * 0.58;
       ctx.drawImage(lily, x, y - lh * 0.16, lw, lh);
     }
-    if (pad.lotus) {
+    if (pad.lotus && !(pad.mermaid && joined)) {
       const lotus = sprites.lotus;
-      const lh = (pad.mermaid ? 48 : 58) * s;
+      const lh = (pad.mermaid ? 42 : 58) * s;
       const lw = lh * (lotus.width / lotus.height);
-      const lotusAnchor = pad.mermaid ? 0.1 : 0.62;
-      ctx.drawImage(lotus, x + w * lotusAnchor - lw / 2, y - lh * 0.65, lw, lh);
+      const lotusAnchor = pad.mermaid ? 0.84 : 0.62;
+      ctx.drawImage(lotus, x + w * lotusAnchor - lw / 2, y - lh * 0.62, lw, lh);
     }
   }
 }
