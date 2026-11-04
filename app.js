@@ -252,6 +252,17 @@ const DEMOS = [
     shelfCover: "10_game_assets/demo/spelling-vs-lennon.png?v=27",
     iframeTitle: "Spelling vs Lennon",
   },
+  {
+    id: "soft-next-ops",
+    title: "Hammer Studio Soft Next!",
+    kid: "Hammer Studio Soft Next!",
+    parent: "Soft Next desks · Soft PASS board · Hammer Studio",
+    blurb: "",
+    kind: "play",
+    playPath: "play/soft-next-ops/?v=1",
+    shelfCover: "10_game_assets/demo/soft-next-ops.png?v=1",
+    iframeTitle: "Hammer Studio Soft Next",
+  },
 ];
 
 const NOVELS = [
