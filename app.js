@@ -238,7 +238,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/queen-team-up/?v=7",
-    shelfCover: "10_game_assets/demo/queen-team-up.png?v=25",
+    shelfCover: "10_game_assets/demo/queen-team-up.png?v=26",
     iframeTitle: "Queen Team-Up",
   },
   {
@@ -249,7 +249,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/spelling-vs-lennon/?v=4",
-    shelfCover: "10_game_assets/demo/spelling-vs-lennon.png?v=26",
+    shelfCover: "10_game_assets/demo/spelling-vs-lennon.png?v=27",
     iframeTitle: "Spelling vs Lennon",
   },
 ];
