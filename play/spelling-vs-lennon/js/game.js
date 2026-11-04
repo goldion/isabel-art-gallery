@@ -428,7 +428,7 @@ function render() {
   if (state.phase === "cast") {
     drawWorldSprite(currentWalkerSprite(), 640, 470, 210);
     ctx.save();
-    ctx.fillStyle = "rgba(244, 239, 227, 0.82)";
+    ctx.fillStyle = "rgba(244, 239, 227, 0.48)";
     ctx.fillRect(0, window.innerHeight * 0.72, window.innerWidth, window.innerHeight * 0.28);
     ctx.fillStyle = "#2a221c";
     ctx.font = "800 18px Trebuchet MS, Segoe UI, sans-serif";

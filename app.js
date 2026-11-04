@@ -248,7 +248,7 @@ const DEMOS = [
     parent: "School hallway · spell words · face Lennon",
     blurb: "",
     kind: "play",
-    playPath: "play/spelling-vs-lennon/?v=4",
+    playPath: "play/spelling-vs-lennon/?v=5",
     shelfCover: "10_game_assets/demo/spelling-vs-lennon.png?v=27",
     iframeTitle: "Spelling vs Lennon",
   },
