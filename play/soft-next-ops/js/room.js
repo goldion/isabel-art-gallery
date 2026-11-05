@@ -1,26 +1,28 @@
 /**
  * Hammer Studio — Soft Next ops room (Soft PASS moodboard v3).
- * Static war-room board + desk avatars for v1.
- * TODO(soft-next): wire live Soft PASS status from JSON or Worker when cheap.
+ * Cool gallery palette · Soft PASS war-room board · lane avatars idle+walk.
  */
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const COLORS = {
-  cream: 0xf5edd8,
-  creamDark: 0xe8dcc4,
-  wood: 0xc9a66b,
-  woodLight: 0xdfc99a,
-  laneMat: 0xf0e6cc,
-  laneGlow: 0xffc857,
-  pick: 0xe8c98a,
-  softPass: 0xb8d4a8,
-  waitingGo: 0xffb84d,
-  tip: 0xa8c4e8,
-  smoke: 0xe8b8c4,
-  done: 0xb8e8c8,
+  wall: 0xc8d0d8,
+  wallSide: 0xbfc8d2,
+  floor: 0xd6dce4,
+  wood: 0x8a949e,
+  woodLight: 0x9aa4ae,
+  laneMat: 0x6ba3c9,
+  laneGlow: 0x7ec8e8,
+  paper: 0xeef1f4,
+  waitingGlow: 0xffd966,
+  pick: 0xa7f3d0,
+  softPass: 0xd1d5db,
+  waitingGo: 0xc7d2fe,
+  tip: 0xa5b4fc,
+  smoke: 0xa7f3d0,
+  done: 0xd1d5db,
   art: 0xffd54f,
-  dev: 0xc84da8,
+  dev: 0xd946b5,
   tester: 0xf4a698,
   cto: 0x67c4e8,
   assistant: 0x9caf88,
@@ -30,19 +32,19 @@ const COLORS = {
 };
 
 const STATIONS = [
-  { id: "pick", label: "Pick", color: COLORS.pick },
-  { id: "soft-pass", label: "Soft PASS", color: COLORS.softPass },
-  { id: "waiting-go", label: "Waiting Go", color: COLORS.waitingGo, active: true },
-  { id: "tip", label: "Tip", color: COLORS.tip },
-  { id: "smoke", label: "Smoke", color: COLORS.smoke },
-  { id: "done", label: "Done", color: COLORS.done },
+  { id: "pick", label: "Pick", color: COLORS.pick, icon: "clipboard" },
+  { id: "soft-pass", label: "Soft PASS", color: COLORS.softPass, icon: "stamp" },
+  { id: "waiting-go", label: "Waiting Go", color: COLORS.waitingGo, icon: "bulb", active: true },
+  { id: "tip", label: "Tip", color: COLORS.tip, icon: "crate" },
+  { id: "smoke", label: "Smoke", color: COLORS.smoke, icon: "flask" },
+  { id: "done", label: "Done", color: COLORS.done, icon: "ribbon" },
 ];
 
 const LANE_DESKS = [
-  { role: "Art", shape: "heart", color: COLORS.art, x: -2.2, z: 0.6 },
-  { role: "Developer", shape: "hex", color: COLORS.dev, x: -2.2, z: -1.4 },
-  { role: "Tester · Marketing", shape: "tablet", color: COLORS.tester, x: 2.2, z: 0.6 },
-  { role: "CTO", shape: "cloud", color: COLORS.cto, x: 2.2, z: -1.4 },
+  { role: "Art", sheet: "art", x: -2.2, z: 0.6, phase: 0 },
+  { role: "Developer", sheet: "developer", x: -2.2, z: -1.4, phase: 0.7 },
+  { role: "Tester · Marketing", sheet: "tester", x: 2.2, z: 0.6, phase: 1.4 },
+  { role: "CTO", sheet: "cto", x: 2.2, z: -1.4, phase: 2.1 },
 ];
 
 const OFF_LANE = [
@@ -52,12 +54,22 @@ const OFF_LANE = [
   { role: "Main Bot · Admin", shape: "blob", color: COLORS.mainBot, x: 7.4, z: -1.6 },
 ];
 
+const SHEET_PATHS = {
+  art: "assets/characters/art-walk-idle-sheet.png",
+  developer: "assets/characters/developer-walk-idle-sheet.png",
+  tester: "assets/characters/tester-walk-idle-sheet.png",
+  cto: "assets/characters/cto-walk-idle-sheet.png",
+};
+
+const FRAME_COLS = 4;
+const FRAME_ASPECT = 320 / 720;
+
 const view = document.getElementById("view");
 const loadingEl = document.getElementById("loading");
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(COLORS.cream);
-scene.fog = new THREE.Fog(COLORS.cream, 28, 52);
+scene.background = new THREE.Color(COLORS.wall);
+scene.fog = new THREE.Fog(COLORS.wall, 28, 52);
 
 const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 80);
 camera.position.set(0, 7.5, 13.5);
@@ -80,8 +92,8 @@ controls.minPolarAngle = Math.PI * 0.12;
 controls.autoRotate = true;
 controls.autoRotateSpeed = 0.35;
 
-scene.add(new THREE.HemisphereLight(0xfff8ee, 0xc4a574, 0.95));
-const sun = new THREE.DirectionalLight(0xfff4e0, 0.75);
+scene.add(new THREE.HemisphereLight(0xe8eef4, 0x8898a8, 0.92));
+const sun = new THREE.DirectionalLight(0xf0f4f8, 0.72);
 sun.position.set(4, 14, 8);
 sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
@@ -93,7 +105,7 @@ sun.shadow.camera.top = 14;
 sun.shadow.camera.bottom = -14;
 scene.add(sun);
 
-const loungeLight = new THREE.PointLight(0xfff0d8, 0.35, 12);
+const loungeLight = new THREE.PointLight(0xc8dce8, 0.32, 12);
 loungeLight.position.set(7, 4, 0);
 scene.add(loungeLight);
 
@@ -101,7 +113,9 @@ const world = new THREE.Group();
 scene.add(world);
 
 const glowMeshes = [];
+const laneAnimators = [];
 const clock = new THREE.Clock();
+const textureLoader = new THREE.TextureLoader();
 
 function mat(color, opts = {}) {
   return new THREE.MeshStandardMaterial({
@@ -113,7 +127,7 @@ function mat(color, opts = {}) {
   });
 }
 
-function makeTextTexture(text, { width = 512, height = 128, fontSize = 48, fill = "#3d3229", bg = null } = {}) {
+function makeTextTexture(text, { width = 512, height = 128, fontSize = 48, fill = "#2a3440", bg = null } = {}) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -141,13 +155,60 @@ function textPlane(text, w, h, opts = {}) {
   return mesh;
 }
 
+function frameSlice(baseTex, col) {
+  const clone = baseTex.clone();
+  clone.wrapS = THREE.ClampToEdgeWrapping;
+  clone.wrapT = THREE.ClampToEdgeWrapping;
+  clone.repeat.set(1 / FRAME_COLS, 1);
+  clone.offset.set(col / FRAME_COLS, 0);
+  clone.needsUpdate = true;
+  return clone;
+}
+
+function loadSheet(url) {
+  return new Promise((resolve, reject) => {
+    textureLoader.load(url, resolve, undefined, reject);
+  });
+}
+
+function makeLaneAnimator(baseTex, homeX, homeZ, phaseOffset) {
+  const frames = [0, 1, 2, 3].map((i) => frameSlice(baseTex, i));
+  const material = new THREE.SpriteMaterial({
+    map: frames[0],
+    transparent: true,
+    depthTest: true,
+    depthWrite: false,
+  });
+  const sprite = new THREE.Sprite(material);
+  const height = 1.42;
+  sprite.scale.set(height * FRAME_ASPECT, height, 1);
+  sprite.center.set(0.5, 0);
+  sprite.position.set(homeX, 0.98, homeZ);
+
+  world.add(sprite);
+
+  return {
+    sprite,
+    frames,
+    homeX,
+    homeZ,
+    x: homeX,
+    z: homeZ,
+    phaseOffset,
+    mode: "idle",
+    frame: 0,
+    frameTimer: 0,
+    moveTimer: phaseOffset,
+  };
+}
+
 function buildRoom() {
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(28, 22), mat(COLORS.woodLight));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(28, 22), mat(COLORS.floor));
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   world.add(floor);
 
-  const wallMat = mat(COLORS.cream);
+  const wallMat = mat(COLORS.wall);
   const back = new THREE.Mesh(new THREE.PlaneGeometry(28, 10), wallMat);
   back.position.set(0, 5, -11);
   world.add(back);
@@ -157,7 +218,7 @@ function buildRoom() {
   left.position.set(-14, 5, 0);
   world.add(left);
 
-  const right = new THREE.Mesh(new THREE.PlaneGeometry(22, 10), mat(COLORS.creamDark));
+  const right = new THREE.Mesh(new THREE.PlaneGeometry(22, 10), mat(COLORS.wallSide));
   right.rotation.y = -Math.PI / 2;
   right.position.set(14, 5, 0);
   world.add(right);
@@ -168,14 +229,13 @@ function buildRoom() {
 }
 
 function buildLaneMat() {
-  const matGeo = new THREE.PlaneGeometry(7.2, 4.8);
-  const lane = new THREE.Mesh(matGeo, mat(COLORS.laneMat));
+  const lane = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 4.8), mat(COLORS.laneMat));
   lane.rotation.x = -Math.PI / 2;
   lane.position.set(0, 0.02, -0.4);
   lane.receiveShadow = true;
   world.add(lane);
 
-  const glowMat = mat(COLORS.laneGlow, { emissive: COLORS.laneGlow, emissiveIntensity: 0.55 });
+  const glowMat = mat(COLORS.laneGlow, { emissive: COLORS.laneGlow, emissiveIntensity: 0.45 });
   const stripW = 7.4;
   const stripD = 0.12;
   for (const [x, z, rw, rd] of [
@@ -192,6 +252,70 @@ function buildLaneMat() {
   }
 }
 
+function addCardIcon(card, icon, cardColor) {
+  const g = new THREE.Group();
+  g.position.set(0, 0.15, 0.14);
+  const accent = mat(0x5a6470);
+  switch (icon) {
+    case "clipboard": {
+      const board = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.48, 0.06), mat(COLORS.paper));
+      const clip = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 0.1), accent);
+      clip.position.y = 0.26;
+      g.add(board, clip);
+      break;
+    }
+    case "stamp": {
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.22, 10), mat(0x6b8f5e));
+      handle.position.y = 0.12;
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.06, 16), mat(0x4a7040));
+      g.add(handle, pad);
+      break;
+    }
+    case "bulb": {
+      const bulb = new THREE.Mesh(
+        new THREE.SphereGeometry(0.14, 12, 12),
+        mat(COLORS.waitingGlow, { emissive: COLORS.waitingGlow, emissiveIntensity: 0.65 }),
+      );
+      bulb.position.y = 0.22;
+      g.add(bulb);
+      break;
+    }
+    case "crate": {
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.28, 0.28), mat(0xb8956a));
+      const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.18, 3), mat(0x5b8fd4));
+      arrow.rotation.z = -Math.PI / 2;
+      arrow.position.set(0.22, 0, 0);
+      g.add(box, arrow);
+      break;
+    }
+    case "flask": {
+      const flask = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.16, 0.36, 10), mat(cardColor));
+      flask.position.y = -0.02;
+      const steam = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 8, 8),
+        mat(0xeef1f4, { transparent: true, opacity: 0.75 }),
+      );
+      steam.position.y = 0.28;
+      steam.scale.set(1.2, 0.7, 1);
+      g.add(flask, steam);
+      break;
+    }
+    case "ribbon": {
+      const medal = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.05, 20), mat(0x6b8f5e));
+      const check = new THREE.Mesh(
+        new THREE.TorusGeometry(0.08, 0.02, 6, 12, Math.PI * 1.2),
+        mat(0xeef1f4, { emissive: 0xcccccc, emissiveIntensity: 0.2 }),
+      );
+      check.rotation.z = Math.PI * 0.15;
+      g.add(medal, check);
+      break;
+    }
+    default:
+      break;
+  }
+  card.add(g);
+}
+
 function buildWarBoard() {
   const board = new THREE.Group();
   board.position.set(0, 5.2, -10.5);
@@ -200,11 +324,11 @@ function buildWarBoard() {
   frame.castShadow = true;
   board.add(frame);
 
-  const surface = new THREE.Mesh(new THREE.PlaneGeometry(10.6, 2.8), mat(0xfaf6ec));
+  const surface = new THREE.Mesh(new THREE.PlaneGeometry(10.6, 2.8), mat(COLORS.paper));
   surface.position.z = 0.11;
   board.add(surface);
 
-  const header = textPlane("Soft PASS", 2.4, 0.45, { fontSize: 40, width: 480, height: 96 });
+  const header = textPlane("Soft PASS", 2.4, 0.45, { fontSize: 40, width: 480, height: 96, fill: "#3a4550" });
   header.position.set(0, 1.05, 0.12);
   board.add(header);
 
@@ -218,47 +342,44 @@ function buildWarBoard() {
     body.castShadow = true;
     card.add(body);
 
+    addCardIcon(card, st.icon, st.color);
+
     const label = textPlane(st.label, cardW * 0.92, 0.32, {
       fontSize: st.label.length > 10 ? 22 : 28,
       width: 256,
       height: 64,
-      fill: "#4a4038",
+      fill: "#3a4550",
     });
     label.position.set(0, -0.72, 0.08);
     card.add(label);
 
     if (st.active) {
       const glow = new THREE.Mesh(
-        new THREE.PlaneGeometry(cardW + 0.35, 1.7),
-        mat(COLORS.waitingGo, { emissive: COLORS.waitingGo, emissiveIntensity: 0.9, transparent: true, opacity: 0.35 }),
+        new THREE.PlaneGeometry(cardW + 0.28, 1.55),
+        mat(COLORS.waitingGlow, {
+          emissive: COLORS.waitingGlow,
+          emissiveIntensity: 0.85,
+          transparent: true,
+          opacity: 0.32,
+        }),
       );
       glow.position.z = -0.08;
       card.add(glow);
       glowMeshes.push(glow);
 
-      const waitLight = new THREE.PointLight(0xffc857, 1.2, 4);
-      waitLight.position.set(0, 0.3, 0.5);
+      const waitLight = new THREE.PointLight(0xffd966, 0.95, 2.8);
+      waitLight.position.set(0, 0.3, 0.45);
       card.add(waitLight);
 
       const pack = new THREE.Group();
       pack.position.set(0.35, -0.35, 0.22);
-      const box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.28, 0.32), mat(0xc9a66b));
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.28, 0.32), mat(COLORS.woodLight));
       box.castShadow = true;
       pack.add(box);
-      const packLabel = textPlane("Soft PASS", 0.38, 0.18, { fontSize: 18, width: 200, height: 48, fill: "#5a4a38" });
+      const packLabel = textPlane("Soft PASS", 0.38, 0.18, { fontSize: 18, width: 200, height: 48, fill: "#3a4550" });
       packLabel.position.set(0, 0.01, 0.17);
       pack.add(packLabel);
       card.add(pack);
-    }
-
-    if (st.id === "soft-pass") {
-      const seal = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.14, 0.14, 0.04, 24),
-        mat(0x6b8f5e, { emissive: 0x4a7040, emissiveIntensity: 0.2 }),
-      );
-      seal.rotation.x = Math.PI / 2;
-      seal.position.set(0.45, 0.25, 0.1);
-      card.add(seal);
     }
 
     board.add(card);
@@ -299,41 +420,6 @@ function shapeMesh(shape, color) {
   let body;
   const m = mat(color);
   switch (shape) {
-    case "heart": {
-      const s = new THREE.Shape();
-      const x = 0;
-      const y = 0;
-      s.moveTo(x, y + 0.25);
-      s.bezierCurveTo(x, y + 0.25, x - 0.25, y, x - 0.25, y - 0.1);
-      s.bezierCurveTo(x - 0.25, y - 0.35, x, y - 0.45, x, y - 0.55);
-      s.bezierCurveTo(x, y - 0.45, x + 0.25, y - 0.35, x + 0.25, y - 0.1);
-      s.bezierCurveTo(x + 0.25, y, x, y + 0.25, x, y + 0.25);
-      body = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 0.35, bevelEnabled: true, bevelSize: 0.04, bevelThickness: 0.04 }), m);
-      body.scale.set(1.8, 1.8, 1);
-      body.rotation.z = Math.PI;
-      break;
-    }
-    case "hex":
-      body = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.5, 6), m);
-      break;
-    case "tablet":
-      body = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.55, 0.28), m);
-      break;
-    case "cloud": {
-      body = new THREE.Group();
-      const parts = [
-        [0, 0.1, 0.32],
-        [-0.28, 0, 0.24],
-        [0.28, 0, 0.24],
-        [0, -0.08, 0.28],
-      ];
-      for (const [px, py, r] of parts) {
-        const p = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), m);
-        p.position.set(px, py, 0);
-        body.add(p);
-      }
-      break;
-    }
     case "square":
       body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.4), m);
       break;
@@ -372,7 +458,7 @@ function shapeMesh(shape, color) {
   return g;
 }
 
-function buildDesk(role, botShape, botColor, x, z, dimmer = false) {
+function buildDesk(role, x, z) {
   const desk = new THREE.Group();
   desk.position.set(x, 0, z);
 
@@ -391,32 +477,17 @@ function buildDesk(role, botShape, botColor, x, z, dimmer = false) {
     fontSize: role.length > 12 ? 20 : 26,
     width: 512,
     height: 80,
-    fill: "#faf6ec",
+    fill: "#eef1f4",
   });
   label.position.set(0, 0.52, 0.48);
   label.rotation.x = -0.08;
   desk.add(label);
 
-  const bot = shapeMesh(botShape, botColor);
-  bot.position.y = 1.15;
-  if (dimmer) bot.scale.multiplyScalar(0.92);
-  desk.add(bot);
-
-  if (dimmer) {
-    desk.traverse((o) => {
-      if (o.isMesh && o.material && o.material.emissiveIntensity !== undefined) {
-        o.material = o.material.clone();
-        o.material.emissiveIntensity *= 0.65;
-      }
-    });
-  }
-
   world.add(desk);
-  return desk;
 }
 
 function buildOffLaneLounge() {
-  const rug = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 4.2), mat(0xd8d0c4));
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 4.2), mat(0xc8d0d8));
   rug.rotation.x = -Math.PI / 2;
   rug.position.set(6.8, 0.015, -0.2);
   world.add(rug);
@@ -425,8 +496,8 @@ function buildOffLaneLounge() {
   shelf.position.set(6.8, 0.5, -2.2);
   world.add(shelf);
 
-  OFF_LANE.forEach((b, i) => {
-    const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.38, 0.45, 12), mat(COLORS.creamDark));
+  OFF_LANE.forEach((b) => {
+    const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.38, 0.45, 12), mat(COLORS.wallSide));
     stool.position.set(b.x, 0.225, b.z);
     stool.castShadow = true;
     world.add(stool);
@@ -447,7 +518,7 @@ function buildOffLaneLounge() {
       fontSize: 18,
       width: 320,
       height: 56,
-      fill: "#6a6258",
+      fill: "#5a6470",
     });
     tag.position.set(b.x, 0.05, b.z + 0.55);
     tag.rotation.x = -Math.PI / 2;
@@ -482,6 +553,47 @@ function buildDecor() {
   }
 }
 
+function updateLaneAnimators(dt) {
+  for (const bot of laneAnimators) {
+    bot.moveTimer += dt;
+    bot.frameTimer += dt;
+
+    if (bot.mode === "idle" && bot.moveTimer > 2.6 + bot.phaseOffset * 0.35) {
+      bot.mode = "walk";
+      bot.moveTimer = 0;
+      bot.targetX = bot.homeX + (Math.random() - 0.5) * 1.1;
+      bot.targetZ = bot.homeZ + (Math.random() - 0.5) * 0.75;
+    }
+
+    if (bot.mode === "walk") {
+      const dx = bot.targetX - bot.x;
+      const dz = bot.targetZ - bot.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < 0.04) {
+        bot.mode = "idle";
+        bot.x = bot.homeX;
+        bot.z = bot.homeZ;
+        bot.frame = 0;
+      } else {
+        const speed = 0.85 * dt;
+        bot.x += (dx / dist) * speed;
+        bot.z += (dz / dist) * speed;
+      }
+      if (bot.frameTimer > 0.11) {
+        bot.frameTimer = 0;
+        bot.frame = bot.frame === 2 ? 3 : 2;
+      }
+    } else if (bot.frameTimer > 0.38) {
+      bot.frameTimer = 0;
+      bot.frame = bot.frame === 0 ? 1 : 0;
+    }
+
+    bot.sprite.material.map = bot.frames[bot.frame];
+    bot.sprite.material.needsUpdate = true;
+    bot.sprite.position.set(bot.x, 0.98, bot.z);
+  }
+}
+
 function resize() {
   const w = view.clientWidth;
   const h = view.clientHeight;
@@ -490,13 +602,32 @@ function resize() {
   renderer.setSize(w, h);
 }
 
-function init() {
+async function init() {
   buildRoom();
   buildLaneMat();
   buildWarBoard();
-  LANE_DESKS.forEach((d) => buildDesk(d.role, d.shape, d.color, d.x, d.z, false));
+  LANE_DESKS.forEach((d) => buildDesk(d.role, d.x, d.z));
   buildOffLaneLounge();
   buildDecor();
+
+  try {
+    const entries = await Promise.all(
+      Object.entries(SHEET_PATHS).map(async ([key, url]) => {
+        const tex = await loadSheet(url);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        return [key, tex];
+      }),
+    );
+    const loaded = Object.fromEntries(entries);
+    for (const desk of LANE_DESKS) {
+      const base = loaded[desk.sheet];
+      if (base) laneAnimators.push(makeLaneAnimator(base, desk.x, desk.z, desk.phase));
+    }
+  } catch (err) {
+    console.error("Lane avatar sheets failed to load", err);
+  }
 
   resize();
   window.addEventListener("resize", resize);
@@ -514,14 +645,17 @@ function init() {
 
 function animate() {
   requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.getElapsedTime();
-  const pulse = 0.45 + Math.sin(t * 2.2) * 0.2;
+  const pulse = 0.38 + Math.sin(t * 2.0) * 0.12;
   for (const m of glowMeshes) {
     if (m.material.emissiveIntensity !== undefined) {
-      m.material.emissiveIntensity = pulse + 0.35;
+      const isWaiting = m.material.color?.getHex?.() === COLORS.waitingGlow;
+      m.material.emissiveIntensity = isWaiting ? pulse + 0.55 : pulse + 0.22;
     }
   }
 
+  updateLaneAnimators(dt);
   controls.update();
   renderer.render(scene, camera);
 }
