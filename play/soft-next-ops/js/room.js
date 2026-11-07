@@ -1400,13 +1400,25 @@ function shapeMesh(shape, color) {
   return g;
 }
 
+const STUDIO_ART = [
+  { url: "../../07_comics/converted/cover-isabel-art.png", aspect: 864 / 1152, x: -7.15, y: 3.9 },
+  { url: "../../10_game_assets/characters/isabel.png", aspect: 1280 / 720, x: 6.55, y: 4.15 },
+  { url: "../../10_game_assets/characters/maisie.png", aspect: 1280 / 720, x: 8.55, y: 3.85 },
+  { url: "../../10_game_assets/characters/lotus-dragon.png", aspect: 1280 / 720, x: 10.5, y: 4.15 },
+];
+
+function loadStudioTexture(url) {
+  const tex = new THREE.TextureLoader().load(url);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 function buildDecor() {
   addPlant(-5.15, -0.4, 1.05);
   addPlant(5.3, 2.5, 0.85);
-  hangPicture(6.7, 4.55, -5.68, 0, crayonTexture("sun"));
-  hangPicture(8.05, 4.32, -5.68, 0, crayonTexture("flower"));
-  hangPicture(9.35, 4.55, -5.68, 0, crayonTexture("house"));
-  hangPicture(-6.55, 4.48, -5.68, 0, crayonTexture("night"));
+  for (const piece of STUDIO_ART) {
+    hangPicture(piece.x, piece.y, -5.68, 0, loadStudioTexture(piece.url), piece.aspect);
+  }
 }
 
 function addPlant(x, z, scale) {
@@ -1427,14 +1439,22 @@ function addPlant(x, z, scale) {
   world.add(g);
 }
 
-function hangPicture(x, y, z, rotY, tex) {
+function hangPicture(x, y, z, rotY, tex, aspect = 1.4) {
+  const maxW = 1.9;
+  const maxH = 1.55;
+  let w = maxW;
+  let h = w / aspect;
+  if (h > maxH) {
+    h = maxH;
+    w = h * aspect;
+  }
   const group = new THREE.Group();
   group.position.set(x, y, z);
   group.rotation.y = rotY;
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(1.28, 0.98, 0.06), mat(0xc5d0da));
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.16, h + 0.16, 0.06), mat(0xc5d0da));
   frame.castShadow = true;
   const art = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.08, 0.78),
+    new THREE.PlaneGeometry(w, h),
     new THREE.MeshBasicMaterial({ map: tex }),
   );
   art.position.z = 0.04;
