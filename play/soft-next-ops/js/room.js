@@ -18,14 +18,15 @@ const COLORS = {
   laneGlow: 0x9aefff,
   waiting: 0xfff1c2,
   waitingGlow: 0xffd56a,
-  art: 0xf0c14d,
-  dev: 0xe25b86,
-  tester: 0xf27d62,
-  cto: 0x7ec8ef,
-  assistant: 0xb7d0a6,
-  cfo: 0x8b7ec8,
-  governess: 0xe8c547,
-  mainBot: 0x2a2a2a,
+  art: 0xf5a33c,
+  dev: 0xf23d8a,
+  tester: 0xff6b45,
+  cto: 0x5ec8f2,
+  assistant: 0x8eefc8,
+  cfo: 0xb15cff,
+  governess: 0x3dce63,
+  mainBot: 0x1c1c1c,
+  mainBadge: 0xf5a024,
   wood: 0xe7d3b4,
   desk: 0xb4c0cb,
 };
@@ -39,19 +40,24 @@ const STATIONS = [
   { id: "done", label: "Done", icon: "done" },
 ];
 
+const DESK_Z = 0.9;
+const BACK_Z = -1.7;
+
 const LANE_DESKS = [
-  { id: "art", role: "Art", mark: "heart", color: COLORS.art, sheet: "art", x: -3.15 },
-  { id: "developer", role: "Developer", mark: "hex", color: COLORS.dev, sheet: "developer", x: -1.05 },
-  { id: "tester", role: "Tester", sub: "Marketing", mark: "tablet", color: COLORS.tester, sheet: "tester", x: 1.05 },
-  { id: "cto", role: "CTO", mark: "cloud", color: COLORS.cto, sheet: "cto", x: 3.15 },
+  { id: "art", role: "Art", mark: "heart", color: COLORS.art, sheet: "art", x: -3.15, z: DESK_Z },
+  { id: "developer", role: "Developer", mark: "hex", color: COLORS.dev, sheet: "developer", x: -1.05, z: DESK_Z },
+  { id: "tester", role: "Tester", sub: "Marketing", mark: "tablet", color: COLORS.tester, sheet: "tester", x: 1.05, z: DESK_Z },
+  { id: "cto", role: "CTO", mark: "cloud", color: COLORS.cto, sheet: "cto", x: 3.15, z: DESK_Z },
 ];
 
 const OFF_LANE = [
-  { id: "assistant", role: "Assistant", sub: "Admin", shape: "square", color: COLORS.assistant, x: 4.72 },
-  { id: "cfo", role: "CFO", sub: "Expense", shape: "teardrop", color: COLORS.cfo, x: 5.72 },
-  { id: "governess", role: "Governess", shape: "star", color: COLORS.governess, x: 6.72 },
-  { id: "main", role: "Main", sub: "Bot", shape: "blob", color: COLORS.mainBot, x: 7.72 },
+  { id: "assistant", role: "Assistant", sub: "Admin", mark: "square", shape: "square", color: COLORS.assistant, x: -3.15, z: BACK_Z },
+  { id: "cfo", role: "CFO", sub: "Expense", mark: "drop", shape: "teardrop", color: COLORS.cfo, x: -1.05, z: BACK_Z },
+  { id: "governess", role: "Governess", mark: "star", shape: "star", color: COLORS.governess, x: 1.05, z: BACK_Z },
+  { id: "main", role: "Main", sub: "Bot", mark: "blob", shape: "blob", color: COLORS.mainBot, x: 3.15, z: BACK_Z },
 ];
+
+const ALL_DESKS = [...LANE_DESKS, ...OFF_LANE];
 
 const SHEET_PATHS = {
   art: "assets/characters/art-walk-idle-sheet.png",
@@ -60,9 +66,7 @@ const SHEET_PATHS = {
   cto: "assets/characters/cto-walk-idle-sheet.png",
 };
 
-const DESK_Z = 0.78;
-const LOUNGE_Z = 0.82;
-const HOME_POS = new THREE.Vector3(2.05, 4.4, 10.85);
+const HOME_POS = new THREE.Vector3(2.15, 6.15, 13.4);
 const HOME_TARGET = new THREE.Vector3(1.7, 2.9, -0.7);
 const REDUCE_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -141,7 +145,6 @@ scene.add(world);
 
 const glows = [];
 const laneAnimators = [];
-const loungeBobs = [];
 const deskGroups = [];
 const clock = new THREE.Clock();
 const raycaster = new THREE.Raycaster();
@@ -237,6 +240,24 @@ function drawMark(ctx, mark, s = 1) {
     ctx.arc(-8 * s, 4 * s, 12 * s, 0, Math.PI * 2);
     ctx.arc(10 * s, 2 * s, 14 * s, 0, Math.PI * 2);
     ctx.arc(0, -8 * s, 11 * s, 0, Math.PI * 2);
+  } else if (mark === "square") {
+    roundPath(ctx, -18 * s, -18 * s, 36 * s, 36 * s, 10 * s);
+  } else if (mark === "drop") {
+    ctx.moveTo(0, -24 * s);
+    ctx.bezierCurveTo(22 * s, -6 * s, 16 * s, 18 * s, 0, 22 * s);
+    ctx.bezierCurveTo(-16 * s, 18 * s, -22 * s, -6 * s, 0, -24 * s);
+  } else if (mark === "star") {
+    for (let i = 0; i < 8; i++) {
+      const r = i % 2 === 0 ? 22 * s : 8 * s;
+      const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
+      const x = Math.cos(a) * r;
+      const y = Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+  } else if (mark === "blob") {
+    ctx.arc(-2 * s, 2 * s, 16 * s, 0, Math.PI * 2);
   }
   ctx.fill();
 }
@@ -672,16 +693,28 @@ function applyAnchor(sprite, sheet, col) {
 }
 
 function seatVector(desk) {
-  return new THREE.Vector3(desk.x - 0.46, SEAT_Y, DESK_Z + 1.02);
+  return new THREE.Vector3(desk.x - 0.46, SEAT_Y, desk.z + 1.02);
 }
 
 function standVector(desk) {
-  return new THREE.Vector3(desk.x - 0.46, FLOOR_Y, DESK_Z + 1.95);
+  return new THREE.Vector3(desk.x - 0.46, FLOOR_Y, desk.z + 1.95);
 }
 
-function loopVector(index) {
+function deskIndex(desk) {
+  return ALL_DESKS.findIndex((item) => item.id === desk.id);
+}
+
+function lanesFor(index) {
+  const angle = (index / ALL_DESKS.length) * Math.PI * 2;
+  return {
+    laneX: Math.cos(angle) * 0.95,
+    laneZ: Math.sin(angle) * 0.55,
+  };
+}
+
+function loopVector(index, lanes = { laneX: 0, laneZ: 0 }) {
   const p = LOOP[index % LOOP.length];
-  return new THREE.Vector3(p[0], FLOOR_Y, p[1]);
+  return new THREE.Vector3(p[0] + lanes.laneX, FLOOR_Y, p[1] + lanes.laneZ);
 }
 
 function makeLaneAnimator(sheet, desk) {
@@ -718,17 +751,14 @@ function makeLaneAnimator(sheet, desk) {
   anchor.add(shadow);
   world.add(anchor);
 
-  const index = LANE_DESKS.findIndex((d) => d.id === desk.id);
+  const index = deskIndex(desk);
   const seat = seatVector(desk);
   const stand = standVector(desk);
+  const lanes = lanesFor(index);
   const startWalking = index % 2 === 0;
   const wp = (index * 3) % LOOP.length;
-  if (startWalking) {
-    const here = loopVector(wp);
-    anchor.position.copy(here);
-  } else {
-    anchor.position.copy(seat);
-  }
+  if (startWalking) anchor.position.copy(loopVector(wp, lanes));
+  else anchor.position.copy(seat);
 
   return {
     id: desk.id,
@@ -753,7 +783,64 @@ function makeLaneAnimator(sheet, desk) {
     fadeT: 1,
     fadeFrom: 0,
     mode: startWalking ? "walk" : "idle",
-    workDur: 5.4 + index * 0.35,
+    workDur: 5.2 + (index % 4) * 0.45,
+    kind: "sheet",
+    sitLift: 0.5,
+    floorLift: FLOOR_Y,
+    ...lanes,
+  };
+}
+
+function makeMeshAnimator(desk) {
+  const body = shapeMesh(desk.shape, desk.color);
+  body.scale.setScalar(1.65);
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(0.34, 18),
+    new THREE.MeshBasicMaterial({ color: 0x667484, transparent: true, opacity: 0, depthWrite: false }),
+  );
+  shadow.rotation.x = -Math.PI / 2;
+  const anchor = new THREE.Group();
+  anchor.userData.deskId = desk.id;
+  anchor.add(body);
+  anchor.add(shadow);
+  world.add(anchor);
+
+  const index = deskIndex(desk);
+  const seat = seatVector(desk);
+  const stand = standVector(desk);
+  const lanes = lanesFor(index);
+  const startWalking = index % 2 === 0;
+  const wp = (index * 2 + 1) % LOOP.length;
+  if (startWalking) anchor.position.copy(loopVector(wp, lanes));
+  else anchor.position.copy(seat);
+
+  return {
+    id: desk.id,
+    anchor,
+    sprite: null,
+    ghost: null,
+    mesh: body,
+    shadow,
+    displayW: 1,
+    displayH: 1,
+    phase: index * 0.85,
+    seat,
+    stand,
+    state: startWalking ? "wander" : "work",
+    stateT: startWalking ? 0.3 : 0.15,
+    wp: (wp + 1) % LOOP.length,
+    wanderLeft: 6 + (index % 3),
+    from: new THREE.Vector3(),
+    frame: 0,
+    frameTimer: 0,
+    fadeT: 1,
+    fadeFrom: 0,
+    mode: startWalking ? "walk" : "idle",
+    workDur: 5.6 + (index % 4) * 0.4,
+    kind: "mesh",
+    sitLift: 0.78,
+    floorLift: 0.58,
+    ...lanes,
   };
 }
 
@@ -776,6 +863,10 @@ function smooth(t) {
 }
 
 function faceMove(bot, dx, dz) {
+  if (!bot.sprite) {
+    if (bot.mesh) bot.mesh.rotation.y = Math.abs(dx) > 0.02 ? (dx > 0 ? -0.55 : 0.55) : 0;
+    return;
+  }
   let facing = 1;
   if (Math.abs(dx) > Math.abs(dz) * 0.55 && Math.abs(dx) > 0.015) facing = Math.sign(dx);
   const w = bot.displayW * facing;
@@ -785,6 +876,7 @@ function faceMove(bot, dx, dz) {
 
 function playClip(bot, walking, dt) {
   bot.mode = walking ? "walk" : "idle";
+  if (!bot.sprite) return;
   bot.frameTimer += dt;
   const interval = walking ? 0.13 : 0.46;
   const inWalk = bot.frame >= 2;
@@ -860,11 +952,13 @@ function updateLaneAnimators(dt, elapsed) {
 
     if (bot.state === "work") {
       const bob = Math.sin(elapsed * 2.05 + bot.phase) * 0.012;
-      bot.anchor.position.set(bot.seat.x, 0.5 + bob, bot.seat.z);
+      bot.anchor.position.set(bot.seat.x, bot.sitLift + bob, bot.seat.z);
       faceMove(bot, 0, 1);
-      const sitH = bot.displayH * 0.86;
-      bot.sprite.scale.y = sitH;
-      bot.ghost.scale.y = sitH;
+      if (bot.sprite) {
+        const sitH = bot.displayH * 0.86;
+        bot.sprite.scale.y = sitH;
+        bot.ghost.scale.y = sitH;
+      }
       playClip(bot, false, dt);
       plantShadow(bot, false);
       bot.stateT += dt;
@@ -875,7 +969,7 @@ function updateLaneAnimators(dt, elapsed) {
     if (bot.state === "leave") {
       const k = smooth(Math.min(1, bot.stateT / 0.9));
       bot.anchor.position.lerpVectors(bot.from, bot.stand, k);
-      bot.anchor.position.y = THREE.MathUtils.lerp(bot.seat.y, FLOOR_Y, k);
+      bot.anchor.position.y = THREE.MathUtils.lerp(bot.sitLift, bot.floorLift, k);
       faceMove(bot, bot.stand.x - bot.seat.x, bot.stand.z - bot.seat.z);
       playClip(bot, k > 0.35, dt);
       plantShadow(bot, k > 0.45);
@@ -885,10 +979,10 @@ function updateLaneAnimators(dt, elapsed) {
     }
 
     if (bot.state === "wander") {
-      const target = loopVector(bot.wp);
+      const target = loopVector(bot.wp, bot);
       const left = moveToward(bot, target, dt);
-      const bob = Math.abs(Math.sin(elapsed * 10 + bot.phase)) * 0.045;
-      bot.anchor.position.y = FLOOR_Y + bob;
+      const bob = Math.abs(Math.sin(elapsed * 10 + bot.phase)) * (bot.sprite ? 0.045 : 0.07);
+      bot.anchor.position.y = bot.floorLift + bob;
       playClip(bot, true, dt);
       plantShadow(bot, true);
       if (left < 0.06) {
@@ -902,7 +996,7 @@ function updateLaneAnimators(dt, elapsed) {
     if (bot.state === "return") {
       if (bot.returnPhase === "toStand") {
         const left = moveToward(bot, bot.stand, dt);
-        bot.anchor.position.y = FLOOR_Y + Math.abs(Math.sin(elapsed * 10 + bot.phase)) * 0.04;
+        bot.anchor.position.y = bot.floorLift + Math.abs(Math.sin(elapsed * 10 + bot.phase)) * 0.05;
         playClip(bot, true, dt);
         plantShadow(bot, true);
         if (left < 0.07) {
@@ -913,7 +1007,7 @@ function updateLaneAnimators(dt, elapsed) {
       } else {
         const k = smooth(Math.min(1, bot.stateT / 0.85));
         bot.anchor.position.lerpVectors(bot.from, bot.seat, k);
-        bot.anchor.position.y = THREE.MathUtils.lerp(FLOOR_Y, bot.seat.y, k);
+        bot.anchor.position.y = THREE.MathUtils.lerp(bot.floorLift, bot.sitLift, k);
         faceMove(bot, 0, -1);
         playClip(bot, k < 0.55, dt);
         plantShadow(bot, k < 0.4);
@@ -925,12 +1019,6 @@ function updateLaneAnimators(dt, elapsed) {
         }
       }
     }
-  }
-}
-
-function updateLounge(elapsed) {
-  for (const bot of loungeBobs) {
-    bot.position.y = bot.userData.baseY + Math.sin(elapsed * 1.4 + bot.userData.phase) * 0.018;
   }
 }
 
@@ -1130,7 +1218,7 @@ function buildWarBoard() {
 
 function buildDesk(desk) {
   const group = new THREE.Group();
-  group.position.set(desk.x, 0, DESK_Z);
+  group.position.set(desk.x, 0, desk.z);
   group.userData.deskId = desk.id;
   group.name = `desk-${desk.id}`;
 
@@ -1216,26 +1304,24 @@ function addBotFace(parent, scale = 1) {
 
 function shapeMesh(shape, color) {
   const g = new THREE.Group();
-  const m = mat(color, { roughness: 0.7 });
+  const m = mat(color, { roughness: 0.5, emissive: color, emissiveIntensity: shape === "blob" ? 0.04 : 0.16 });
   let body;
   if (shape === "square") {
-    body = roundedCard(0.58, 0.58, 0.42, 0.12, m);
+    body = roundedCard(0.62, 0.62, 0.46, 0.16, m);
   } else if (shape === "teardrop") {
     const pts = [];
-    for (let i = 0; i <= 18; i++) {
-      const t = i / 18;
-      const y = (t - 0.42) * 0.78;
-      const r = Math.sin(Math.PI * t) * 0.28 * (0.55 + 0.55 * (1 - t));
-      pts.push(new THREE.Vector2(Math.max(r, 0.02), y));
+    for (let i = 0; i <= 20; i++) {
+      const t = i / 20;
+      const y = (t - 0.38) * 0.86;
+      const r = Math.sin(Math.PI * t) * 0.32 * (0.42 + 0.7 * (1 - t));
+      pts.push(new THREE.Vector2(Math.max(r, 0.015), y));
     }
-    body = new THREE.Mesh(new THREE.LatheGeometry(pts, 18), m);
+    body = new THREE.Mesh(new THREE.LatheGeometry(pts, 20), m);
   } else if (shape === "star") {
     const star = new THREE.Shape();
-    const outer = 0.38;
-    const inner = 0.16;
-    for (let i = 0; i < 10; i++) {
-      const r = i % 2 === 0 ? outer : inner;
-      const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+    for (let i = 0; i < 8; i++) {
+      const r = i % 2 === 0 ? 0.46 : 0.16;
+      const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
       const px = Math.cos(a) * r;
       const py = Math.sin(a) * r;
       if (i === 0) star.moveTo(px, py);
@@ -1243,80 +1329,33 @@ function shapeMesh(shape, color) {
     }
     star.closePath();
     body = new THREE.Mesh(
-      new THREE.ExtrudeGeometry(star, { depth: 0.22, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02 }),
+      new THREE.ExtrudeGeometry(star, { depth: 0.2, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02 }),
       m,
     );
-    body.position.z = -0.11;
+    body.position.z = -0.1;
   } else {
-    body = new THREE.Mesh(new THREE.SphereGeometry(0.36, 20, 16), m);
-    body.scale.set(1.18, 0.92, 1.02);
+    body = new THREE.Mesh(new THREE.SphereGeometry(0.34, 22, 16), m);
+    body.scale.set(1.15, 1.05, 1.05);
   }
   body.castShadow = true;
   g.add(body);
-  const face = addBotFace(g, shape === "blob" ? 0.85 : 0.95);
-  face.position.z = shape === "star" ? 0.16 : 0.2;
-  if (shape === "teardrop") face.position.y = 0.02;
-  return g;
-}
-
-function buildOffLaneLounge() {
-  const lounge = new THREE.Group();
-  lounge.name = "lounge";
-  const rug = new THREE.Mesh(new THREE.PlaneGeometry(4.15, 2.15), mat(0xd0d8de));
-  rug.rotation.x = -Math.PI / 2;
-  rug.position.set(6.22, 0.018, LOUNGE_Z);
-  rug.receiveShadow = true;
-  lounge.add(rug);
-
-  const rim = new THREE.Mesh(
-    new THREE.RingGeometry(0.92, 1.02, 40),
-    mat(0xb7c4ce),
-  );
-  rim.rotation.x = -Math.PI / 2;
-  rim.scale.set(2.15, 1.12, 1);
-  rim.position.set(6.22, 0.022, LOUNGE_Z);
-  lounge.add(rim);
-
-  OFF_LANE.forEach((b, i) => {
-    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.4, 0.28, 18), mat(0xaeb9c4));
-    base.position.set(b.x, 0.14, LOUNGE_Z);
-    base.castShadow = true;
-    lounge.add(base);
-
-    const cushion = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.4, 0.4, 0.16, 18),
-      mat(b.color, { roughness: 0.75 }),
+  const face = addBotFace(g, shape === "blob" ? 0.9 : 1);
+  face.position.z = shape === "star" ? 0.16 : 0.24;
+  if (shape === "teardrop") face.position.y = -0.02;
+  if (shape === "blob") {
+    const badge = new THREE.Mesh(
+      new THREE.SphereGeometry(0.11, 12, 10),
+      mat(COLORS.mainBadge, { emissive: COLORS.mainBadge, emissiveIntensity: 0.45 }),
     );
-    cushion.position.set(b.x, 0.34, LOUNGE_Z);
-    cushion.castShadow = true;
-    lounge.add(cushion);
-
-    const bot = shapeMesh(b.shape, b.color);
-    bot.position.set(b.x, 0.72, LOUNGE_Z);
-    bot.scale.setScalar(0.82);
-    bot.userData.baseY = bot.position.y;
-    bot.userData.phase = i * 0.8;
-    lounge.add(bot);
-    loungeBobs.push(bot);
-
-    const tag = textPlane(b.sub ? [b.role, b.sub] : b.role, 0.92, b.sub ? 0.36 : 0.24, {
-      fontSize: b.role.length > 8 ? 36 : 44,
-      width: 384,
-      height: b.sub ? 160 : 96,
-      fill: COLORS.ink,
-      bg: "#f7f9fb",
-      radius: 28,
-    });
-    tag.position.set(b.x, 0.16, LOUNGE_Z + 0.46);
-    lounge.add(tag);
-  });
-
-  world.add(lounge);
+    badge.position.set(0.26, 0.24, 0.18);
+    g.add(badge);
+  }
+  return g;
 }
 
 function buildDecor() {
   addPlant(-5.15, -0.4, 1.05);
-  addPlant(4.55, -1.35, 0.85);
+  addPlant(5.3, 2.5, 0.85);
   hangPicture(6.7, 4.55, -5.68, 0, crayonTexture("sun"));
   hangPicture(8.05, 4.32, -5.68, 0, crayonTexture("flower"));
   hangPicture(9.35, 4.55, -5.68, 0, crayonTexture("house"));
@@ -1366,7 +1405,7 @@ function setFocus(id) {
 }
 
 function labelFor(id) {
-  const desk = LANE_DESKS.find((d) => d.id === id);
+  const desk = ALL_DESKS.find((d) => d.id === id);
   return desk ? desk.role : id;
 }
 
@@ -1480,7 +1519,6 @@ function animate() {
 
   updateGlows(dt, elapsed);
   updateLaneAnimators(dt, elapsed);
-  updateLounge(elapsed);
   renderer.render(scene, camera);
 }
 
@@ -1538,8 +1576,7 @@ async function init() {
   buildRoom();
   buildLaneRug();
   buildWarBoard();
-  const desks = LANE_DESKS.map((desk) => buildDesk(desk));
-  buildOffLaneLounge();
+  const desks = ALL_DESKS.map((desk) => buildDesk(desk));
   buildDecor();
   resize();
   window.addEventListener("resize", resize);
@@ -1553,15 +1590,19 @@ async function init() {
       }),
     );
     for (const desk of desks) {
+      if (!desk.sheet) continue;
       const sheet = loaded[desk.sheet];
       if (sheet) laneAnimators.push(makeLaneAnimator(sheet, desk));
     }
   } catch (err) {
     console.error(err);
   }
+  for (const desk of desks) {
+    if (!desk.sheet) laneAnimators.push(makeMeshAnimator(desk));
+  }
 
   loadingEl.classList.add("hidden");
-  document.body.dataset.room = laneAnimators.length === LANE_DESKS.length ? "ready" : "partial";
+  document.body.dataset.room = laneAnimators.length === ALL_DESKS.length ? "ready" : "partial";
   window.__hammer = {
     get bots() {
       return laneAnimators.map((b) => ({
