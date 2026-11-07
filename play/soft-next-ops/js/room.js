@@ -18,15 +18,15 @@ const COLORS = {
   laneGlow: 0x5ee0f0,
   waiting: 0xfff0c4,
   waitingGlow: 0xffc84a,
-  art: 0xf5c518,
-  dev: 0xe83898,
-  tester: 0xf0957a,
-  cto: 0x28c8e8,
-  assistant: 0x8fb896,
-  cfo: 0x9b6fe8,
-  governess: 0xecc85a,
+  art: 0xf59312,
+  dev: 0xf93498,
+  tester: 0xfd690f,
+  cto: 0x13b7a2,
+  assistant: 0x1e86fc,
+  cfo: 0x8f59f9,
+  governess: 0x14c16f,
   mainBot: 0x000000,
-  mainBadge: 0xf5a832,
+  mainBadge: 0xf59312,
   wood: 0xc49a6c,
   desk: 0x8f5e32,
   plant: 0x3a8f4a,
@@ -82,7 +82,7 @@ const BACK_Z = -2.35;
 const LANE_DESKS = [
   { id: "art", role: "Art", mark: "heart", shape: "heart", color: COLORS.art, x: -4.7, z: DESK_Z },
   { id: "developer", role: "Developer", mark: "hex", shape: "hex", color: COLORS.dev, x: -1.55, z: DESK_Z },
-  { id: "tester", role: "Tester", sub: "Marketing", mark: "square", shape: "square", color: COLORS.tester, x: 1.55, z: DESK_Z },
+  { id: "tester", role: "Tester", sub: "Marketing", mark: "wedge", shape: "wedge", color: COLORS.tester, x: 1.55, z: DESK_Z },
   { id: "cto", role: "CTO", mark: "cloud", shape: "cloud", color: COLORS.cto, x: 4.7, z: DESK_Z },
 ];
 
@@ -230,6 +230,27 @@ function canvasTexture(width, height, draw) {
   return tex;
 }
 
+function notionMarkTexture() {
+  return canvasTexture(128, 128, (ctx) => {
+    roundPath(ctx, 6, 6, 116, 116, 28);
+    ctx.fillStyle = "#1b2836";
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(30, 28, 16, 72);
+    ctx.beginPath();
+    ctx.moveTo(52, 28);
+    ctx.lineTo(74, 28);
+    ctx.lineTo(98, 62);
+    ctx.lineTo(98, 28);
+    ctx.lineTo(82, 28);
+    ctx.lineTo(64, 54);
+    ctx.lineTo(64, 100);
+    ctx.lineTo(52, 100);
+    ctx.closePath();
+    ctx.fill();
+  });
+}
+
 function textPlane(lines, w, h, opts = {}) {
   const tex = canvasTexture(opts.width || 512, opts.height || 128, (ctx, width, height) => {
     if (opts.bg) {
@@ -283,6 +304,11 @@ function drawMark(ctx, mark, s = 1) {
     ctx.arc(0, -8 * s, 11 * s, 0, Math.PI * 2);
   } else if (mark === "square") {
     roundPath(ctx, -18 * s, -18 * s, 36 * s, 36 * s, 10 * s);
+  } else if (mark === "wedge") {
+    ctx.moveTo(-16 * s, -20 * s);
+    ctx.lineTo(22 * s, 0);
+    ctx.lineTo(-16 * s, 20 * s);
+    ctx.closePath();
   } else if (mark === "drop") {
     ctx.moveTo(0, -24 * s);
     ctx.bezierCurveTo(22 * s, -6 * s, 16 * s, 18 * s, 0, 22 * s);
@@ -961,13 +987,31 @@ function beginLeave(bot) {
   bot.from.copy(bot.anchor.position);
 }
 
-function pointBlocked(x, z) {
+const BOT_RADIUS = 0.55;
+
+function deskObstacles() {
+  const list = [];
   for (const desk of ALL_DESKS) {
-    const dx = x - desk.x;
-    const dz = z - (desk.z + 0.35);
-    if (dx * dx + dz * dz < 1.05 * 1.05) return true;
+    list.push({ x: desk.x, z: desk.z, r: 0.98 });
+    list.push({ x: desk.x, z: desk.z - 0.95, r: 0.58 });
+  }
+  return list;
+}
+
+function hitsSolid(x, z, selfId) {
+  for (const block of deskObstacles()) {
+    if (Math.hypot(x - block.x, z - block.z) < block.r + BOT_RADIUS * 0.72) return true;
+  }
+  for (const other of laneAnimators) {
+    if (!other || other.id === selfId) continue;
+    const p = other.anchor.position;
+    if (Math.hypot(x - p.x, z - p.z) < BOT_RADIUS * 2) return true;
   }
   return false;
+}
+
+function pointBlocked(x, z) {
+  return hitsSolid(x, z, null);
 }
 
 function randomFloorPoint(from) {
@@ -1001,8 +1045,18 @@ function moveToward(bot, target, dt) {
   const dz = target.z - pos.z;
   const dist = Math.hypot(dx, dz) || 0.0001;
   const step = Math.min(WALK_SPEED * dt, dist);
-  pos.x += (dx / dist) * step;
-  pos.z += (dz / dist) * step;
+  const nx = pos.x + (dx / dist) * step;
+  const nz = pos.z + (dz / dist) * step;
+  if (!hitsSolid(nx, nz, bot.id)) {
+    pos.x = nx;
+    pos.z = nz;
+  } else if (!hitsSolid(nx, pos.z, bot.id)) {
+    pos.x = nx;
+  } else if (!hitsSolid(pos.x, nz, bot.id)) {
+    pos.z = nz;
+  } else if (bot.state === "wander") {
+    bot.goal = randomFloorPoint(pos);
+  }
   faceMove(bot, dx, dz);
   return dist - step;
 }
@@ -1110,16 +1164,22 @@ function buildRoom() {
   right.position.set(11.6, 4.1, 1.2);
   world.add(right);
 
-  const sign = roundedCard(7.5, 1.02, 0.05, 0.18, mat(0xf0e6d8));
-  sign.position.set(-0.2, 5.18, -5.74);
+  const sign = roundedCard(8.2, 1.15, 0.05, 0.18, mat(0xf0e6d8));
+  sign.position.set(0.15, 5.18, -5.74);
   world.add(sign);
-  const title = textPlane("Hammer Studio", 7.1, 0.78, {
-    fontSize: 118,
+  const logo = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.72, 0.72),
+    new THREE.MeshBasicMaterial({ map: notionMarkTexture(), transparent: true }),
+  );
+  logo.position.set(-3.55, 5.18, -5.68);
+  world.add(logo);
+  const title = textPlane("Hammer Studio", 6.2, 0.78, {
+    fontSize: 112,
     width: 1200,
     height: 200,
     fill: "#1b2836",
   });
-  title.position.set(-0.2, 5.18, -5.68);
+  title.position.set(0.45, 5.18, -5.66);
   world.add(title);
 
   const cornice = new THREE.Mesh(new THREE.BoxGeometry(22, 0.1, 0.12), mat(COLORS.trim));
@@ -1398,13 +1458,13 @@ function buildWarBoard(activeId = gateStageId) {
       card.add(badge);
     }
 
-    const label = textPlane(st.label, cardW * 0.92, isActive ? 0.48 : 0.34, {
-      fontSize: st.label.length > 8 ? 40 : 48,
-      width: 512,
-      height: 128,
+    const label = textPlane(st.label, cardW * 0.98, isActive ? 0.62 : 0.52, {
+      fontSize: st.label.length > 8 ? 64 : 84,
+      width: 768,
+      height: 200,
       fill: isActive ? "#6a5420" : COLORS.ink,
     });
-    label.position.set(0, isActive ? -0.05 : -0.58, 0.06);
+    label.position.set(0, isActive ? -0.08 : -0.62, 0.07);
     card.add(label);
     board.add(card);
   });
@@ -1558,21 +1618,30 @@ function shapeMesh(shape, color) {
       g.add(puff);
     }
     addGrokEyes(g, { y: 0.02, z: 0.28, spread: 0.1, radius: 0.065 });
+  } else if (shape === "wedge") {
+    const wedge = new THREE.Shape();
+    wedge.moveTo(-0.34, -0.4);
+    wedge.lineTo(0.46, 0);
+    wedge.lineTo(-0.34, 0.4);
+    wedge.closePath();
+    g.add(flatShape(wedge, 0.36, m));
+    addGrokEyes(g, { y: 0.02, z: 0.24, spread: 0.1, radius: 0.065 });
   } else if (shape === "square") {
     g.add(roundedCard(0.7, 0.7, 0.46, 0.18, m));
     addGrokEyes(g, { y: 0.02, z: 0.3, spread: 0.14, radius: 0.075 });
   } else if (shape === "teardrop") {
     const pts = [];
-    for (let i = 0; i <= 20; i++) {
-      const t = i / 20;
-      const y = (t - 0.38) * 0.9;
-      const r = Math.sin(Math.PI * t) * 0.34 * (0.4 + 0.75 * (1 - t));
-      pts.push(new THREE.Vector2(Math.max(r, 0.02), y));
+    for (let i = 0; i <= 28; i++) {
+      const t = i / 28;
+      const y = 0.5 - t * 1.02;
+      const belly = Math.sin(Math.pow(t, 0.55) * Math.PI);
+      const r = Math.max(0.012, belly * 0.4 * (0.25 + 0.85 * t));
+      pts.push(new THREE.Vector2(r, y));
     }
-    const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 22), m);
+    const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 24), m);
     body.castShadow = true;
     g.add(body);
-    addGrokEyes(g, { y: -0.02, z: 0.28, spread: 0.1, radius: 0.065 });
+    addGrokEyes(g, { y: -0.08, z: 0.32, spread: 0.1, radius: 0.06 });
   } else if (shape === "star") {
     const star = new THREE.Shape();
     for (let i = 0; i < 8; i++) {
@@ -1603,10 +1672,10 @@ function shapeMesh(shape, color) {
 }
 
 const STUDIO_ART = [
-  { url: "../../07_comics/converted/cover-isabel-art.png", aspect: 864 / 1152, x: -7.15, y: 3.9 },
-  { url: "../../10_game_assets/characters/isabel.png", aspect: 1280 / 720, x: 6.55, y: 4.15 },
-  { url: "../../10_game_assets/characters/maisie.png", aspect: 1280 / 720, x: 8.55, y: 3.85 },
-  { url: "../../10_game_assets/characters/lotus-dragon.png", aspect: 1280 / 720, x: 10.5, y: 4.15 },
+  { url: "../../10_game_assets/demo/queen-team-up.png", aspect: 1, x: -7.35, y: 3.55 },
+  { url: "../../10_game_assets/demo/dragon-ville-picnic.png", aspect: 1, x: 6.55, y: 3.7 },
+  { url: "../../10_game_assets/demo/spelling-vs-lennon.png", aspect: 1, x: 8.2, y: 3.45 },
+  { url: "../../10_game_assets/demo/dragon-flight.png", aspect: 1, x: 9.85, y: 3.7 },
 ];
 
 function loadStudioTexture(url) {
@@ -1615,25 +1684,89 @@ function loadStudioTexture(url) {
   return tex;
 }
 
-function addDeskProps(group, color, deskId, dimmed = false) {
-  const paper = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.025, 0.32), mat(0xfff8ee));
-  paper.position.set(-0.42, 0.84, -0.08);
-  const paper2 = paper.clone();
-  paper2.position.set(-0.38, 0.865, -0.05);
-  paper2.rotation.y = 0.15;
-  const mugColor = dimmed ? (color & 0xfefefe) >> 1 : color;
-  const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.12, 12), mat(mugColor, { roughness: 0.42 }));
-  mug.position.set(0.48, 0.9, -0.18);
-  const accent = DESK_CUP_ACCENTS[deskId] || 0x2eb8b8;
-  const cupColor = dimmed ? 0xb8a898 : accent;
-  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.055, 0.16, 10), mat(cupColor, { roughness: 0.4 }));
-  cup.position.set(0.18, 0.92, -0.22);
-  for (const [dx, h] of [[-0.02, 0.1], [0, 0.13], [0.02, 0.08]]) {
-    const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, h, 6), mat(0x5b6b7c));
-    pen.position.set(0.18 + dx, 1.02, -0.22);
-    group.add(pen);
+function prop(mesh) {
+  mesh.castShadow = true;
+  return mesh;
+}
+
+function addDeskProps(group, color, deskId) {
+  const wood = mat(0xe7c89a, { roughness: 0.6 });
+  const paper = mat(0xfff8ee, { roughness: 0.85 });
+  const ink = mat(0x243044);
+  if (deskId === "art") {
+    const box = prop(new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.22), mat(color)));
+    box.position.set(-0.42, 0.94, -0.12);
+    group.add(box);
+    for (const [dx, c] of [[-0.08, 0xf93498], [0, 0x1e86fc], [0.08, 0x14c16f]]) {
+      const crayon = prop(new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.16, 6), mat(c)));
+      crayon.position.set(-0.42 + dx, 1.08, -0.12);
+      group.add(crayon);
+    }
+    const palette = prop(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 16), wood));
+    palette.position.set(0.12, 0.86, -0.08);
+    group.add(palette);
+    const pencil = prop(new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.28, 6), mat(0x8a5a32)));
+    pencil.rotation.z = 0.7;
+    pencil.position.set(0.42, 0.96, -0.05);
+    group.add(pencil);
+  } else if (deskId === "developer") {
+    const base = prop(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.3), mat(0xf4f1ea)));
+    base.position.set(-0.1, 0.86, -0.06);
+    const screen = prop(new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.24, 0.03), mat(0x243044)));
+    screen.position.set(-0.08, 1.02, -0.16);
+    screen.rotation.x = -0.35;
+    const mug = prop(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.12, 12), mat(color)));
+    mug.position.set(0.42, 0.9, -0.08);
+    group.add(base, screen, mug);
+  } else if (deskId === "tester") {
+    const pad = prop(new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.03, 0.4), paper));
+    pad.position.set(-0.2, 0.85, -0.02);
+    const glass = prop(new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.018, 8, 16), mat(0x3a4a5c)));
+    glass.rotation.x = Math.PI / 2;
+    glass.position.set(0.36, 0.88, -0.02);
+    const handle = prop(new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.16, 6), mat(0x3a4a5c)));
+    handle.rotation.z = 0.8;
+    handle.position.set(0.48, 0.9, 0.08);
+    group.add(pad, glass, handle);
+  } else if (deskId === "cto") {
+    const board = prop(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.04, 0.28), mat(0xf7e27a)));
+    board.position.set(-0.16, 0.86, -0.06);
+    for (const [dx, dz, c] of [[-0.08, 0.04, 0xf93498], [0.06, -0.02, 0x1e86fc], [0.02, 0.08, 0x14c16f]]) {
+      const note = prop(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.012, 0.1), mat(c)));
+      note.position.set(-0.16 + dx, 0.89, -0.06 + dz);
+      group.add(note);
+    }
+    const mug = prop(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.12, 12), mat(color)));
+    mug.position.set(0.4, 0.9, -0.08);
+    group.add(board, mug);
+  } else if (deskId === "assistant") {
+    const clip = prop(new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.03, 0.36), paper));
+    clip.position.set(0, 0.86, -0.04);
+    const clasp = prop(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.06), mat(0x8aa0b0)));
+    clasp.position.set(0, 0.9, -0.18);
+    group.add(clip, clasp);
+  } else if (deskId === "cfo") {
+    const ledger = prop(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.04, 0.26), mat(0xf3efe4)));
+    ledger.position.set(-0.16, 0.86, -0.04);
+    for (let i = 0; i < 3; i++) {
+      const coin = prop(new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.025, 14), mat(0xf5c518)));
+      coin.position.set(0.34, 0.85 + i * 0.03, -0.06);
+      group.add(coin);
+    }
+    group.add(ledger);
+  } else if (deskId === "governess") {
+    const book = prop(new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.05, 0.34), mat(color)));
+    book.position.set(-0.1, 0.86, -0.02);
+    const star = prop(new THREE.Mesh(new THREE.OctahedronGeometry(0.08, 0), mat(0xf5c518)));
+    star.position.set(0.32, 0.92, -0.02);
+    group.add(book, star);
+  } else {
+    const tile = prop(new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.04, 0.28), mat(0x2a2a2a)));
+    tile.position.set(0, 0.86, -0.04);
+    const star = prop(new THREE.Mesh(new THREE.OctahedronGeometry(0.07, 0), mat(COLORS.mainBadge)));
+    star.position.set(0, 0.94, -0.04);
+    group.add(tile, star);
   }
-  group.add(paper, paper2, mug, cup);
 }
 
 function addBookcase(x, z) {

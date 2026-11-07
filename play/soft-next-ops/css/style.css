@@ -56,6 +56,19 @@ body,
   z-index: 2;
 }
 
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 28px;
+  height: 28px;
+  display: block;
+  flex: none;
+}
+
 .brand {
   font-weight: 800;
   font-size: 1.35rem;

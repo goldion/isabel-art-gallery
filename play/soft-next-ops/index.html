@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=6" />
+  <link rel="stylesheet" href="css/style.css?v=7" />
   <script type="importmap">
   {
     "imports": {
@@ -21,16 +21,22 @@
   <div id="app">
     <div id="view"></div>
     <header id="hud">
-      <div class="brand">Hammer Studio</div>
+      <div class="brand-lockup">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+          <rect width="32" height="32" rx="7" fill="#1b2836" />
+          <path fill="#fff" d="M8 7h4v18H8zm6 0h5.2L26 16.2V7h-4v6.4L16.2 7H14zm0 8.2L22.6 25H27l-8.4-9.2z" />
+        </svg>
+        <div class="brand">Hammer Studio</div>
+      </div>
     </header>
     <div id="hint">Drag to look · scroll to zoom · click a desk</div>
     <div id="loading" role="status" aria-live="polite">
       <div class="loading-card">
-        <p class="brand">Hammer Studio</p>
+        <p class="brand-lockup"><span class="brand">Hammer Studio</span></p>
         <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
       </div>
     </div>
   </div>
-  <script type="module" src="js/room.js?v=13"></script>
+  <script type="module" src="js/room.js?v=14"></script>
 </body>
 </html>
