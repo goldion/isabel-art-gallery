@@ -1,6 +1,12 @@
 {
   "stage": "pick",
   "stages": ["pick", "soft-pass", "waiting-go", "tip", "smoke", "done"],
-  "updatedAt": "2026-11-07T07:50:00.000Z",
+  "bots": {
+    "art": "idle",
+    "developer": "idle",
+    "tester": "idle"
+  },
+  "botStatuses": ["idle", "cooking", "waiting-go", "smoking"],
+  "updatedAt": "2026-11-07T09:50:00.000Z",
   "source": "static"
 }

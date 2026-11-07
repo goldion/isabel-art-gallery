@@ -51,11 +51,21 @@ const DESK_CUP_ACCENTS = {
 };
 
 const GATE_STAGES = ["pick", "soft-pass", "waiting-go", "tip", "smoke", "done"];
+const GATE_BOT_IDS = ["art", "developer", "tester"];
+const GATE_BOT_STATUSES = ["idle", "cooking", "waiting-go", "smoking"];
 const GATE_API =
   (typeof window !== "undefined" && window.__SOFT_PASS_GATE_URL) ||
   "https://soft-pass-gate.isabel-art-goldion.workers.dev";
 const GATE_STATIC = new URL("../gate-status.json", import.meta.url).href;
 const GATE_POLL_MS = 12_000;
+
+/** Seat glow from Worker `bots` — not ambient walker animation. */
+const BOT_SEAT_GLOW = {
+  idle: { ring: 0, emissive: 0.12, tint: null },
+  cooking: { ring: 0.78, emissive: 0.58, tint: COLORS.waitingGlow },
+  "waiting-go": { ring: 0.88, emissive: 0.65, tint: COLORS.waitingGlow },
+  smoking: { ring: 0.72, emissive: 0.5, tint: 0xf0a8a0 },
+};
 
 const STATIONS = [
   { id: "pick", label: "Pick", icon: "pick" },
@@ -179,6 +189,7 @@ const pointer = new THREE.Vector2();
 
 let focusedId = null;
 let gateStageId = "pick";
+let gateBots = { art: "idle", developer: "idle", tester: "idle" };
 let warBoardGroup = null;
 let gatePollTimer = null;
 let introT = REDUCE_MOTION ? 1 : 0;
@@ -1220,6 +1231,60 @@ function normalizeGateStage(stage) {
   return GATE_STAGES.includes(id) ? id : null;
 }
 
+function defaultBotsForStage(stage) {
+  const idle = () => Object.fromEntries(GATE_BOT_IDS.map((id) => [id, "idle"]));
+  switch (stage) {
+    case "soft-pass":
+      return { art: "cooking", developer: "idle", tester: "idle" };
+    case "waiting-go":
+      return { art: "waiting-go", developer: "waiting-go", tester: "idle" };
+    case "tip":
+      return { art: "idle", developer: "cooking", tester: "idle" };
+    case "smoke":
+      return { art: "idle", developer: "idle", tester: "smoking" };
+    default:
+      return idle();
+  }
+}
+
+function normalizeGateBots(raw, stage) {
+  const base = defaultBotsForStage(stage);
+  if (!raw || typeof raw !== "object") return base;
+  for (const id of GATE_BOT_IDS) {
+    const s = String(raw[id] ?? "").trim();
+    if (GATE_BOT_STATUSES.includes(s)) base[id] = s;
+  }
+  return base;
+}
+
+function gateBotsChanged(next) {
+  return GATE_BOT_IDS.some((id) => gateBots[id] !== next[id]);
+}
+
+function applyGateSeatStatus(bots) {
+  gateBots = { ...bots };
+  for (const item of glows) {
+    if (item.kind !== "desk" || !GATE_BOT_IDS.includes(item.id)) continue;
+    const status = gateBots[item.id] || "idle";
+    const spec = BOT_SEAT_GLOW[status] || BOT_SEAT_GLOW.idle;
+    item.seatStatus = status;
+    item.ringTarget = spec.ring;
+    if (spec.tint) item.material.color.setHex(spec.tint);
+    else if (item.baseColor != null) item.material.color.setHex(item.baseColor);
+    const group = deskGroups.find((g) => g.userData.deskId === item.id);
+    const lock = group?.userData.seatLock;
+    if (lock?.material) {
+      const em = spec.emissive ?? 0.12;
+      lock.material.emissiveIntensity = em;
+      if (spec.tint && status !== "idle") {
+        lock.material.emissive.setHex(spec.tint);
+      } else if (group.userData.seatBaseColor != null) {
+        lock.material.emissive.setHex(group.userData.seatBaseColor);
+      }
+    }
+  }
+}
+
 async function loadGateStage() {
   const sources = [
     { url: GATE_API, label: "worker" },
@@ -1231,21 +1296,34 @@ async function loadGateStage() {
       if (!res.ok) continue;
       const data = await res.json();
       const stage = normalizeGateStage(data?.stage);
-      if (stage) return { stage, source: data.source || label };
+      if (!stage) continue;
+      const bots = normalizeGateBots(data?.bots, stage);
+      return { stage, bots, source: data.source || label };
     } catch {
       /* try next source */
     }
   }
-  return { stage: gateStageId, source: "default" };
+  return {
+    stage: gateStageId,
+    bots: normalizeGateBots(gateBots, gateStageId),
+    source: "default",
+  };
+}
+
+function applyGateSnapshot({ stage, bots }) {
+  let boardDirty = false;
+  if (stage && stage !== gateStageId) {
+    gateStageId = stage;
+    buildWarBoard(gateStageId);
+    boardDirty = true;
+  }
+  const nextBots = normalizeGateBots(bots, gateStageId);
+  if (boardDirty || gateBotsChanged(nextBots)) applyGateSeatStatus(nextBots);
 }
 
 function startGatePolling() {
   const tick = async () => {
-    const { stage } = await loadGateStage();
-    if (stage && stage !== gateStageId) {
-      gateStageId = stage;
-      buildWarBoard(gateStageId);
-    }
+    applyGateSnapshot(await loadGateStage());
   };
   tick();
   if (gatePollTimer) clearInterval(gatePollTimer);
@@ -1362,6 +1440,8 @@ function buildDesk(desk) {
   );
   lock.position.set(0, 0.58, 0.42);
   group.add(lock);
+  group.userData.seatLock = lock;
+  group.userData.seatBaseColor = desk.color;
 
   const plateTex = nameplateTexture(desk.role, desk.sub, desk.mark, `#${desk.color.toString(16).padStart(6, "0")}`);
   const plate = new THREE.Mesh(
@@ -1397,7 +1477,14 @@ function buildDesk(desk) {
   ring.rotation.x = -Math.PI / 2;
   ring.position.y = 0.84;
   group.add(ring);
-  glows.push({ kind: "desk", id: desk.id, material: ring.material });
+  glows.push({
+    kind: "desk",
+    id: desk.id,
+    material: ring.material,
+    baseColor: desk.color,
+    seatStatus: "idle",
+    ringTarget: 0,
+  });
 
   world.add(group);
   deskGroups.push(group);
@@ -1755,8 +1842,14 @@ function updateGlows(dt, elapsed) {
     else if (item.kind === "wait-halo") item.material.opacity = item.opacityBase + pulse * 0.28;
     else if (item.kind === "lane") item.material.opacity = 0.36 + pulse * 0.24;
     else if (item.kind === "desk") {
-      const target = item.id === focusedId ? 0.92 : 0;
-      item.material.opacity += (target - item.material.opacity) * Math.min(1, dt * 8);
+      const live = item.seatStatus && item.seatStatus !== "idle";
+      if (live) {
+        const base = item.ringTarget ?? 0.7;
+        item.material.opacity = base * (0.62 + pulse * 0.38);
+      } else {
+        const target = item.id === focusedId ? 0.92 : 0;
+        item.material.opacity += (target - item.material.opacity) * Math.min(1, dt * 8);
+      }
     }
   }
 }
@@ -1856,10 +1949,12 @@ async function init() {
   await readyFonts();
   const gate = await loadGateStage();
   gateStageId = gate.stage;
+  gateBots = normalizeGateBots(gate.bots, gateStageId);
   buildRoom();
   buildLaneRug();
   buildWarBoard(gateStageId);
   const desks = ALL_DESKS.map((desk) => buildDesk(desk));
+  applyGateSeatStatus(gateBots);
   buildDecor();
   resize();
   window.addEventListener("resize", resize);
@@ -1888,13 +1983,13 @@ async function init() {
     get gateStage() {
       return gateStageId;
     },
+    get gateBots() {
+      return { ...gateBots };
+    },
     refreshGate: async () => {
       const next = await loadGateStage();
-      if (next.stage !== gateStageId) {
-        gateStageId = next.stage;
-        buildWarBoard(gateStageId);
-      }
-      return gateStageId;
+      applyGateSnapshot(next);
+      return { stage: gateStageId, bots: { ...gateBots } };
     },
   };
   startGatePolling();
