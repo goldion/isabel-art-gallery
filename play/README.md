@@ -12,6 +12,6 @@ Built output only — no game source trees. Published for anonymous play at `/pl
 | `dragon-ville-picnic/` | Isabel Art Gallery (Soft PASS pack) | attached `picnic-softpass-assets` | 2D hatch-and-shoo Demo · 17 PNG Soft PASS (no snow field) |
 | `queen-team-up/` | Isabel Art Gallery (Soft PASS pack) | attached `queen-team-up-softpass-assets` | Lily-pad pond jumper · pick three, hop, join the mermaid, beat Gugu |
 | `spelling-vs-lennon/` | Isabel Art Gallery (Soft PASS pack) | attached `spelling-vs-lennon-softpass-assets` | 2D hallway spelling Demo · 9 PNG Soft PASS #3 |
-| `soft-next-ops/` | Isabel Art Gallery (Soft PASS pack) | moodboard v3 · Soft FAIL→Soft PASS tip | Three.js Hammer Studio · cooler palette · Soft PASS war-room (Waiting Go glow) · lane bots idle+walk sheets |
+| `soft-next-ops/` | Isabel Art Gallery (Soft PASS pack) | moodboard v3 · Soft FAIL→Soft PASS tip | Three.js Hammer Studio · cooler palette · row desks on the blue lane · Waiting Go card glow · keyed idle+walk sheets (labels cropped) · click a desk |
 
 Legacy picnic showcase stickers remain under `showcase/picnic/`; Demo hub links `dragon-ville-picnic/`, `queen-team-up/`, `spelling-vs-lennon/`, and `soft-next-ops/` play slices only.

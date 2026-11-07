@@ -4,7 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Hammer Studio</title>
-  <link rel="stylesheet" href="css/style.css?v=2" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=3" />
   <script type="importmap">
   {
     "imports": {
@@ -20,9 +23,14 @@
     <header id="hud">
       <div class="brand">Hammer Studio</div>
     </header>
-    <div id="hint">Drag to look · scroll to zoom</div>
-    <div id="loading">Opening the ops room…</div>
+    <div id="hint">Drag to look · scroll to zoom · click a desk</div>
+    <div id="loading" role="status" aria-live="polite">
+      <div class="loading-card">
+        <p class="brand">Hammer Studio</p>
+        <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+      </div>
+    </div>
   </div>
-  <script type="module" src="js/room.js?v=2"></script>
+  <script type="module" src="js/room.js?v=3"></script>
 </body>
 </html>
