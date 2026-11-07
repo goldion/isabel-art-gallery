@@ -1,0 +1,6 @@
+{
+  "stage": "pick",
+  "stages": ["pick", "soft-pass", "waiting-go", "tip", "smoke", "done"],
+  "updatedAt": "2026-11-07T07:50:00.000Z",
+  "source": "static"
+}
