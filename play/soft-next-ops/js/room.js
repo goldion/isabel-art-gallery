@@ -1777,10 +1777,10 @@ function shapeMesh(shape, color, deskId) {
 }
 
 const STUDIO_ART = [
-  { url: "../../10_game_assets/demo/queen-team-up.png", aspect: 1, x: -7.35, y: 3.55 },
-  { url: "../../10_game_assets/demo/dragon-ville-picnic.png", aspect: 1, x: 6.55, y: 3.7 },
-  { url: "../../10_game_assets/demo/spelling-vs-lennon.png", aspect: 1, x: 8.2, y: 3.45 },
-  { url: "../../10_game_assets/demo/dragon-flight.png", aspect: 1, x: 9.85, y: 3.7 },
+  { url: "../../07_comics/converted/cover-isabel-art.png", aspect: 864 / 1152, x: -10.05, y: 3.95 },
+  { url: "../../10_game_assets/characters/isabel.png", aspect: 1280 / 720, x: -7.7, y: 3.95 },
+  { url: "../../10_game_assets/characters/maisie.png", aspect: 1280 / 720, x: 7.35, y: 3.95 },
+  { url: "../../10_game_assets/characters/lotus-dragon.png", aspect: 1280 / 720, x: 10.05, y: 3.95 },
 ];
 
 function loadStudioTexture(url) {
