@@ -44,10 +44,10 @@ const DESK_Z = 0.9;
 const BACK_Z = -1.7;
 
 const LANE_DESKS = [
-  { id: "art", role: "Art", mark: "heart", color: COLORS.art, sheet: "art", x: -3.15, z: DESK_Z },
-  { id: "developer", role: "Developer", mark: "hex", color: COLORS.dev, sheet: "developer", x: -1.05, z: DESK_Z },
-  { id: "tester", role: "Tester", sub: "Marketing", mark: "tablet", color: COLORS.tester, sheet: "tester", x: 1.05, z: DESK_Z },
-  { id: "cto", role: "CTO", mark: "cloud", color: COLORS.cto, sheet: "cto", x: 3.15, z: DESK_Z },
+  { id: "art", role: "Art", mark: "heart", shape: "heart", color: COLORS.art, x: -3.15, z: DESK_Z },
+  { id: "developer", role: "Developer", mark: "hex", shape: "hex", color: COLORS.dev, x: -1.05, z: DESK_Z },
+  { id: "tester", role: "Tester", sub: "Marketing", mark: "square", shape: "square", color: COLORS.tester, x: 1.05, z: DESK_Z },
+  { id: "cto", role: "CTO", mark: "cloud", shape: "cloud", color: COLORS.cto, x: 3.15, z: DESK_Z },
 ];
 
 const OFF_LANE = [
@@ -73,7 +73,8 @@ const REDUCE_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matc
 const BODY_H = 1.48;
 const SEAT_Y = 0.06;
 const FLOOR_Y = 0.02;
-const WALK_SPEED = 1.25;
+const WALK_SPEED = 1.15;
+const FLOOR_BOX = { minX: -5.2, maxX: 5.5, minZ: -3.2, maxZ: 4.5 };
 const LOOP = [
   [-4.05, 2.35],
   [-2.1, 2.85],
@@ -793,7 +794,7 @@ function makeLaneAnimator(sheet, desk) {
 
 function makeMeshAnimator(desk) {
   const body = shapeMesh(desk.shape, desk.color);
-  body.scale.setScalar(1.65);
+  body.scale.setScalar(1.35);
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(0.34, 18),
     new THREE.MeshBasicMaterial({ color: 0x667484, transparent: true, opacity: 0, depthWrite: false }),
@@ -808,11 +809,11 @@ function makeMeshAnimator(desk) {
   const index = deskIndex(desk);
   const seat = seatVector(desk);
   const stand = standVector(desk);
-  const lanes = lanesFor(index);
   const startWalking = index % 2 === 0;
-  const wp = (index * 2 + 1) % LOOP.length;
-  if (startWalking) anchor.position.copy(loopVector(wp, lanes));
-  else anchor.position.copy(seat);
+  if (startWalking) {
+    anchor.position.copy(randomFloorPoint());
+    anchor.position.y = 0.58;
+  } else anchor.position.copy(seat);
 
   return {
     id: desk.id,
@@ -828,8 +829,8 @@ function makeMeshAnimator(desk) {
     stand,
     state: startWalking ? "wander" : "work",
     stateT: startWalking ? 0.3 : 0.15,
-    wp: (wp + 1) % LOOP.length,
-    wanderLeft: 6 + (index % 3),
+    goal: startWalking ? randomFloorPoint() : null,
+    wanderLeft: startWalking ? 4 + (index % 3) : 0,
     from: new THREE.Vector3(),
     frame: 0,
     frameTimer: 0,
@@ -840,7 +841,6 @@ function makeMeshAnimator(desk) {
     kind: "mesh",
     sitLift: 0.78,
     floorLift: 0.58,
-    ...lanes,
   };
 }
 
@@ -907,22 +907,30 @@ function beginLeave(bot) {
   bot.from.copy(bot.anchor.position);
 }
 
+function pointBlocked(x, z) {
+  for (const desk of ALL_DESKS) {
+    const dx = x - desk.x;
+    const dz = z - (desk.z + 0.35);
+    if (dx * dx + dz * dz < 1.05 * 1.05) return true;
+  }
+  return false;
+}
+
+function randomFloorPoint(from) {
+  for (let i = 0; i < 18; i++) {
+    const x = FLOOR_BOX.minX + Math.random() * (FLOOR_BOX.maxX - FLOOR_BOX.minX);
+    const z = FLOOR_BOX.minZ + Math.random() * (FLOOR_BOX.maxZ - FLOOR_BOX.minZ);
+    const far = !from || Math.hypot(x - from.x, z - from.z) > 1.4;
+    if (far && !pointBlocked(x, z)) return new THREE.Vector3(x, FLOOR_Y, z);
+  }
+  return new THREE.Vector3(0.2, FLOOR_Y, 3.4);
+}
+
 function beginWander(bot) {
   bot.state = "wander";
   bot.stateT = 0;
-  bot.wanderLeft = 7 + (bot.phase > 2 ? 2 : 0);
-  let best = 0;
-  let bestD = Infinity;
-  const p = bot.anchor.position;
-  for (let i = 0; i < LOOP.length; i++) {
-    const q = LOOP[i];
-    const d = (q[0] - p.x) ** 2 + (q[1] - p.z) ** 2;
-    if (d < bestD) {
-      bestD = d;
-      best = i;
-    }
-  }
-  bot.wp = (best + 1) % LOOP.length;
+  bot.wanderLeft = 4 + Math.floor(Math.random() * 4);
+  bot.goal = randomFloorPoint(bot.anchor.position);
 }
 
 function beginReturn(bot) {
@@ -979,16 +987,16 @@ function updateLaneAnimators(dt, elapsed) {
     }
 
     if (bot.state === "wander") {
-      const target = loopVector(bot.wp, bot);
-      const left = moveToward(bot, target, dt);
-      const bob = Math.abs(Math.sin(elapsed * 10 + bot.phase)) * (bot.sprite ? 0.045 : 0.07);
+      if (!bot.goal) bot.goal = randomFloorPoint(bot.anchor.position);
+      const left = moveToward(bot, bot.goal, dt);
+      const bob = Math.abs(Math.sin(elapsed * 8 + bot.phase)) * 0.06;
       bot.anchor.position.y = bot.floorLift + bob;
       playClip(bot, true, dt);
       plantShadow(bot, true);
-      if (left < 0.06) {
-        bot.wp = (bot.wp + 1) % LOOP.length;
+      if (left < 0.12) {
         bot.wanderLeft -= 1;
         if (bot.wanderLeft <= 0) beginReturn(bot);
+        else bot.goal = randomFloorPoint(bot.anchor.position);
       }
       continue;
     }
@@ -1278,49 +1286,92 @@ function buildDesk(desk) {
   return { ...desk, group };
 }
 
-function addBotFace(parent, scale = 1) {
-  const face = new THREE.Group();
-  const screen = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42 * scale, 0.26 * scale, 0.05 * scale),
-    mat(0x1a1a1a, { emissive: 0x101820, emissiveIntensity: 0.35 }),
-  );
-  face.add(screen);
-  const eyeMat = mat(0x7ad7f5, { emissive: 0x5ec8f0, emissiveIntensity: 0.85 });
-  for (const ex of [-0.09, 0.09]) {
-    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045 * scale, 10, 10), eyeMat);
-    eye.position.set(ex * scale, 0.02 * scale, 0.04 * scale);
-    face.add(eye);
+const EYE_MAT = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+function addGrokEyes(parent, { y = 0, z = 0.28, spread = 0.12, radius = 0.075 } = {}) {
+  const eyes = new THREE.Group();
+  for (const ex of [-spread, spread]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(radius, 14, 12), EYE_MAT);
+    eye.scale.set(1.25, 0.92, 0.55);
+    eye.position.set(ex, y, z);
+    eyes.add(eye);
   }
-  const smile = new THREE.Mesh(
-    new THREE.TorusGeometry(0.07 * scale, 0.012 * scale, 6, 14, Math.PI),
-    eyeMat,
-  );
-  smile.rotation.z = Math.PI;
-  smile.position.set(0, -0.06 * scale, 0.04 * scale);
-  face.add(smile);
-  parent.add(face);
-  return face;
+  parent.add(eyes);
+  return eyes;
+}
+
+function flatShape(shape, depth, material) {
+  const geo = new THREE.ExtrudeGeometry(shape, {
+    depth,
+    bevelEnabled: true,
+    bevelSize: 0.03,
+    bevelThickness: 0.03,
+    bevelSegments: 2,
+    curveSegments: 10,
+  });
+  geo.translate(0, 0, -depth / 2);
+  const mesh = new THREE.Mesh(geo, material);
+  mesh.castShadow = true;
+  return mesh;
 }
 
 function shapeMesh(shape, color) {
   const g = new THREE.Group();
-  const m = mat(color, { roughness: 0.5, emissive: color, emissiveIntensity: shape === "blob" ? 0.04 : 0.16 });
-  let body;
-  if (shape === "square") {
-    body = roundedCard(0.62, 0.62, 0.46, 0.16, m);
+  const m = mat(color, { roughness: 0.42, emissive: color, emissiveIntensity: shape === "blob" ? 0.02 : 0.12 });
+  if (shape === "heart") {
+    const heart = new THREE.Shape();
+    heart.moveTo(0, -0.46);
+    heart.bezierCurveTo(0.42, -0.12, 0.58, 0.16, 0.26, 0.34);
+    heart.bezierCurveTo(0.1, 0.46, 0.02, 0.24, 0, 0.14);
+    heart.bezierCurveTo(-0.02, 0.24, -0.1, 0.46, -0.26, 0.34);
+    heart.bezierCurveTo(-0.58, 0.16, -0.42, -0.12, 0, -0.46);
+    g.add(flatShape(heart, 0.36, m));
+    addGrokEyes(g, { y: 0.08, z: 0.24, spread: 0.12, radius: 0.07 });
+  } else if (shape === "hex") {
+    const hex = new THREE.Shape();
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI / 6 + (i * Math.PI) / 3;
+      const px = Math.cos(a) * 0.4;
+      const py = Math.sin(a) * 0.4;
+      if (i === 0) hex.moveTo(px, py);
+      else hex.lineTo(px, py);
+    }
+    hex.closePath();
+    g.add(flatShape(hex, 0.38, m));
+    addGrokEyes(g, { y: 0.02, z: 0.26, spread: 0.12, radius: 0.07 });
+  } else if (shape === "cloud") {
+    const puffs = [
+      [0, 0.02, 0, 0.3],
+      [-0.24, -0.06, 0.02, 0.2],
+      [0.24, -0.04, 0.02, 0.22],
+      [0.02, 0.2, -0.02, 0.18],
+    ];
+    for (const [x, y, z, r] of puffs) {
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 18, 14), m);
+      puff.position.set(x, y, z);
+      puff.castShadow = true;
+      g.add(puff);
+    }
+    addGrokEyes(g, { y: 0.02, z: 0.28, spread: 0.1, radius: 0.065 });
+  } else if (shape === "square") {
+    g.add(roundedCard(0.7, 0.7, 0.46, 0.18, m));
+    addGrokEyes(g, { y: 0.02, z: 0.3, spread: 0.14, radius: 0.075 });
   } else if (shape === "teardrop") {
     const pts = [];
     for (let i = 0; i <= 20; i++) {
       const t = i / 20;
-      const y = (t - 0.38) * 0.86;
-      const r = Math.sin(Math.PI * t) * 0.32 * (0.42 + 0.7 * (1 - t));
-      pts.push(new THREE.Vector2(Math.max(r, 0.015), y));
+      const y = (t - 0.38) * 0.9;
+      const r = Math.sin(Math.PI * t) * 0.34 * (0.4 + 0.75 * (1 - t));
+      pts.push(new THREE.Vector2(Math.max(r, 0.02), y));
     }
-    body = new THREE.Mesh(new THREE.LatheGeometry(pts, 20), m);
+    const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 22), m);
+    body.castShadow = true;
+    g.add(body);
+    addGrokEyes(g, { y: -0.02, z: 0.28, spread: 0.1, radius: 0.065 });
   } else if (shape === "star") {
     const star = new THREE.Shape();
     for (let i = 0; i < 8; i++) {
-      const r = i % 2 === 0 ? 0.46 : 0.16;
+      const r = i % 2 === 0 ? 0.48 : 0.16;
       const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
       const px = Math.cos(a) * r;
       const py = Math.sin(a) * r;
@@ -1328,26 +1379,19 @@ function shapeMesh(shape, color) {
       else star.lineTo(px, py);
     }
     star.closePath();
-    body = new THREE.Mesh(
-      new THREE.ExtrudeGeometry(star, { depth: 0.2, bevelEnabled: true, bevelSize: 0.02, bevelThickness: 0.02 }),
-      m,
-    );
-    body.position.z = -0.1;
+    g.add(flatShape(star, 0.28, m));
+    addGrokEyes(g, { y: 0.02, z: 0.2, spread: 0.1, radius: 0.06 });
   } else {
-    body = new THREE.Mesh(new THREE.SphereGeometry(0.34, 22, 16), m);
-    body.scale.set(1.15, 1.05, 1.05);
-  }
-  body.castShadow = true;
-  g.add(body);
-  const face = addBotFace(g, shape === "blob" ? 0.9 : 1);
-  face.position.z = shape === "star" ? 0.16 : 0.24;
-  if (shape === "teardrop") face.position.y = -0.02;
-  if (shape === "blob") {
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.36, 24, 18), m);
+    body.scale.set(1.12, 1.02, 1.02);
+    body.castShadow = true;
+    g.add(body);
+    addGrokEyes(g, { y: 0.02, z: 0.34, spread: 0.11, radius: 0.07 });
     const badge = new THREE.Mesh(
-      new THREE.SphereGeometry(0.11, 12, 10),
-      mat(COLORS.mainBadge, { emissive: COLORS.mainBadge, emissiveIntensity: 0.45 }),
+      new THREE.SphereGeometry(0.1, 12, 10),
+      new THREE.MeshBasicMaterial({ color: COLORS.mainBadge }),
     );
-    badge.position.set(0.26, 0.24, 0.18);
+    badge.position.set(0.28, 0.26, 0.16);
     g.add(badge);
   }
   return g;
@@ -1582,24 +1626,7 @@ async function init() {
   window.addEventListener("resize", resize);
   bindInput();
 
-  try {
-    const loaded = {};
-    await Promise.all(
-      Object.entries(SHEET_PATHS).map(async ([key, url]) => {
-        loaded[key] = keySheet(await loadImage(url));
-      }),
-    );
-    for (const desk of desks) {
-      if (!desk.sheet) continue;
-      const sheet = loaded[desk.sheet];
-      if (sheet) laneAnimators.push(makeLaneAnimator(sheet, desk));
-    }
-  } catch (err) {
-    console.error(err);
-  }
-  for (const desk of desks) {
-    if (!desk.sheet) laneAnimators.push(makeMeshAnimator(desk));
-  }
+  for (const desk of desks) laneAnimators.push(makeMeshAnimator(desk));
 
   loadingEl.classList.add("hidden");
   document.body.dataset.room = laneAnimators.length === ALL_DESKS.length ? "ready" : "partial";
