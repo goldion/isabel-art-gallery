@@ -40,21 +40,21 @@ const STATIONS = [
   { id: "done", label: "Done", icon: "done" },
 ];
 
-const DESK_Z = 0.9;
-const BACK_Z = -1.7;
+const DESK_Z = 1.85;
+const BACK_Z = -2.35;
 
 const LANE_DESKS = [
-  { id: "art", role: "Art", mark: "heart", shape: "heart", color: COLORS.art, x: -3.15, z: DESK_Z },
-  { id: "developer", role: "Developer", mark: "hex", shape: "hex", color: COLORS.dev, x: -1.05, z: DESK_Z },
-  { id: "tester", role: "Tester", sub: "Marketing", mark: "square", shape: "square", color: COLORS.tester, x: 1.05, z: DESK_Z },
-  { id: "cto", role: "CTO", mark: "cloud", shape: "cloud", color: COLORS.cto, x: 3.15, z: DESK_Z },
+  { id: "art", role: "Art", mark: "heart", shape: "heart", color: COLORS.art, x: -4.7, z: DESK_Z },
+  { id: "developer", role: "Developer", mark: "hex", shape: "hex", color: COLORS.dev, x: -1.55, z: DESK_Z },
+  { id: "tester", role: "Tester", sub: "Marketing", mark: "square", shape: "square", color: COLORS.tester, x: 1.55, z: DESK_Z },
+  { id: "cto", role: "CTO", mark: "cloud", shape: "cloud", color: COLORS.cto, x: 4.7, z: DESK_Z },
 ];
 
 const OFF_LANE = [
-  { id: "assistant", role: "Assistant", sub: "Admin", mark: "square", shape: "square", color: COLORS.assistant, x: -3.15, z: BACK_Z },
-  { id: "cfo", role: "CFO", sub: "Expense", mark: "drop", shape: "teardrop", color: COLORS.cfo, x: -1.05, z: BACK_Z },
-  { id: "governess", role: "Governess", mark: "star", shape: "star", color: COLORS.governess, x: 1.05, z: BACK_Z },
-  { id: "main", role: "Main", sub: "Bot", mark: "blob", shape: "blob", color: COLORS.mainBot, x: 3.15, z: BACK_Z },
+  { id: "assistant", role: "Assistant", sub: "Admin", mark: "square", shape: "square", color: COLORS.assistant, x: -4.7, z: BACK_Z },
+  { id: "cfo", role: "CFO", sub: "Expense", mark: "drop", shape: "teardrop", color: COLORS.cfo, x: -1.55, z: BACK_Z },
+  { id: "governess", role: "Governess", mark: "star", shape: "star", color: COLORS.governess, x: 1.55, z: BACK_Z },
+  { id: "main", role: "Main", sub: "Bot", mark: "blob", shape: "blob", color: COLORS.mainBot, x: 4.7, z: BACK_Z },
 ];
 
 const ALL_DESKS = [...LANE_DESKS, ...OFF_LANE];
@@ -66,15 +66,15 @@ const SHEET_PATHS = {
   cto: "assets/characters/cto-walk-idle-sheet.png",
 };
 
-const HOME_POS = new THREE.Vector3(2.15, 6.15, 13.4);
-const HOME_TARGET = new THREE.Vector3(1.7, 2.9, -0.7);
+const HOME_POS = new THREE.Vector3(0.2, 7.4, 15.6);
+const HOME_TARGET = new THREE.Vector3(0.1, 1.8, -0.3);
 const REDUCE_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const BODY_H = 1.48;
 const SEAT_Y = 0.06;
 const FLOOR_Y = 0.02;
 const WALK_SPEED = 1.15;
-const FLOOR_BOX = { minX: -5.2, maxX: 5.5, minZ: -3.2, maxZ: 4.5 };
+const FLOOR_BOX = { minX: -6.4, maxX: 6.4, minZ: -4.2, maxZ: 4.8 };
 const LOOP = [
   [-4.05, 2.35],
   [-2.1, 2.85],
@@ -694,11 +694,12 @@ function applyAnchor(sprite, sheet, col) {
 }
 
 function seatVector(desk) {
-  return new THREE.Vector3(desk.x - 0.46, SEAT_Y, desk.z + 1.02);
+  return new THREE.Vector3(desk.x, SEAT_Y, desk.z - 0.95);
 }
 
 function standVector(desk) {
-  return new THREE.Vector3(desk.x - 0.46, FLOOR_Y, desk.z + 1.95);
+  const side = desk.x >= 0 ? 1.7 : -1.7;
+  return new THREE.Vector3(desk.x + side, FLOOR_Y, desk.z - 0.95);
 }
 
 function deskIndex(desk) {
@@ -839,7 +840,7 @@ function makeMeshAnimator(desk) {
     mode: startWalking ? "walk" : "idle",
     workDur: 5.6 + (index % 4) * 0.4,
     kind: "mesh",
-    sitLift: 0.78,
+    sitLift: 1.05,
     floorLift: 0.58,
   };
 }
@@ -1258,12 +1259,14 @@ function buildDesk(desk) {
   group.add(plate);
 
   const chair = new THREE.Group();
-  chair.position.set(-0.46, 0, 1.02);
-  const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.1, 0.5), mat(0xd7e0e8));
-  chairSeat.position.set(0, 0.48, -0.2);
-  const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.78, 0.08), mat(0xc5d0dc));
-  chairBack.position.set(0, 0.92, -0.42);
-  chair.add(chairSeat, chairBack);
+  chair.position.set(0, 0, -0.95);
+  const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.52), mat(0xd7e0e8));
+  chairSeat.position.set(0, 0.46, 0);
+  const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.72, 0.08), mat(0xc5d0dc));
+  chairBack.position.set(0, 0.86, -0.28);
+  const chairLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.42, 10), mat(0xb3bec8));
+  chairLeg.position.set(0, 0.22, 0);
+  chair.add(chairSeat, chairBack, chairLeg);
   group.add(chair);
 
   const ring = new THREE.Mesh(
