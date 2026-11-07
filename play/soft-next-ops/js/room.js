@@ -1,7 +1,7 @@
 /**
  * Hammer Studio — Soft Next ops room.
- * Cool gallery palette, moodboard v3 war-room cards, lane idle+walk sheets.
- * Title is Hammer Studio only. Waiting Go is the one warm glow.
+ * Cool gallery palette, Soft PASS war-room cards, lane idle+walk sheets.
+ * Title is Hammer Studio only. Active station glow follows live Soft PASS gate.
  */
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -31,10 +31,17 @@ const COLORS = {
   desk: 0xb4c0cb,
 };
 
+const GATE_STAGES = ["pick", "soft-pass", "waiting-go", "tip", "smoke", "done"];
+const GATE_API =
+  (typeof window !== "undefined" && window.__SOFT_PASS_GATE_URL) ||
+  "https://soft-pass-gate.isabel-art-goldion.workers.dev";
+const GATE_STATIC = new URL("../gate-status.json", import.meta.url).href;
+const GATE_POLL_MS = 12_000;
+
 const STATIONS = [
   { id: "pick", label: "Pick", icon: "pick" },
   { id: "soft-pass", label: "Soft PASS", icon: "pass" },
-  { id: "waiting-go", label: "Waiting Go", icon: "wait", active: true },
+  { id: "waiting-go", label: "Waiting Go", icon: "wait" },
   { id: "tip", label: "Tip", icon: "tip" },
   { id: "smoke", label: "Smoke", icon: "smoke" },
   { id: "done", label: "Done", icon: "done" },
@@ -152,6 +159,9 @@ const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
 let focusedId = null;
+let gateStageId = "pick";
+let warBoardGroup = null;
+let gatePollTimer = null;
 let introT = REDUCE_MOTION ? 1 : 0;
 let resumeAt = Infinity;
 let resetJob = null;
@@ -1154,7 +1164,72 @@ function ribbon(points, width, material) {
   return new THREE.Mesh(geo, material);
 }
 
-function buildWarBoard() {
+function purgeGateGlows() {
+  for (let i = glows.length - 1; i >= 0; i--) {
+    if (glows[i].gate) glows.splice(i, 1);
+  }
+}
+
+function disposeGroup(group) {
+  group.traverse((obj) => {
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material) {
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      for (const m of mats) {
+        if (m.map) m.map.dispose();
+        m.dispose();
+      }
+    }
+  });
+}
+
+function normalizeGateStage(stage) {
+  const id = String(stage || "").trim();
+  return GATE_STAGES.includes(id) ? id : null;
+}
+
+async function loadGateStage() {
+  const sources = [
+    { url: GATE_API, label: "worker" },
+    { url: GATE_STATIC, label: "static" },
+  ];
+  for (const { url, label } of sources) {
+    try {
+      const res = await fetch(url, { cache: "no-store", credentials: "omit" });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const stage = normalizeGateStage(data?.stage);
+      if (stage) return { stage, source: data.source || label };
+    } catch {
+      /* try next source */
+    }
+  }
+  return { stage: gateStageId, source: "default" };
+}
+
+function startGatePolling() {
+  const tick = async () => {
+    const { stage } = await loadGateStage();
+    if (stage && stage !== gateStageId) {
+      gateStageId = stage;
+      buildWarBoard(gateStageId);
+    }
+  };
+  tick();
+  if (gatePollTimer) clearInterval(gatePollTimer);
+  gatePollTimer = setInterval(tick, GATE_POLL_MS);
+}
+
+function buildWarBoard(activeId = gateStageId) {
+  const active = normalizeGateStage(activeId) || gateStageId;
+  gateStageId = active;
+
+  if (warBoardGroup) {
+    world.remove(warBoardGroup);
+    disposeGroup(warBoardGroup);
+    purgeGateGlows();
+  }
+
   const board = new THREE.Group();
   board.position.set(-0.2, 2.88, -5.58);
   board.name = "war-board";
@@ -1174,19 +1249,20 @@ function buildWarBoard() {
   const start = -total / 2 + cardW / 2;
 
   STATIONS.forEach((st, i) => {
+    const isActive = st.id === active;
     const card = new THREE.Group();
-    const tall = st.active ? 2.05 : 1.82;
-    card.position.set(start + i * (cardW + gap), st.active ? 0.04 : -0.02, 0.14);
+    const tall = isActive ? 2.05 : 1.82;
+    card.position.set(start + i * (cardW + gap), isActive ? 0.04 : -0.02, 0.14);
 
-    const bodyMat = st.active
+    const bodyMat = isActive
       ? mat(COLORS.waiting, { emissive: COLORS.waitingGlow, emissiveIntensity: 0.72, roughness: 0.6 })
       : mat(COLORS.card, { roughness: 0.9 });
     const body = roundedCard(cardW, tall, 0.08, 0.16, bodyMat);
     body.castShadow = true;
     card.add(body);
-    if (st.active) glows.push({ kind: "wait", material: bodyMat });
+    if (isActive) glows.push({ kind: "wait", material: bodyMat, gate: true });
 
-    if (st.active) {
+    if (isActive) {
       const halo = new THREE.Mesh(
         new THREE.PlaneGeometry(cardW + 0.28, tall + 0.28),
         new THREE.MeshBasicMaterial({
@@ -1198,7 +1274,7 @@ function buildWarBoard() {
       );
       halo.position.z = -0.05;
       card.add(halo);
-      glows.push({ kind: "wait-halo", material: halo.material, opacityBase: 0.28 });
+      glows.push({ kind: "wait-halo", material: halo.material, opacityBase: 0.28, gate: true });
       const lamp = new THREE.PointLight(0xffe1a3, 0.42, 2.4, 2);
       lamp.position.set(0, 0.1, 0.45);
       card.add(lamp);
@@ -1211,18 +1287,19 @@ function buildWarBoard() {
       card.add(badge);
     }
 
-    const label = textPlane(st.label, cardW * 0.92, st.active ? 0.48 : 0.34, {
+    const label = textPlane(st.label, cardW * 0.92, isActive ? 0.48 : 0.34, {
       fontSize: st.label.length > 8 ? 40 : 48,
       width: 512,
       height: 128,
-      fill: st.active ? "#6a5420" : COLORS.ink,
+      fill: isActive ? "#6a5420" : COLORS.ink,
     });
-    label.position.set(0, st.active ? -0.05 : -0.58, 0.06);
+    label.position.set(0, isActive ? -0.05 : -0.58, 0.06);
     card.add(label);
     board.add(card);
   });
 
   world.add(board);
+  warBoardGroup = board;
 }
 
 function buildDesk(desk) {
@@ -1737,9 +1814,11 @@ async function readyFonts() {
 
 async function init() {
   await readyFonts();
+  const gate = await loadGateStage();
+  gateStageId = gate.stage;
   buildRoom();
   buildLaneRug();
-  buildWarBoard();
+  buildWarBoard(gateStageId);
   const desks = ALL_DESKS.map((desk) => buildDesk(desk));
   buildDecor();
   resize();
@@ -1766,7 +1845,19 @@ async function init() {
       return focusedId;
     },
     focus: setFocus,
+    get gateStage() {
+      return gateStageId;
+    },
+    refreshGate: async () => {
+      const next = await loadGateStage();
+      if (next.stage !== gateStageId) {
+        gateStageId = next.stage;
+        buildWarBoard(gateStageId);
+      }
+      return gateStageId;
+    },
   };
+  startGatePolling();
   animate();
 }
 

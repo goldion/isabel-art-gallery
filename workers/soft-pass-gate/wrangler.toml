@@ -1,0 +1,11 @@
+name = "soft-pass-gate"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+[[kv_namespaces]]
+binding = "GATE"
+# Replace after: wrangler kv namespace create GATE
+id = "00000000000000000000000000000000"
+
+[vars]
+# Optional: wrangler secret put SET_TOKEN
