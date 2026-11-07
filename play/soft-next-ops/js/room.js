@@ -1,21 +1,21 @@
 /**
  * Hammer Studio — Soft Next ops room.
- * Warm Soft PASS gallery palette, war-room cards, lane idle+walk sheets.
+ * Blue studio walls and board, war-room cards, free-walking Grok bots.
  * Title is Hammer Studio only. Active station glow follows live Soft PASS gate.
  */
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const COLORS = {
-  wall: 0xede6dc,
-  wallSide: 0xe5ddd2,
-  floor: 0xddc9ae,
-  frame: 0x9a6b3f,
-  board: 0xf5efe6,
-  card: 0xfaf6f0,
+  wall: 0xd7eefc,
+  wallSide: 0xc9e4f8,
+  floor: 0xe3eef6,
+  frame: 0x5b96d6,
+  board: 0xe7f3fc,
+  card: 0xf7fbff,
   ink: "#243044",
-  lane: 0x3589a8,
-  laneGlow: 0x5ee0f0,
+  lane: 0x3a8ec4,
+  laneGlow: 0x7ee7ff,
   waiting: 0xfff0c4,
   waitingGlow: 0xffc84a,
   art: 0xf59312,
@@ -31,16 +31,16 @@ const COLORS = {
   desk: 0x8f5e32,
   plant: 0x3a8f4a,
   pot: 0xc87850,
-  trim: 0xa67c52,
+  trim: 0x6d94c0,
 };
 
 const STATION_TINTS = {
-  pick: 0xf5d5c0,
-  "soft-pass": 0xc5e6c8,
-  "waiting-go": 0xfff0c8,
-  tip: 0xb8dff5,
-  smoke: 0xf0c8c4,
-  done: 0xc0ecd8,
+  pick: 0xf4f7fb,
+  "soft-pass": 0xe7f6ea,
+  "waiting-go": 0xfff6dc,
+  tip: 0xe5f3fb,
+  smoke: 0xfdeceb,
+  done: 0xe7f8f0,
 };
 
 const DESK_CUP_ACCENTS = {
@@ -76,21 +76,22 @@ const STATIONS = [
   { id: "done", label: "Done", icon: "done" },
 ];
 
-const DESK_Z = 1.85;
-const BACK_Z = -2.35;
+const DESK_Z = 3.15;
+const BACK_Z = -2.85;
+const COL_X = [-7.85, -2.6, 2.6, 7.85];
 
 const LANE_DESKS = [
-  { id: "art", role: "Art", mark: "heart", shape: "heart", color: COLORS.art, x: -4.7, z: DESK_Z },
-  { id: "developer", role: "Developer", mark: "hex", shape: "hex", color: COLORS.dev, x: -1.55, z: DESK_Z },
-  { id: "tester", role: "Tester", sub: "Marketing", mark: "wedge", shape: "wedge", color: COLORS.tester, x: 1.55, z: DESK_Z },
-  { id: "cto", role: "CTO", mark: "cloud", shape: "cloud", color: COLORS.cto, x: 4.7, z: DESK_Z },
+  { id: "art", role: "Art", mark: "heart", shape: "heart", color: COLORS.art, x: COL_X[0], z: DESK_Z },
+  { id: "developer", role: "Developer", mark: "hex", shape: "hex", color: COLORS.dev, x: COL_X[1], z: DESK_Z },
+  { id: "tester", role: "Tester", sub: "Marketing", mark: "wedge", shape: "wedge", color: COLORS.tester, x: COL_X[2], z: DESK_Z },
+  { id: "cto", role: "CTO", mark: "cloud", shape: "cloud", color: COLORS.cto, x: COL_X[3], z: DESK_Z },
 ];
 
 const OFF_LANE = [
-  { id: "assistant", role: "Assistant", sub: "Admin", mark: "square", shape: "square", color: COLORS.assistant, x: -4.7, z: BACK_Z },
-  { id: "cfo", role: "CFO", sub: "Expense", mark: "drop", shape: "teardrop", color: COLORS.cfo, x: -1.55, z: BACK_Z },
-  { id: "governess", role: "Governess", mark: "star", shape: "star", color: COLORS.governess, x: 1.55, z: BACK_Z },
-  { id: "main", role: "Main", sub: "Bot", mark: "blob", shape: "blob", color: COLORS.mainBot, x: 4.7, z: BACK_Z },
+  { id: "assistant", role: "Assistant", sub: "Admin", mark: "square", shape: "square", color: COLORS.assistant, x: COL_X[0], z: BACK_Z },
+  { id: "cfo", role: "CFO", sub: "Expense", mark: "drop", shape: "teardrop", color: COLORS.cfo, x: COL_X[1], z: BACK_Z },
+  { id: "governess", role: "Governess", mark: "star", shape: "star", color: COLORS.governess, x: COL_X[2], z: BACK_Z },
+  { id: "main", role: "Main", sub: "Bot", mark: "blob", shape: "blob", color: COLORS.mainBot, x: COL_X[3], z: BACK_Z },
 ];
 
 const ALL_DESKS = [...LANE_DESKS, ...OFF_LANE];
@@ -110,7 +111,7 @@ const BODY_H = 1.48;
 const SEAT_Y = 0.06;
 const FLOOR_Y = 0.02;
 const WALK_SPEED = 1.15;
-const FLOOR_BOX = { minX: -6.4, maxX: 6.4, minZ: -4.2, maxZ: 4.8 };
+const FLOOR_BOX = { minX: -9.6, maxX: 9.6, minZ: -4.55, maxZ: 6.6 };
 const LOOP = [
   [-4.05, 2.35],
   [-2.1, 2.85],
@@ -161,17 +162,20 @@ controls.autoRotate = false;
 controls.autoRotateSpeed = 0.12;
 controls.enabled = REDUCE_MOTION;
 
-scene.add(new THREE.HemisphereLight(0xfff5e8, 0x8b7355, 0.92));
-const sun = new THREE.DirectionalLight(0xfff3e0, 0.85);
+scene.add(new THREE.HemisphereLight(0xf4f9ff, 0xc9ddf0, 1.42));
+const sun = new THREE.DirectionalLight(0xffffff, 1.08);
+const fill = new THREE.DirectionalLight(0xe7f3ff, 0.38);
+fill.position.set(-9, 7, 3);
+scene.add(fill);
 sun.position.set(4.5, 14, 9);
 sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
 sun.shadow.camera.near = 2;
 sun.shadow.camera.far = 36;
-sun.shadow.camera.left = -12;
-sun.shadow.camera.right = 12;
-sun.shadow.camera.top = 12;
-sun.shadow.camera.bottom = -12;
+sun.shadow.camera.left = -16;
+sun.shadow.camera.right = 16;
+sun.shadow.camera.top = 14;
+sun.shadow.camera.bottom = -14;
 sun.shadow.bias = -0.0004;
 scene.add(sun);
 sun.target.position.set(1.2, 0, 0.4);
@@ -230,24 +234,57 @@ function canvasTexture(width, height, draw) {
   return tex;
 }
 
-function notionMarkTexture() {
-  return canvasTexture(128, 128, (ctx) => {
-    roundPath(ctx, 6, 6, 116, 116, 28);
-    ctx.fillStyle = "#1b2836";
-    ctx.fill();
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(30, 28, 16, 72);
+function drawController(ctx) {
+  ctx.fillStyle = "#14171a";
+  ctx.beginPath();
+  ctx.moveTo(39, 2.2);
+  ctx.bezierCurveTo(24, 2.2, 16.2, 5.2, 11.2, 10.2);
+  ctx.bezierCurveTo(7.2, 14.2, 5.2, 18.4, 4.6, 24.2);
+  ctx.lineTo(3.6, 35.6);
+  ctx.bezierCurveTo(3.1, 39.6, 2.2, 42.4, 2.2, 45.6);
+  ctx.bezierCurveTo(2.2, 50.8, 6.2, 54.2, 11, 54.2);
+  ctx.bezierCurveTo(15.6, 54.2, 17.8, 51.2, 17.8, 47.2);
+  ctx.bezierCurveTo(17.8, 43.2, 21.4, 40.8, 27.2, 40.8);
+  ctx.bezierCurveTo(32.2, 40.8, 34.6, 42.6, 39, 42.6);
+  ctx.bezierCurveTo(43.4, 42.6, 45.8, 40.8, 50.8, 40.8);
+  ctx.bezierCurveTo(56.6, 40.8, 60.2, 43.2, 60.2, 47.2);
+  ctx.bezierCurveTo(60.2, 51.2, 62.4, 54.2, 67, 54.2);
+  ctx.bezierCurveTo(71.8, 54.2, 75.8, 50.8, 75.8, 45.6);
+  ctx.bezierCurveTo(75.8, 42.4, 74.9, 39.6, 74.4, 35.6);
+  ctx.lineTo(73.4, 24.2);
+  ctx.bezierCurveTo(72.8, 18.4, 70.8, 14.2, 66.8, 10.2);
+  ctx.bezierCurveTo(61.8, 5.2, 54, 2.2, 39, 2.2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "#8899a6";
+  roundPath(ctx, 18.8, 7.4, 6.2, 17.4, 2.1);
+  ctx.fill();
+  roundPath(ctx, 12.2, 13, 19.4, 6.2, 2.1);
+  ctx.fill();
+  ctx.fillStyle = "#67757f";
+  ctx.beginPath();
+  ctx.arc(27.6, 34.6, 5.8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(49.6, 34.6, 5.8, 0, Math.PI * 2);
+  ctx.fill();
+  for (const [x, y, color] of [
+    [55.4, 8.8, "#ffcc4d"],
+    [48.5, 15.7, "#50a5e6"],
+    [62.4, 15.7, "#dd2e44"],
+    [55.5, 22.6, "#77b255"],
+  ]) {
+    ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.moveTo(52, 28);
-    ctx.lineTo(74, 28);
-    ctx.lineTo(98, 62);
-    ctx.lineTo(98, 28);
-    ctx.lineTo(82, 28);
-    ctx.lineTo(64, 54);
-    ctx.lineTo(64, 100);
-    ctx.lineTo(52, 100);
-    ctx.closePath();
+    ctx.arc(x, y, 3.15, 0, Math.PI * 2);
     ctx.fill();
+  }
+}
+
+function controllerMarkTexture() {
+  return canvasTexture(390, 280, (ctx) => {
+    ctx.scale(5, 5);
+    drawController(ctx);
   });
 }
 
@@ -305,9 +342,9 @@ function drawMark(ctx, mark, s = 1) {
   } else if (mark === "square") {
     roundPath(ctx, -18 * s, -18 * s, 36 * s, 36 * s, 10 * s);
   } else if (mark === "wedge") {
-    ctx.moveTo(-16 * s, -20 * s);
-    ctx.lineTo(22 * s, 0);
-    ctx.lineTo(-16 * s, 20 * s);
+    ctx.moveTo(0, -22 * s);
+    ctx.lineTo(18 * s, 16 * s);
+    ctx.lineTo(-18 * s, 16 * s);
     ctx.closePath();
   } else if (mark === "drop") {
     ctx.moveTo(0, -24 * s);
@@ -489,9 +526,9 @@ function roundedCard(w, h, d, r, material) {
 
 function floorTexture() {
   return canvasTexture(256, 256, (ctx) => {
-    ctx.fillStyle = "#e8d4b8";
+    ctx.fillStyle = "#e3eef6";
     ctx.fillRect(0, 0, 256, 256);
-    ctx.strokeStyle = "rgba(139, 90, 43, 0.32)";
+    ctx.strokeStyle = "rgba(90, 124, 158, 0.28)";
     ctx.lineWidth = 2;
     for (let i = 0; i < 8; i++) {
       ctx.beginPath();
@@ -499,7 +536,7 @@ function floorTexture() {
       ctx.lineTo(256, i * 32 + 0.5);
       ctx.stroke();
     }
-    ctx.strokeStyle = "rgba(166, 124, 82, 0.55)";
+    ctx.strokeStyle = "rgba(110, 146, 178, 0.45)";
     for (let i = 0; i < 8; i++) {
       ctx.beginPath();
       ctx.moveTo((i % 2) * 40, i * 32);
@@ -998,20 +1035,15 @@ function deskObstacles() {
   return list;
 }
 
-function hitsSolid(x, z, selfId) {
+function hitsSolid(x, z) {
   for (const block of deskObstacles()) {
     if (Math.hypot(x - block.x, z - block.z) < block.r + BOT_RADIUS * 0.72) return true;
-  }
-  for (const other of laneAnimators) {
-    if (!other || other.id === selfId) continue;
-    const p = other.anchor.position;
-    if (Math.hypot(x - p.x, z - p.z) < BOT_RADIUS * 2) return true;
   }
   return false;
 }
 
 function pointBlocked(x, z) {
-  return hitsSolid(x, z, null);
+  return hitsSolid(x, z);
 }
 
 function randomFloorPoint(from) {
@@ -1047,12 +1079,12 @@ function moveToward(bot, target, dt) {
   const step = Math.min(WALK_SPEED * dt, dist);
   const nx = pos.x + (dx / dist) * step;
   const nz = pos.z + (dz / dist) * step;
-  if (!hitsSolid(nx, nz, bot.id)) {
+  if (!hitsSolid(nx, nz)) {
     pos.x = nx;
     pos.z = nz;
-  } else if (!hitsSolid(nx, pos.z, bot.id)) {
+  } else if (!hitsSolid(nx, pos.z)) {
     pos.x = nx;
-  } else if (!hitsSolid(pos.x, nz, bot.id)) {
+  } else if (!hitsSolid(pos.x, nz)) {
     pos.z = nz;
   } else if (bot.state === "wander") {
     bot.goal = randomFloorPoint(pos);
@@ -1164,22 +1196,22 @@ function buildRoom() {
   right.position.set(11.6, 4.1, 1.2);
   world.add(right);
 
-  const sign = roundedCard(8.2, 1.15, 0.05, 0.18, mat(0xf0e6d8));
-  sign.position.set(0.15, 5.18, -5.74);
+  const sign = roundedCard(8.6, 1.28, 0.05, 0.2, mat(0xd7e8f8));
+  sign.position.set(0.15, 5.22, -5.74);
   world.add(sign);
   const logo = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.72, 0.72),
-    new THREE.MeshBasicMaterial({ map: notionMarkTexture(), transparent: true }),
+    new THREE.PlaneGeometry(1.5, 1.08),
+    new THREE.MeshBasicMaterial({ map: controllerMarkTexture(), transparent: true, depthWrite: false }),
   );
-  logo.position.set(-3.55, 5.18, -5.68);
+  logo.position.set(-3.15, 5.22, -5.68);
   world.add(logo);
-  const title = textPlane("Hammer Studio", 6.2, 0.78, {
+  const title = textPlane("Hammer Studio", 5.8, 0.78, {
     fontSize: 112,
     width: 1200,
     height: 200,
     fill: "#1b2836",
   });
-  title.position.set(0.45, 5.18, -5.66);
+  title.position.set(0.85, 5.22, -5.66);
   world.add(title);
 
   const cornice = new THREE.Mesh(new THREE.BoxGeometry(22, 0.1, 0.12), mat(COLORS.trim));
@@ -1190,15 +1222,15 @@ function buildRoom() {
 function buildLaneRug() {
   const rug = new THREE.Mesh(new THREE.CircleGeometry(1, 64), mat(COLORS.lane));
   rug.rotation.x = -Math.PI / 2;
-  rug.scale.set(4.65, 1, 2.45);
-  rug.position.set(0, 0.02, 1.35);
+  rug.scale.set(9.2, 1, 2.15);
+  rug.position.set(0, 0.02, DESK_Z + 0.35);
   rug.receiveShadow = true;
   world.add(rug);
 
   const pts = [];
-  const xArm = 3.25;
-  const zBack = 1.42;
-  const zFront = 2.42;
+  const xArm = 6.9;
+  const zBack = DESK_Z - 0.35;
+  const zFront = DESK_Z + 0.85;
   const n = 72;
   for (let i = 0; i <= n; i++) {
     const t = i / n;
@@ -1565,14 +1597,14 @@ function addGrokEyes(parent, { y = 0, z = 0.28, spread = 0.12, radius = 0.075 } 
   return eyes;
 }
 
-function flatShape(shape, depth, material) {
+function flatShape(shape, depth, material, bevel = 0.03) {
   const geo = new THREE.ExtrudeGeometry(shape, {
     depth,
-    bevelEnabled: true,
-    bevelSize: 0.03,
-    bevelThickness: 0.03,
+    bevelEnabled: bevel > 0,
+    bevelSize: bevel,
+    bevelThickness: bevel,
     bevelSegments: 2,
-    curveSegments: 10,
+    curveSegments: 12,
   });
   geo.translate(0, 0, -depth / 2);
   const mesh = new THREE.Mesh(geo, material);
@@ -1620,28 +1652,36 @@ function shapeMesh(shape, color) {
     addGrokEyes(g, { y: 0.02, z: 0.28, spread: 0.1, radius: 0.065 });
   } else if (shape === "wedge") {
     const wedge = new THREE.Shape();
-    wedge.moveTo(-0.34, -0.4);
-    wedge.lineTo(0.46, 0);
-    wedge.lineTo(-0.34, 0.4);
+    wedge.moveTo(0, 0.52);
+    wedge.lineTo(0.44, -0.36);
+    wedge.lineTo(-0.44, -0.36);
     wedge.closePath();
-    g.add(flatShape(wedge, 0.36, m));
-    addGrokEyes(g, { y: 0.02, z: 0.24, spread: 0.1, radius: 0.065 });
+    g.add(flatShape(wedge, 0.42, m, 0.012));
+    addGrokEyes(g, { y: -0.04, z: 0.26, spread: 0.12, radius: 0.078 });
   } else if (shape === "square") {
     g.add(roundedCard(0.7, 0.7, 0.46, 0.18, m));
     addGrokEyes(g, { y: 0.02, z: 0.3, spread: 0.14, radius: 0.075 });
   } else if (shape === "teardrop") {
     const pts = [];
-    for (let i = 0; i <= 28; i++) {
-      const t = i / 28;
-      const y = 0.5 - t * 1.02;
-      const belly = Math.sin(Math.pow(t, 0.55) * Math.PI);
-      const r = Math.max(0.012, belly * 0.4 * (0.25 + 0.85 * t));
+    const steps = 32;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const y = 0.48 - t * 0.96;
+      let r;
+      if (t < 0.62) {
+        const u = t / 0.62;
+        r = Math.pow(Math.sin(u * Math.PI * 0.5), 0.9) * 0.4;
+      } else {
+        const u = (t - 0.62) / 0.38;
+        r = Math.cos(u * Math.PI * 0.5) * 0.4;
+      }
+      if (i === 0 || i === steps) r = 0;
       pts.push(new THREE.Vector2(r, y));
     }
-    const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 24), m);
+    const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 28), m);
     body.castShadow = true;
     g.add(body);
-    addGrokEyes(g, { y: -0.08, z: 0.32, spread: 0.1, radius: 0.06 });
+    addGrokEyes(g, { y: 0.02, z: 0.34, spread: 0.11, radius: 0.07 });
   } else if (shape === "star") {
     const star = new THREE.Shape();
     for (let i = 0; i < 8; i++) {
@@ -1661,12 +1701,6 @@ function shapeMesh(shape, color) {
     body.castShadow = true;
     g.add(body);
     addGrokEyes(g, { y: 0.02, z: 0.34, spread: 0.11, radius: 0.07 });
-    const badge = new THREE.Mesh(
-      new THREE.SphereGeometry(0.1, 12, 10),
-      new THREE.MeshBasicMaterial({ color: COLORS.mainBadge }),
-    );
-    badge.position.set(0.28, 0.26, 0.16);
-    g.add(badge);
   }
   return g;
 }
@@ -1805,7 +1839,7 @@ function addFloorLamp(x, z) {
 
 function addClock() {
   const g = new THREE.Group();
-  g.position.set(4.35, 5.55, -5.7);
+  g.position.set(6.85, 5.55, -5.7);
   const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.06, 24), mat(COLORS.trim));
   rim.rotation.x = Math.PI / 2;
   const face = new THREE.Mesh(
@@ -1840,16 +1874,16 @@ function addFileCabinet(x, z) {
 }
 
 function buildDecor() {
-  addPlant(-6.3, 3.4, 1.05);
-  addPlant(6.4, 3.5, 0.9);
-  addPlant(-6.5, -3.6, 0.8);
-  addBookcase(-8.4, -5.35);
-  addBookcase(8.6, -5.35);
-  addFloorLamp(-6.9, 1.2);
-  addFloorLamp(6.9, 1.1);
+  addPlant(-10.3, 5.5, 1.05);
+  addPlant(10.3, 5.4, 0.9);
+  addPlant(-10.2, -4.35, 0.8);
+  addBookcase(-10.15, -5.45);
+  addBookcase(10.15, -5.45);
+  addFloorLamp(-10.35, 0.15);
+  addFloorLamp(10.35, 0.35);
   addClock();
-  addFileCabinet(6.7, -4.5);
-  addFileCabinet(-6.7, -4.5);
+  addFileCabinet(10.35, -3.7);
+  addFileCabinet(-10.35, -3.7);
   for (const piece of STUDIO_ART) {
     hangPicture(piece.x, piece.y, -5.68, 0, loadStudioTexture(piece.url), piece.aspect);
   }
