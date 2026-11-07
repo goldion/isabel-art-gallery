@@ -1268,6 +1268,7 @@ function buildDesk(desk) {
   chairLeg.position.set(0, 0.22, 0);
   chair.add(chairSeat, chairBack, chairLeg);
   group.add(chair);
+  addDeskProps(group, desk.color);
 
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(0.62, 0.78, 40),
@@ -1413,9 +1414,105 @@ function loadStudioTexture(url) {
   return tex;
 }
 
+function addDeskProps(group, color) {
+  const paper = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.025, 0.32), mat(0xf7f9fb));
+  paper.position.set(-0.42, 0.84, -0.08);
+  const paper2 = paper.clone();
+  paper2.position.set(-0.38, 0.865, -0.05);
+  paper2.rotation.y = 0.15;
+  const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.12, 12), mat(color, { roughness: 0.45 }));
+  mug.position.set(0.48, 0.9, -0.18);
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.055, 0.16, 10), mat(0xc5d0da));
+  cup.position.set(0.18, 0.92, -0.22);
+  for (const [dx, h] of [[-0.02, 0.1], [0, 0.13], [0.02, 0.08]]) {
+    const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, h, 6), mat(0x5b6b7c));
+    pen.position.set(0.18 + dx, 1.02, -0.22);
+    group.add(pen);
+  }
+  group.add(paper, paper2, mug, cup);
+}
+
+function addBookcase(x, z) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const carcass = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.65, 0.38), mat(0xb7c3ce));
+  carcass.position.y = 0.82;
+  carcass.castShadow = true;
+  g.add(carcass);
+  const spines = [0xf5a33c, 0xf23d8a, 0xff6b45, 0x5ec8f2, 0x8eefc8, 0xb15cff, 0x3dce63, 0x8aa4bc];
+  spines.forEach((color, i) => {
+    const book = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.34, 0.22), mat(color, { roughness: 0.7 }));
+    const row = Math.floor(i / 4);
+    const col = i % 4;
+    book.position.set(-0.55 + col * 0.28, 0.42 + row * 0.55, 0.06);
+    g.add(book);
+  });
+  world.add(g);
+}
+
+function addFloorLamp(x, z) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.7, 10), mat(0x9aa8b4));
+  pole.position.y = 0.85;
+  const shade = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.28, 0.28, 16),
+    mat(0xf4f7fb, { emissive: 0xd5e4f2, emissiveIntensity: 0.45 }),
+  );
+  shade.position.y = 1.72;
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 0.06, 12), mat(0xb7c3ce));
+  foot.position.y = 0.03;
+  g.add(pole, shade, foot);
+  world.add(g);
+}
+
+function addClock() {
+  const g = new THREE.Group();
+  g.position.set(4.35, 5.55, -5.7);
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.06, 24), mat(0xc5d0da));
+  rim.rotation.x = Math.PI / 2;
+  const face = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.26, 0.26, 0.02, 24),
+    new THREE.MeshBasicMaterial({ color: 0xf7f9fb }),
+  );
+  face.rotation.x = Math.PI / 2;
+  face.position.z = 0.03;
+  const hand = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.16, 0.02), mat(0x243044));
+  hand.position.set(0, 0.05, 0.05);
+  const hand2 = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.02, 0.02), mat(0x243044));
+  hand2.position.set(0.04, 0, 0.05);
+  g.add(rim, face, hand, hand2);
+  world.add(g);
+}
+
+function addFileCabinet(x, z) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.15, 0.48), mat(0xaeb8c4));
+  body.position.y = 0.58;
+  body.castShadow = true;
+  g.add(body);
+  for (const y of [0.28, 0.62, 0.96]) {
+    const drawer = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.28, 0.04), mat(0xd5dee6));
+    drawer.position.set(0, y, 0.24);
+    const pull = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 0.03), mat(0x8aa0b0));
+    pull.position.set(0, y, 0.27);
+    g.add(drawer, pull);
+  }
+  world.add(g);
+}
+
 function buildDecor() {
-  addPlant(-5.15, -0.4, 1.05);
-  addPlant(5.3, 2.5, 0.85);
+  addPlant(-6.3, 3.4, 1.05);
+  addPlant(6.4, 3.5, 0.9);
+  addPlant(-6.5, -3.6, 0.8);
+  addBookcase(-8.4, -5.35);
+  addBookcase(8.6, -5.35);
+  addFloorLamp(-6.9, 1.2);
+  addFloorLamp(6.9, 1.1);
+  addClock();
+  addFileCabinet(6.7, -4.5);
+  addFileCabinet(-6.7, -4.5);
   for (const piece of STUDIO_ART) {
     hangPicture(piece.x, piece.y, -5.68, 0, loadStudioTexture(piece.url), piece.aspect);
   }
