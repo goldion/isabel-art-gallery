@@ -910,7 +910,7 @@ function makeLaneAnimator(sheet, desk) {
 }
 
 function makeMeshAnimator(desk) {
-  const body = shapeMesh(desk.shape, desk.color);
+  const body = shapeMesh(desk.shape, desk.color, desk.id);
   body.scale.setScalar(1.35);
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(0.34, 18),
@@ -1612,7 +1612,77 @@ function flatShape(shape, depth, material, bevel = 0.03) {
   return mesh;
 }
 
-function shapeMesh(shape, color) {
+function basicMat(color) {
+  return new THREE.MeshBasicMaterial({ color });
+}
+
+function heldProp(deskId) {
+  const g = new THREE.Group();
+  g.name = "held";
+  if (deskId === "art") {
+    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.3, 8), basicMat(0xf93498));
+    stick.rotation.z = 0.55;
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.08, 8), basicMat(0xf6d365));
+    tip.rotation.z = 0.55;
+    tip.position.set(0.08, 0.13, 0);
+    g.add(stick, tip);
+    g.position.set(0.28, -0.2, 0.24);
+  } else if (deskId === "developer") {
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.024, 0.14), basicMat(0xf7f4ee));
+    const screen = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.1, 0.018), basicMat(0x1b2836));
+    screen.position.set(0, 0.05, -0.04);
+    screen.rotation.x = -0.4;
+    const keys = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.008, 0.05), basicMat(0x5b6b7c));
+    keys.position.set(0, 0.016, 0.02);
+    g.add(base, screen, keys);
+    g.position.set(0.32, -0.26, 0.26);
+  } else if (deskId === "tester") {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.015, 8, 18), basicMat(0x243044));
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.064, 18), basicMat(0xd7f6ff));
+    lens.position.z = 0.01;
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.08, 6), basicMat(0x243044));
+    handle.position.y = -0.12;
+    g.add(ring, lens, handle);
+    g.position.set(0.22, -0.22, 0.28);
+  } else if (deskId === "cto") {
+    const note = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.02), basicMat(0xffe56a));
+    const line = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.012, 0.01), basicMat(0x13b7a2));
+    line.position.set(0, 0.02, 0.012);
+    g.add(note, line);
+    g.position.set(0.26, -0.16, 0.34);
+  } else if (deskId === "assistant") {
+    const board = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.02), basicMat(0xfff8ee));
+    const clip = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.035, 0.024), basicMat(0x9aa8b5));
+    clip.position.set(0, 0.08, 0.012);
+    const line = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.01, 0.01), basicMat(0x8aa0b4));
+    line.position.set(0, 0.01, 0.014);
+    g.add(board, clip, line);
+    g.position.set(0.22, -0.06, 0.3);
+  } else if (deskId === "cfo") {
+    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.028, 18), basicMat(0xf5c518));
+    coin.rotation.x = Math.PI / 2;
+    const mark = new THREE.Mesh(new THREE.CircleGeometry(0.04, 14), basicMat(0xfff6cf));
+    mark.position.z = 0.02;
+    g.add(coin, mark);
+    g.position.set(0.16, -0.18, 0.4);
+  } else if (deskId === "governess") {
+    const cover = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.19, 0.04), basicMat(0x128a52));
+    const pages = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.018), basicMat(0xfff8ee));
+    pages.position.z = 0.02;
+    g.add(cover, pages);
+    g.position.set(0.16, -0.06, 0.2);
+  } else {
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.028), basicMat(0x161616));
+    const screen = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.13, 0.01), basicMat(0x2c3a4a));
+    screen.position.z = 0.016;
+    g.add(slab, screen);
+    g.position.set(0.22, -0.08, 0.4);
+  }
+  g.rotation.y = -0.28;
+  return g;
+}
+
+function shapeMesh(shape, color, deskId) {
   const g = new THREE.Group();
   const m = new THREE.MeshBasicMaterial({ color });
   if (shape === "heart") {
@@ -1702,6 +1772,7 @@ function shapeMesh(shape, color) {
     g.add(body);
     addGrokEyes(g, { y: 0.02, z: 0.34, spread: 0.11, radius: 0.07 });
   }
+  if (deskId) g.add(heldProp(deskId));
   return g;
 }
 
