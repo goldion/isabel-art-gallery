@@ -18,15 +18,15 @@ const COLORS = {
   laneGlow: 0x9aefff,
   waiting: 0xfff1c2,
   waitingGlow: 0xffd56a,
-  art: 0xf5a33c,
-  dev: 0xf23d8a,
-  tester: 0xff6b45,
-  cto: 0x5ec8f2,
-  assistant: 0x8eefc8,
-  cfo: 0xb15cff,
-  governess: 0x3dce63,
-  mainBot: 0x1c1c1c,
-  mainBadge: 0xf5a024,
+  art: 0xf59312,
+  dev: 0xf93498,
+  tester: 0xfd690f,
+  cto: 0x13b7a2,
+  assistant: 0x1e86fc,
+  cfo: 0x8f59f9,
+  governess: 0x14c16f,
+  mainBot: 0x000000,
+  mainBadge: 0xf59312,
   wood: 0xe7d3b4,
   desk: 0xb4c0cb,
 };
@@ -1321,7 +1321,7 @@ function flatShape(shape, depth, material) {
 
 function shapeMesh(shape, color) {
   const g = new THREE.Group();
-  const m = mat(color, { roughness: 0.42, emissive: color, emissiveIntensity: shape === "blob" ? 0.02 : 0.12 });
+  const m = new THREE.MeshBasicMaterial({ color });
   if (shape === "heart") {
     const heart = new THREE.Shape();
     heart.moveTo(0, -0.46);
@@ -1439,7 +1439,7 @@ function addBookcase(x, z) {
   carcass.position.y = 0.82;
   carcass.castShadow = true;
   g.add(carcass);
-  const spines = [0xf5a33c, 0xf23d8a, 0xff6b45, 0x5ec8f2, 0x8eefc8, 0xb15cff, 0x3dce63, 0x8aa4bc];
+  const spines = [0xf59312, 0xf93498, 0xfd690f, 0x13b7a2, 0x1e86fc, 0x8f59f9, 0x14c16f, 0x8aa4bc];
   spines.forEach((color, i) => {
     const book = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.34, 0.22), mat(color, { roughness: 0.7 }));
     const row = Math.floor(i / 4);
