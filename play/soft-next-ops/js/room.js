@@ -810,13 +810,17 @@ function applyAnchor(sprite, sheet, col) {
   sprite.center.set(THREE.MathUtils.clamp(centerX, 0.2, 0.8), THREE.MathUtils.clamp(footFromBottom, 0, 0.2));
 }
 
+function chairZ(desk) {
+  return desk.id === "cfo" ? 1.18 : 0.95;
+}
+
 function seatVector(desk) {
-  return new THREE.Vector3(desk.x, SEAT_Y, desk.z - 0.95);
+  return new THREE.Vector3(desk.x, SEAT_Y, desk.z - chairZ(desk));
 }
 
 function standVector(desk) {
   const side = desk.x >= 0 ? 1.7 : -1.7;
-  return new THREE.Vector3(desk.x + side, FLOOR_Y, desk.z - 0.95);
+  return new THREE.Vector3(desk.x + side, FLOOR_Y, desk.z - chairZ(desk));
 }
 
 function deskIndex(desk) {
@@ -1044,7 +1048,7 @@ function deskObstacles() {
   const list = [];
   for (const desk of ALL_DESKS) {
     list.push({ x: desk.x, z: desk.z, r: 0.98 });
-    list.push({ x: desk.x, z: desk.z - 0.95, r: 0.58 });
+    list.push({ x: desk.x, z: desk.z - chairZ(desk), r: 0.58 });
   }
   return list;
 }
@@ -1717,12 +1721,13 @@ function buildDesk(desk) {
   group.add(plate);
 
   const chair = new THREE.Group();
-  chair.position.set(0, 0, -0.95);
+  const chairBackZ = desk.id === "cfo" ? -0.72 : -0.28;
+  chair.position.set(0, 0, -chairZ(desk));
   const chairTone = isOffLane ? 0xc8b8a8 : 0xdccab4;
   const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.52), mat(chairTone));
   chairSeat.position.set(0, 0.46, 0);
   const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.72, 0.08), mat(chairTone, { roughness: 0.85 }));
-  chairBack.position.set(0, 0.86, -0.28);
+  chairBack.position.set(0, 0.86, chairBackZ);
   const chairLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.42, 10), mat(COLORS.trim));
   chairLeg.position.set(0, 0.22, 0);
   chair.add(chairSeat, chairBack, chairLeg);
@@ -1790,25 +1795,36 @@ function basicMat(color) {
 }
 
 function heldProp(deskId) {
+  if (deskId === "main") return null;
   const g = new THREE.Group();
   g.name = "held";
+  const silver = basicMat(0xd5d8de);
+  const black = basicMat(0x1b1f24);
   if (deskId === "art") {
-    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.3, 8), basicMat(0xf93498));
-    stick.rotation.z = 0.55;
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.08, 8), basicMat(0xf6d365));
-    tip.rotation.z = 0.55;
-    tip.position.set(0.08, 0.13, 0);
-    g.add(stick, tip);
-    g.position.set(0.28, -0.2, 0.24);
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.018, 0.28, 8), basicMat(0xc48a4a));
+    handle.rotation.z = 0.7;
+    const ferrule = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.05, 8), silver);
+    ferrule.rotation.z = 0.7;
+    ferrule.position.set(0.08, 0.11, 0);
+    const bristle = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.022, 0.07, 8), basicMat(0x3a2a22));
+    bristle.rotation.z = 0.7;
+    bristle.position.set(0.12, 0.16, 0);
+    const paint = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), basicMat(0xe23b2f));
+    paint.position.set(0.145, 0.19, 0);
+    g.add(handle, ferrule, bristle, paint);
+    g.position.set(0.52, -0.08, 0.36);
   } else if (deskId === "developer") {
-    const base = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.024, 0.14), basicMat(0xf7f4ee));
-    const screen = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.1, 0.018), basicMat(0x1b2836));
-    screen.position.set(0, 0.05, -0.04);
-    screen.rotation.x = -0.4;
-    const keys = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.008, 0.05), basicMat(0x5b6b7c));
-    keys.position.set(0, 0.016, 0.02);
-    g.add(base, screen, keys);
-    g.position.set(0.32, -0.26, 0.26);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.014, 0.15), silver);
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.13, 0.01), silver);
+    lid.position.set(0, 0.07, -0.07);
+    lid.rotation.x = -0.45;
+    const display = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.1, 0.006), black);
+    display.position.set(0, 0.07, -0.078);
+    display.rotation.x = -0.45;
+    g.add(base, lid, display);
+    g.position.set(0.5, -0.16, 0.4);
+    g.rotation.y = 0.05;
+    return g;
   } else if (deskId === "tester") {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.015, 8, 18), basicMat(0x243044));
     const lens = new THREE.Mesh(new THREE.CircleGeometry(0.064, 18), basicMat(0xd7f6ff));
@@ -1816,42 +1832,37 @@ function heldProp(deskId) {
     const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.08, 6), basicMat(0x243044));
     handle.position.y = -0.12;
     g.add(ring, lens, handle);
-    g.position.set(0.22, -0.22, 0.28);
+    g.position.set(0.48, -0.16, 0.36);
   } else if (deskId === "cto") {
     const note = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.02), basicMat(0xffe56a));
     const line = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.012, 0.01), basicMat(0x13b7a2));
     line.position.set(0, 0.02, 0.012);
     g.add(note, line);
-    g.position.set(0.26, -0.16, 0.34);
+    g.position.set(0.5, -0.1, 0.4);
   } else if (deskId === "assistant") {
     const board = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.02), basicMat(0xfff8ee));
-    const clip = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.035, 0.024), basicMat(0x9aa8b5));
+    const clip = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.035, 0.024), silver);
     clip.position.set(0, 0.08, 0.012);
     const line = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.01, 0.01), basicMat(0x8aa0b4));
     line.position.set(0, 0.01, 0.014);
     g.add(board, clip, line);
-    g.position.set(0.22, -0.06, 0.3);
+    g.position.set(0.5, -0.02, 0.4);
   } else if (deskId === "cfo") {
-    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.028, 18), basicMat(0xf5c518));
-    coin.rotation.x = Math.PI / 2;
-    const mark = new THREE.Mesh(new THREE.CircleGeometry(0.04, 14), basicMat(0xfff6cf));
-    mark.position.z = 0.02;
-    g.add(coin, mark);
-    g.position.set(0.16, -0.18, 0.4);
+    const bill = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.11, 0.012), basicMat(0xb7d7a8));
+    bill.rotation.z = -0.2;
+    const band = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.012, 0.008), basicMat(0x2f6b45));
+    band.rotation.z = -0.2;
+    band.position.z = 0.008;
+    g.add(bill, band);
+    g.position.set(0.54, -0.12, 0.48);
   } else if (deskId === "governess") {
     const cover = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.19, 0.04), basicMat(0x128a52));
     const pages = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.018), basicMat(0xfff8ee));
     pages.position.z = 0.02;
     g.add(cover, pages);
-    g.position.set(0.16, -0.06, 0.2);
-  } else {
-    const slab = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.028), basicMat(0x161616));
-    const screen = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.13, 0.01), basicMat(0x2c3a4a));
-    screen.position.z = 0.016;
-    g.add(slab, screen);
-    g.position.set(0.22, -0.08, 0.4);
+    g.position.set(0.5, -0.02, 0.32);
   }
-  g.rotation.y = -0.28;
+  g.rotation.y = -0.18;
   return g;
 }
 
@@ -1945,7 +1956,10 @@ function shapeMesh(shape, color, deskId) {
     g.add(body);
     addGrokEyes(g, { y: 0.02, z: 0.34, spread: 0.11, radius: 0.07 });
   }
-  if (deskId) g.add(heldProp(deskId));
+  if (deskId) {
+    const held = heldProp(deskId);
+    if (held) g.add(held);
+  }
   return g;
 }
 
@@ -1988,24 +2002,31 @@ function addDeskProps(group, color, deskId) {
     pencil.position.set(0.42, 0.96, -0.05);
     group.add(pencil);
   } else if (deskId === "developer") {
-    const base = prop(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.04, 0.3), mat(0xf4f1ea)));
-    base.position.set(-0.1, 0.86, -0.06);
-    const screen = prop(new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.24, 0.03), mat(0x243044)));
-    screen.position.set(-0.08, 1.02, -0.16);
-    screen.rotation.x = -0.35;
+    const aluminum = mat(0xd7dbe2, { roughness: 0.32, metalness: 0.2 });
+    const foot = prop(new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.02, 16), aluminum));
+    foot.position.set(0, 0.84, -0.04);
+    const neck = prop(new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.14, 0.03), aluminum));
+    neck.position.set(0, 0.92, -0.04);
+    const shell = prop(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.32, 0.028), aluminum));
+    shell.position.set(0, 1.12, -0.08);
+    const glass = prop(new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.26, 0.008), mat(0x1b2430)));
+    glass.position.set(0, 1.12, -0.098);
     const mug = prop(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.12, 12), mat(color)));
-    mug.position.set(0.42, 0.9, -0.08);
-    group.add(base, screen, mug);
+    mug.position.set(0.48, 0.9, 0.12);
+    group.add(foot, neck, shell, glass, mug);
   } else if (deskId === "tester") {
     const pad = prop(new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.03, 0.4), paper));
     pad.position.set(-0.2, 0.85, -0.02);
-    const glass = prop(new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.018, 8, 16), mat(0x3a4a5c)));
-    glass.rotation.x = Math.PI / 2;
-    glass.position.set(0.36, 0.88, -0.02);
-    const handle = prop(new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.16, 6), mat(0x3a4a5c)));
-    handle.rotation.z = 0.8;
-    handle.position.set(0.48, 0.9, 0.08);
-    group.add(pad, glass, handle);
+    const calc = prop(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.035, 0.26), mat(0x2c3540)));
+    calc.position.set(0.36, 0.86, -0.02);
+    const calcScreen = prop(new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.012, 0.07), mat(0xc6ddd0)));
+    calcScreen.position.set(0.36, 0.885, -0.08);
+    for (const [dx, dz] of [[-0.045, 0.02], [0, 0.02], [0.045, 0.02], [-0.045, 0.07], [0, 0.07], [0.045, 0.07]]) {
+      const key = prop(new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.012, 0.03), mat(0x8fd0c4)));
+      key.position.set(0.36 + dx, 0.885, -0.02 + dz);
+      group.add(key);
+    }
+    group.add(pad, calc, calcScreen);
   } else if (deskId === "cto") {
     const board = prop(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.04, 0.28), mat(0xf7e27a)));
     board.position.set(-0.16, 0.86, -0.06);
