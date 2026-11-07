@@ -1199,7 +1199,7 @@ function bubbleTexture(text) {
   return tex;
 }
 
-function bubbleLine(bot) {
+function workflowLine(bot) {
   const seat = gateBots[bot.id];
   if (!seat || seat === "idle") return "";
   if (seat === "cooking") {
@@ -1209,6 +1209,13 @@ function bubbleLine(bot) {
   }
   if (seat === "waiting-go") return "Waiting Go";
   if (seat === "smoking") return "Smoking";
+  return "";
+}
+
+function bubbleLine(bot) {
+  const workflow = workflowLine(bot);
+  if (workflow) return workflow;
+  if (bot.calledBack && bot.state === "return") return "Going back";
   return "";
 }
 
@@ -1232,7 +1239,10 @@ function updateLaneAnimators(dt, elapsed) {
   for (const bot of laneAnimators) {
     syncBubble(bot);
     const focused = bot.id === focusedId;
-    if (focused && bot.state !== "work" && bot.state !== "return") beginReturn(bot);
+    if (focused && bot.state !== "work") {
+      bot.calledBack = true;
+      if (bot.state !== "return") beginReturn(bot);
+    }
 
     if (bot.state === "work") {
       const bob = Math.sin(elapsed * 2.05 + bot.phase) * 0.012;
@@ -1325,6 +1335,7 @@ function updateLaneAnimators(dt, elapsed) {
         if (k >= 1) {
           bot.state = "work";
           bot.stateT = 0;
+          bot.calledBack = false;
           bot.anchor.position.copy(bot.seat);
         }
       }
@@ -2382,6 +2393,7 @@ async function init() {
         y: Number(b.anchor.position.y.toFixed(3)),
         z: Number(b.anchor.position.z.toFixed(3)),
         state: b.state,
+        bubble: b.bubbleLine || "",
         mode: b.mode,
         frame: b.frame,
       }));
