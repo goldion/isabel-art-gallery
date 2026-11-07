@@ -66,13 +66,20 @@ const HOME_POS = new THREE.Vector3(2.05, 4.4, 10.85);
 const HOME_TARGET = new THREE.Vector3(1.7, 2.9, -0.7);
 const REDUCE_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const PACE = [
-  { mode: "idle", x: 0, dur: 2.15 },
-  { mode: "walk", x: 0.26, dur: 0.82 },
-  { mode: "idle", x: 0.26, dur: 0.22 },
-  { mode: "walk", x: -0.26, dur: 1.12 },
-  { mode: "idle", x: -0.26, dur: 0.18 },
-  { mode: "walk", x: 0, dur: 0.78 },
+const BODY_H = 1.48;
+const SEAT_Y = 0.06;
+const FLOOR_Y = 0.02;
+const WALK_SPEED = 1.25;
+const LOOP = [
+  [-4.05, 2.35],
+  [-2.1, 2.85],
+  [0.15, 3.3],
+  [2.35, 2.85],
+  [4.15, 2.35],
+  [3.15, 3.45],
+  [0.4, 3.7],
+  [-2.4, 3.45],
+  [-4.2, 2.9],
 ];
 
 const view = document.getElementById("view");
@@ -664,10 +671,23 @@ function applyAnchor(sprite, sheet, col) {
   sprite.center.set(THREE.MathUtils.clamp(centerX, 0.2, 0.8), THREE.MathUtils.clamp(footFromBottom, 0, 0.2));
 }
 
+function seatVector(desk) {
+  return new THREE.Vector3(desk.x - 0.46, SEAT_Y, DESK_Z + 1.02);
+}
+
+function standVector(desk) {
+  return new THREE.Vector3(desk.x - 0.46, FLOOR_Y, DESK_Z + 1.95);
+}
+
+function loopVector(index) {
+  const p = LOOP[index % LOOP.length];
+  return new THREE.Vector3(p[0], FLOOR_Y, p[1]);
+}
+
 function makeLaneAnimator(sheet, desk) {
   const frames = [0, 1, 2, 3].map((i) => frameSlice(sheet, i));
   const cropH = sheet.cropBot - sheet.cropTop;
-  const displayH = 1.22;
+  const displayH = BODY_H;
   const displayW = displayH * (sheet.colW / cropH);
   const material = new THREE.SpriteMaterial({
     map: frames[0],
@@ -685,31 +705,55 @@ function makeLaneAnimator(sheet, desk) {
   applyAnchor(sprite, sheet, 0);
   ghost.center.copy(sprite.center);
 
+  const shadow = new THREE.Mesh(
+    new THREE.CircleGeometry(0.34, 18),
+    new THREE.MeshBasicMaterial({ color: 0x667484, transparent: true, opacity: 0, depthWrite: false }),
+  );
+  shadow.rotation.x = -Math.PI / 2;
+
   const anchor = new THREE.Group();
-  anchor.position.set(0, 0.93, 0.06);
+  anchor.userData.deskId = desk.id;
   anchor.add(sprite);
   anchor.add(ghost);
-  desk.group.add(anchor);
+  anchor.add(shadow);
+  world.add(anchor);
+
+  const index = LANE_DESKS.findIndex((d) => d.id === desk.id);
+  const seat = seatVector(desk);
+  const stand = standVector(desk);
+  const startWalking = index % 2 === 0;
+  const wp = (index * 3) % LOOP.length;
+  if (startWalking) {
+    const here = loopVector(wp);
+    anchor.position.copy(here);
+  } else {
+    anchor.position.copy(seat);
+  }
 
   return {
     id: desk.id,
     anchor,
     sprite,
     ghost,
+    shadow,
     sheet,
     frames,
     displayW,
     displayH,
-    phase: LANE_DESKS.findIndex((d) => d.id === desk.id) * 0.73,
-    step: 0,
-    stepT: LANE_DESKS.findIndex((d) => d.id === desk.id) * 0.37,
-    fromX: 0,
-    x: 0,
+    phase: index * 0.9,
+    seat,
+    stand,
+    state: startWalking ? "wander" : "work",
+    stateT: startWalking ? 0.4 : index * 0.2,
+    wp: (wp + 1) % LOOP.length,
+    wanderLeft: 7 + index,
+    from: new THREE.Vector3(),
     frame: 0,
     frameTimer: 0,
     fadeT: 1,
     fadeFrom: 0,
-    mode: "idle",
+    mode: startWalking ? "walk" : "idle",
+    workDur: 5.4 + index * 0.35,
   };
 }
 
@@ -731,52 +775,155 @@ function smooth(t) {
   return k * k * (3 - 2 * k);
 }
 
+function faceMove(bot, dx, dz) {
+  let facing = 1;
+  if (Math.abs(dx) > Math.abs(dz) * 0.55 && Math.abs(dx) > 0.015) facing = Math.sign(dx);
+  const w = bot.displayW * facing;
+  bot.sprite.scale.set(w, bot.displayH, 1);
+  bot.ghost.scale.set(w, bot.displayH, 1);
+}
+
+function playClip(bot, walking, dt) {
+  bot.mode = walking ? "walk" : "idle";
+  bot.frameTimer += dt;
+  const interval = walking ? 0.13 : 0.46;
+  const inWalk = bot.frame >= 2;
+  if (walking !== inWalk) {
+    showFrame(bot, walking ? 2 : 0);
+    bot.frameTimer = 0;
+  } else if (bot.frameTimer >= interval) {
+    bot.frameTimer = 0;
+    if (walking) showFrame(bot, bot.frame === 2 ? 3 : 2);
+    else showFrame(bot, bot.frame === 0 ? 1 : 0);
+  }
+  if (bot.fadeT < 1) {
+    bot.fadeT = Math.min(1, bot.fadeT + dt / 0.14);
+    bot.sprite.material.opacity = bot.fadeT;
+    bot.ghost.material.opacity = 1 - bot.fadeT;
+  }
+}
+
+function plantShadow(bot, onFloor) {
+  const shadow = bot.shadow;
+  shadow.position.y = FLOOR_Y + 0.012 - bot.anchor.position.y;
+  shadow.material.opacity = onFloor ? 0.32 : 0;
+}
+
+function beginLeave(bot) {
+  bot.state = "leave";
+  bot.stateT = 0;
+  bot.from.copy(bot.anchor.position);
+}
+
+function beginWander(bot) {
+  bot.state = "wander";
+  bot.stateT = 0;
+  bot.wanderLeft = 7 + (bot.phase > 2 ? 2 : 0);
+  let best = 0;
+  let bestD = Infinity;
+  const p = bot.anchor.position;
+  for (let i = 0; i < LOOP.length; i++) {
+    const q = LOOP[i];
+    const d = (q[0] - p.x) ** 2 + (q[1] - p.z) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  }
+  bot.wp = (best + 1) % LOOP.length;
+}
+
+function beginReturn(bot) {
+  if (bot.state === "return" || bot.state === "work") return;
+  bot.state = "return";
+  bot.stateT = 0;
+  bot.returnPhase = "toStand";
+  bot.from.copy(bot.anchor.position);
+}
+
+function moveToward(bot, target, dt) {
+  const pos = bot.anchor.position;
+  const dx = target.x - pos.x;
+  const dz = target.z - pos.z;
+  const dist = Math.hypot(dx, dz) || 0.0001;
+  const step = Math.min(WALK_SPEED * dt, dist);
+  pos.x += (dx / dist) * step;
+  pos.z += (dz / dist) * step;
+  faceMove(bot, dx, dz);
+  return dist - step;
+}
+
 function updateLaneAnimators(dt, elapsed) {
   for (const bot of laneAnimators) {
     const focused = bot.id === focusedId;
-    const speed = focused ? 1.45 : 1;
-    const step = PACE[bot.step];
-    const dur = step.mode === "idle" ? step.dur * (focused ? 0.55 : 1) : step.dur / speed;
-    bot.stepT += dt;
-    const k = smooth(bot.stepT / dur);
-    bot.x = THREE.MathUtils.lerp(bot.fromX, step.x, step.mode === "walk" ? k : 1);
-    if (bot.stepT >= dur) {
-      bot.fromX = step.x;
-      bot.x = step.x;
-      bot.step = (bot.step + 1) % PACE.length;
-      bot.stepT = 0;
-    }
-    const live = PACE[bot.step];
-    bot.mode = live.mode;
-    const facing = live.mode === "walk" && Math.abs(live.x - bot.fromX) > 0.02
-      ? Math.sign(live.x - bot.fromX) || 1
-      : Math.sign(bot.sprite.scale.x) || 1;
-    const bob = live.mode === "walk"
-      ? Math.sin(elapsed * 11 + bot.phase) * 0.035
-      : Math.sin(elapsed * 2.1 + bot.phase) * 0.02;
-    bot.anchor.position.x = bot.x;
-    bot.anchor.position.y = 0.93 + bob;
-    bot.anchor.position.z = 0.06 + Math.sin(elapsed * 1.3 + bot.phase) * 0.015;
-    const w = bot.displayW * facing;
-    bot.sprite.scale.set(w, bot.displayH, 1);
-    bot.ghost.scale.set(w, bot.displayH, 1);
+    if (focused && bot.state !== "work" && bot.state !== "return") beginReturn(bot);
 
-    bot.frameTimer += dt;
-    const interval = live.mode === "walk" ? 0.14 : 0.42;
-    const wantWalk = live.mode === "walk";
-    const inWalk = bot.frame >= 2;
-    if (wantWalk !== inWalk) {
-      showFrame(bot, wantWalk ? 2 : 0);
-      bot.frameTimer = 0;
-    } else if (bot.frameTimer >= interval) {
-      bot.frameTimer = 0;
-      if (wantWalk) showFrame(bot, bot.frame === 2 ? 3 : 2);
-      else showFrame(bot, bot.frame === 0 ? 1 : 0);
+    if (bot.state === "work") {
+      const bob = Math.sin(elapsed * 2.05 + bot.phase) * 0.012;
+      bot.anchor.position.set(bot.seat.x, 0.5 + bob, bot.seat.z);
+      faceMove(bot, 0, 1);
+      const sitH = bot.displayH * 0.86;
+      bot.sprite.scale.y = sitH;
+      bot.ghost.scale.y = sitH;
+      playClip(bot, false, dt);
+      plantShadow(bot, false);
+      bot.stateT += dt;
+      if (!focused && bot.stateT > bot.workDur) beginLeave(bot);
+      continue;
     }
-    if (bot.fadeT < 1) {
-      bot.fadeT = Math.min(1, bot.fadeT + dt / 0.12);
-      bot.sprite.material.opacity = bot.fadeT;
-      bot.ghost.material.opacity = 1 - bot.fadeT;
+
+    if (bot.state === "leave") {
+      const k = smooth(Math.min(1, bot.stateT / 0.9));
+      bot.anchor.position.lerpVectors(bot.from, bot.stand, k);
+      bot.anchor.position.y = THREE.MathUtils.lerp(bot.seat.y, FLOOR_Y, k);
+      faceMove(bot, bot.stand.x - bot.seat.x, bot.stand.z - bot.seat.z);
+      playClip(bot, k > 0.35, dt);
+      plantShadow(bot, k > 0.45);
+      bot.stateT += dt;
+      if (k >= 1) beginWander(bot);
+      continue;
+    }
+
+    if (bot.state === "wander") {
+      const target = loopVector(bot.wp);
+      const left = moveToward(bot, target, dt);
+      const bob = Math.abs(Math.sin(elapsed * 10 + bot.phase)) * 0.045;
+      bot.anchor.position.y = FLOOR_Y + bob;
+      playClip(bot, true, dt);
+      plantShadow(bot, true);
+      if (left < 0.06) {
+        bot.wp = (bot.wp + 1) % LOOP.length;
+        bot.wanderLeft -= 1;
+        if (bot.wanderLeft <= 0) beginReturn(bot);
+      }
+      continue;
+    }
+
+    if (bot.state === "return") {
+      if (bot.returnPhase === "toStand") {
+        const left = moveToward(bot, bot.stand, dt);
+        bot.anchor.position.y = FLOOR_Y + Math.abs(Math.sin(elapsed * 10 + bot.phase)) * 0.04;
+        playClip(bot, true, dt);
+        plantShadow(bot, true);
+        if (left < 0.07) {
+          bot.returnPhase = "sit";
+          bot.stateT = 0;
+          bot.from.copy(bot.anchor.position);
+        }
+      } else {
+        const k = smooth(Math.min(1, bot.stateT / 0.85));
+        bot.anchor.position.lerpVectors(bot.from, bot.seat, k);
+        bot.anchor.position.y = THREE.MathUtils.lerp(FLOOR_Y, bot.seat.y, k);
+        faceMove(bot, 0, -1);
+        playClip(bot, k < 0.55, dt);
+        plantShadow(bot, k < 0.4);
+        bot.stateT += dt;
+        if (k >= 1) {
+          bot.state = "work";
+          bot.stateT = 0;
+          bot.anchor.position.copy(bot.seat);
+        }
+      }
     }
   }
 }
@@ -1014,6 +1161,15 @@ function buildDesk(desk) {
   plate.position.set(0, 0.32, 0.43);
   group.add(plate);
 
+  const chair = new THREE.Group();
+  chair.position.set(-0.46, 0, 1.02);
+  const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.1, 0.5), mat(0xd7e0e8));
+  chairSeat.position.set(0, 0.48, -0.2);
+  const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.78, 0.08), mat(0xc5d0dc));
+  chairBack.position.set(0, 0.92, -0.42);
+  chair.add(chairSeat, chairBack);
+  group.add(chair);
+
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(0.62, 0.78, 40),
     new THREE.MeshBasicMaterial({
@@ -1219,7 +1375,7 @@ function pickDesk(event) {
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObjects(deskGroups, true);
+  const hits = raycaster.intersectObjects(deskGroups.concat(laneAnimators.map((bot) => bot.anchor)), true);
   if (!hits.length) {
     if (focusedId) setFocus(focusedId);
     return;
@@ -1234,7 +1390,7 @@ function hoverDesk(event) {
   pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(pointer, camera);
-  const hit = raycaster.intersectObjects(deskGroups, true).length > 0;
+  const hit = raycaster.intersectObjects(deskGroups.concat(laneAnimators.map((bot) => bot.anchor)), true).length > 0;
   renderer.domElement.classList.toggle("is-desk", hit);
 }
 
@@ -1411,6 +1567,9 @@ async function init() {
       return laneAnimators.map((b) => ({
         id: b.id,
         x: Number(b.anchor.position.x.toFixed(3)),
+        y: Number(b.anchor.position.y.toFixed(3)),
+        z: Number(b.anchor.position.z.toFixed(3)),
+        state: b.state,
         mode: b.mode,
         frame: b.frame,
       }));
