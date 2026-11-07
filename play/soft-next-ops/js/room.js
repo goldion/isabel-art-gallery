@@ -135,6 +135,7 @@ scene.fog = new THREE.Fog(COLORS.wall, 30, 54);
 const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 80);
 const introFrom = HOME_POS.clone().add(new THREE.Vector3(0.35, 0.85, 1.8));
 camera.position.copy(REDUCE_MOTION ? HOME_POS : introFrom);
+camera.lookAt(HOME_TARGET);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setClearColor(COLORS.wall, 1);
@@ -921,7 +922,6 @@ function makeMeshAnimator(desk) {
   anchor.userData.deskId = desk.id;
   const bubble = new THREE.Sprite(
     new THREE.SpriteMaterial({
-      map: bubbleTexture("Working"),
       transparent: true,
       depthWrite: false,
     }),
@@ -929,6 +929,7 @@ function makeMeshAnimator(desk) {
   bubble.center.set(0.5, 0);
   bubble.position.set(0.05, 1.22, 0);
   bubble.scale.set(1.35, 0.58, 1);
+  bubble.visible = false;
   anchor.add(body);
   anchor.add(shadow);
   anchor.add(bubble);
@@ -1198,14 +1199,24 @@ function bubbleTexture(text) {
   return tex;
 }
 
-function bubbleLine(bot) {
-  if (bot.state === "return") return bot.returnPhase === "sit" ? "Sitting down" : "Going back";
-  if (bot.state === "leave") return "Taking a walk";
-  if (bot.state === "wander") return "Waiting";
+function workflowLine(bot) {
   const seat = gateBots[bot.id];
-  if (seat === "waiting-go") return "Waiting to go";
+  if (!seat || seat === "idle") return "";
+  if (seat === "cooking") {
+    if (bot.id === "art") return "Packing";
+    if (bot.id === "developer") return "Tipping";
+    return "Cooking";
+  }
+  if (seat === "waiting-go") return "Waiting Go";
   if (seat === "smoking") return "Smoking";
-  return "Working";
+  return "";
+}
+
+function bubbleLine(bot) {
+  const workflow = workflowLine(bot);
+  if (workflow) return workflow;
+  if (bot.calledBack && bot.state === "return") return "Going back";
+  return "";
 }
 
 function syncBubble(bot) {
@@ -1213,6 +1224,11 @@ function syncBubble(bot) {
   const line = bubbleLine(bot);
   if (line === bot.bubbleLine) return;
   bot.bubbleLine = line;
+  if (!line) {
+    bot.bubble.visible = false;
+    return;
+  }
+  bot.bubble.visible = true;
   bot.bubble.material.map = bubbleTexture(line);
   bot.bubble.material.needsUpdate = true;
   const width = THREE.MathUtils.clamp(0.62 + line.length * 0.09, 1.1, 2.2);
@@ -1223,7 +1239,10 @@ function updateLaneAnimators(dt, elapsed) {
   for (const bot of laneAnimators) {
     syncBubble(bot);
     const focused = bot.id === focusedId;
-    if (focused && bot.state !== "work" && bot.state !== "return") beginReturn(bot);
+    if (focused && bot.state !== "work") {
+      bot.calledBack = true;
+      if (bot.state !== "return") beginReturn(bot);
+    }
 
     if (bot.state === "work") {
       const bob = Math.sin(elapsed * 2.05 + bot.phase) * 0.012;
@@ -1316,6 +1335,7 @@ function updateLaneAnimators(dt, elapsed) {
         if (k >= 1) {
           bot.state = "work";
           bot.stateT = 0;
+          bot.calledBack = false;
           bot.anchor.position.copy(bot.seat);
         }
       }
@@ -2258,6 +2278,7 @@ function animate() {
     camera.updateProjectionMatrix();
     camera.position.lerpVectors(introFrom, frame.pos, k);
     controls.target.copy(frame.target);
+    camera.lookAt(controls.target);
     if (introT >= 1) {
       controls.enabled = true;
       controls.autoRotate = false;
@@ -2372,6 +2393,7 @@ async function init() {
         y: Number(b.anchor.position.y.toFixed(3)),
         z: Number(b.anchor.position.z.toFixed(3)),
         state: b.state,
+        bubble: b.bubbleLine || "",
         mode: b.mode,
         frame: b.frame,
       }));
