@@ -76,9 +76,9 @@ const STATIONS = [
   { id: "done", label: "Done", icon: "done" },
 ];
 
-const DESK_Z = 3.15;
-const BACK_Z = -2.85;
-const COL_X = [-7.85, -2.6, 2.6, 7.85];
+const DESK_Z = 2.45;
+const BACK_Z = -2.15;
+const COL_X = [-6.35, -2.15, 2.15, 6.35];
 
 const LANE_DESKS = [
   { id: "art", role: "Art", mark: "heart", shape: "heart", color: COLORS.art, x: COL_X[0], z: DESK_Z },
@@ -919,8 +919,19 @@ function makeMeshAnimator(desk) {
   shadow.rotation.x = -Math.PI / 2;
   const anchor = new THREE.Group();
   anchor.userData.deskId = desk.id;
+  const bubble = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: bubbleTexture("Working"),
+      transparent: true,
+      depthWrite: false,
+    }),
+  );
+  bubble.center.set(0.5, 0);
+  bubble.position.set(0.05, 1.22, 0);
+  bubble.scale.set(1.35, 0.58, 1);
   anchor.add(body);
   anchor.add(shadow);
+  anchor.add(bubble);
   world.add(anchor);
 
   const index = deskIndex(desk);
@@ -958,6 +969,8 @@ function makeMeshAnimator(desk) {
     kind: "mesh",
     sitLift: 1.05,
     floorLift: 0.58,
+    bubble,
+    bubbleLine: "",
   };
 }
 
@@ -1093,8 +1106,65 @@ function moveToward(bot, target, dt) {
   return dist - step;
 }
 
+const bubbleCache = new Map();
+
+function bubbleTexture(text) {
+  const cached = bubbleCache.get(text);
+  if (cached) return cached;
+  const tex = canvasTexture(640, 220, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    roundPath(ctx, 18, 14, w - 36, h - 58, 40);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.lineWidth = 8;
+    ctx.strokeStyle = "#d5e4f2";
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(w * 0.5 - 24, h - 52);
+    ctx.lineTo(w * 0.5, h - 12);
+    ctx.lineTo(w * 0.5 + 24, h - 52);
+    ctx.closePath();
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.fillStyle = COLORS.ink;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    let size = 68;
+    ctx.font = `800 ${size}px Nunito, Trebuchet MS, sans-serif`;
+    while (ctx.measureText(text).width > w - 88 && size > 42) {
+      size -= 4;
+      ctx.font = `800 ${size}px Nunito, Trebuchet MS, sans-serif`;
+    }
+    ctx.fillText(text, w / 2, (h - 48) / 2 + 4);
+  });
+  bubbleCache.set(text, tex);
+  return tex;
+}
+
+function bubbleLine(bot) {
+  if (bot.state === "return") return bot.returnPhase === "sit" ? "Sitting down" : "Going back";
+  if (bot.state === "leave") return "Taking a walk";
+  if (bot.state === "wander") return "Waiting";
+  const seat = gateBots[bot.id];
+  if (seat === "waiting-go") return "Waiting to go";
+  if (seat === "smoking") return "Smoking";
+  return "Working";
+}
+
+function syncBubble(bot) {
+  if (!bot.bubble) return;
+  const line = bubbleLine(bot);
+  if (line === bot.bubbleLine) return;
+  bot.bubbleLine = line;
+  bot.bubble.material.map = bubbleTexture(line);
+  bot.bubble.material.needsUpdate = true;
+  const width = THREE.MathUtils.clamp(0.62 + line.length * 0.09, 1.1, 2.2);
+  bot.bubble.scale.set(width, 0.58, 1);
+}
+
 function updateLaneAnimators(dt, elapsed) {
   for (const bot of laneAnimators) {
+    syncBubble(bot);
     const focused = bot.id === focusedId;
     if (focused && bot.state !== "work" && bot.state !== "return") beginReturn(bot);
 
@@ -1222,13 +1292,13 @@ function buildRoom() {
 function buildLaneRug() {
   const rug = new THREE.Mesh(new THREE.CircleGeometry(1, 64), mat(COLORS.lane));
   rug.rotation.x = -Math.PI / 2;
-  rug.scale.set(9.2, 1, 2.15);
+  rug.scale.set(7.5, 1, 2.05);
   rug.position.set(0, 0.02, DESK_Z + 0.35);
   rug.receiveShadow = true;
   world.add(rug);
 
   const pts = [];
-  const xArm = 6.9;
+  const xArm = 5.55;
   const zBack = DESK_Z - 0.35;
   const zFront = DESK_Z + 0.85;
   const n = 72;
@@ -1780,7 +1850,7 @@ const STUDIO_ART = [
   { url: "../../07_comics/converted/cover-isabel-art.png", aspect: 864 / 1152, x: -10.05, y: 3.95 },
   { url: "../../10_game_assets/characters/isabel.png", aspect: 1280 / 720, x: -7.7, y: 3.95 },
   { url: "../../10_game_assets/characters/maisie.png", aspect: 1280 / 720, x: 7.35, y: 3.95 },
-  { url: "../../10_game_assets/characters/lotus-dragon.png", aspect: 1280 / 720, x: 10.05, y: 3.95 },
+  { url: "../../10_game_assets/demo/fruit-catcher.png", aspect: 1, x: 10.05, y: 3.95 },
 ];
 
 function loadStudioTexture(url) {
