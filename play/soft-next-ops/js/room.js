@@ -1,34 +1,53 @@
 /**
  * Hammer Studio — Soft Next ops room.
- * Cool gallery palette, Soft PASS war-room cards, lane idle+walk sheets.
+ * Warm Soft PASS gallery palette, war-room cards, lane idle+walk sheets.
  * Title is Hammer Studio only. Active station glow follows live Soft PASS gate.
  */
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const COLORS = {
-  wall: 0xd5dee8,
-  wallSide: 0xc9d4df,
-  floor: 0xd7dee6,
-  frame: 0xb7c5d1,
-  board: 0xf4f7fb,
-  card: 0xfbfcfe,
+  wall: 0xede6dc,
+  wallSide: 0xe5ddd2,
+  floor: 0xddc9ae,
+  frame: 0x9a6b3f,
+  board: 0xf5efe6,
+  card: 0xfaf6f0,
   ink: "#243044",
-  lane: 0x4e93c8,
-  laneGlow: 0x9aefff,
-  waiting: 0xfff1c2,
-  waitingGlow: 0xffd56a,
-  art: 0xf59312,
-  dev: 0xf93498,
-  tester: 0xfd690f,
-  cto: 0x13b7a2,
-  assistant: 0x1e86fc,
-  cfo: 0x8f59f9,
-  governess: 0x14c16f,
+  lane: 0x3589a8,
+  laneGlow: 0x5ee0f0,
+  waiting: 0xfff0c4,
+  waitingGlow: 0xffc84a,
+  art: 0xf5c518,
+  dev: 0xe83898,
+  tester: 0xf0957a,
+  cto: 0x28c8e8,
+  assistant: 0x8fb896,
+  cfo: 0x9b6fe8,
+  governess: 0xecc85a,
   mainBot: 0x000000,
-  mainBadge: 0xf59312,
-  wood: 0xe7d3b4,
-  desk: 0xb4c0cb,
+  mainBadge: 0xf5a832,
+  wood: 0xc49a6c,
+  desk: 0x8f5e32,
+  plant: 0x3a8f4a,
+  pot: 0xc87850,
+  trim: 0xa67c52,
+};
+
+const STATION_TINTS = {
+  pick: 0xf5d5c0,
+  "soft-pass": 0xc5e6c8,
+  "waiting-go": 0xfff0c8,
+  tip: 0xb8dff5,
+  smoke: 0xf0c8c4,
+  done: 0xc0ecd8,
+};
+
+const DESK_CUP_ACCENTS = {
+  art: 0x2eb8b8,
+  developer: 0xf0957a,
+  tester: 0xf5c518,
+  cto: 0x3ab8c8,
 };
 
 const GATE_STAGES = ["pick", "soft-pass", "waiting-go", "tip", "smoke", "done"];
@@ -132,8 +151,8 @@ controls.autoRotate = false;
 controls.autoRotateSpeed = 0.12;
 controls.enabled = REDUCE_MOTION;
 
-scene.add(new THREE.HemisphereLight(0xeaf2f8, 0x93a3b3, 0.96));
-const sun = new THREE.DirectionalLight(0xf5f8fb, 0.78);
+scene.add(new THREE.HemisphereLight(0xfff5e8, 0x8b7355, 0.92));
+const sun = new THREE.DirectionalLight(0xfff3e0, 0.85);
 sun.position.set(4.5, 14, 9);
 sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024);
@@ -276,10 +295,10 @@ function drawMark(ctx, mark, s = 1) {
 function nameplateTexture(title, sub, mark, color) {
   return canvasTexture(512, 196, (ctx, w, h) => {
     roundPath(ctx, 12, 16, w - 24, h - 32, 32);
-    ctx.fillStyle = "#f7f9fb";
+    ctx.fillStyle = "#fff8ee";
     ctx.fill();
     ctx.lineWidth = 6;
-    ctx.strokeStyle = "rgba(90, 108, 124, 0.28)";
+    ctx.strokeStyle = "rgba(139, 90, 43, 0.22)";
     ctx.stroke();
     ctx.save();
     ctx.translate(92, h / 2 - 2);
@@ -320,10 +339,10 @@ function stationIconTexture(icon) {
     };
     if (icon === "pick") {
       const g = ctx.createRadialGradient(100, 96, 20, 128, 128, 110);
-      g.addColorStop(0, "#f4f7fa");
-      g.addColorStop(1, "#b7c2cc");
-      disc(g, "#8b98a6");
-      ctx.fillStyle = "#6d7c8c";
+      g.addColorStop(0, "#fff0e4");
+      g.addColorStop(1, "#e8b898");
+      disc(g, "#c48a62");
+      ctx.fillStyle = "#8b5a2b";
       roundPath(ctx, 92, 78, 72, 96, 10);
       ctx.fill();
       ctx.fillStyle = "#e8eef3";
@@ -334,7 +353,7 @@ function stationIconTexture(icon) {
       roundPath(ctx, 104, 132, 32, 8, 3);
       ctx.fill();
     } else if (icon === "pass") {
-      disc("#6fbf73", "#3f8f4d");
+      disc("#7ed492", "#3f8f4a");
       ctx.strokeStyle = "#f4fff4";
       ctx.lineWidth = 16;
       ctx.lineCap = "round";
@@ -361,8 +380,21 @@ function stationIconTexture(icon) {
       ctx.lineTo(110, 128);
       ctx.closePath();
       ctx.fill();
+    } else if (icon === "wait") {
+      disc("#fff4cc", "#e8c84a");
+      ctx.fillStyle = "#c4922e";
+      roundPath(ctx, 108, 118, 40, 44, 8);
+      ctx.fill();
+      ctx.fillStyle = "#fff8dc";
+      ctx.beginPath();
+      ctx.arc(128, 102, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#f5c842";
+      ctx.beginPath();
+      ctx.arc(128, 104, 14, 0, Math.PI * 2);
+      ctx.fill();
     } else if (icon === "smoke") {
-      disc("#d5dde4", "#8ea0ae");
+      disc("#f0c4c0", "#d88888");
       ctx.strokeStyle = "#607484";
       ctx.fillStyle = "#9eb0be";
       ctx.lineWidth = 8;
@@ -379,7 +411,7 @@ function stationIconTexture(icon) {
       ctx.ellipse(128, 96, 22, 12, 0, 0, Math.PI * 2);
       ctx.fill();
     } else if (icon === "done") {
-      disc("#7eb6e6", "#4d86b8");
+      disc("#8ee8c8", "#3fbf8f");
       ctx.fillStyle = "#f7fbff";
       ctx.beginPath();
       ctx.arc(104, 138, 26, 0, Math.PI * 2);
@@ -420,9 +452,9 @@ function roundedCard(w, h, d, r, material) {
 
 function floorTexture() {
   return canvasTexture(256, 256, (ctx) => {
-    ctx.fillStyle = "#d7dee6";
+    ctx.fillStyle = "#e8d4b8";
     ctx.fillRect(0, 0, 256, 256);
-    ctx.strokeStyle = "rgba(150, 166, 182, 0.45)";
+    ctx.strokeStyle = "rgba(139, 90, 43, 0.32)";
     ctx.lineWidth = 2;
     for (let i = 0; i < 8; i++) {
       ctx.beginPath();
@@ -430,7 +462,7 @@ function floorTexture() {
       ctx.lineTo(256, i * 32 + 0.5);
       ctx.stroke();
     }
-    ctx.strokeStyle = "rgba(186, 198, 210, 0.7)";
+    ctx.strokeStyle = "rgba(166, 124, 82, 0.55)";
     for (let i = 0; i < 8; i++) {
       ctx.beginPath();
       ctx.moveTo((i % 2) * 40, i * 32);
@@ -443,10 +475,10 @@ function floorTexture() {
 function crayonTexture(kind) {
   const rand = mulberry32(kind.length * 97 + kind.charCodeAt(0) * 13);
   return canvasTexture(320, 240, (ctx) => {
-    ctx.fillStyle = "#f6f8fb";
+    ctx.fillStyle = "#fff6e8";
     ctx.fillRect(0, 0, 320, 240);
     for (let i = 0; i < 90; i++) {
-      ctx.fillStyle = `rgba(150, 170, 190, ${0.04 + rand() * 0.08})`;
+      ctx.fillStyle = `rgba(200, 160, 120, ${0.05 + rand() * 0.09})`;
       ctx.fillRect(rand() * 320, rand() * 240, 3, 2);
     }
     ctx.lineCap = "round";
@@ -1067,7 +1099,7 @@ function buildRoom() {
   right.position.set(11.6, 4.1, 1.2);
   world.add(right);
 
-  const sign = roundedCard(7.5, 1.02, 0.05, 0.18, mat(0xeef3f8));
+  const sign = roundedCard(7.5, 1.02, 0.05, 0.18, mat(0xf0e6d8));
   sign.position.set(-0.2, 5.18, -5.74);
   world.add(sign);
   const title = textPlane("Hammer Studio", 7.1, 0.78, {
@@ -1079,7 +1111,7 @@ function buildRoom() {
   title.position.set(-0.2, 5.18, -5.68);
   world.add(title);
 
-  const cornice = new THREE.Mesh(new THREE.BoxGeometry(22, 0.1, 0.12), mat(0xb4c0cc));
+  const cornice = new THREE.Mesh(new THREE.BoxGeometry(22, 0.1, 0.12), mat(COLORS.trim));
   cornice.position.set(0, 6.45, -5.76);
   world.add(cornice);
 }
@@ -1120,7 +1152,7 @@ function buildLaneRug() {
   const glowMat = new THREE.MeshBasicMaterial({
     color: COLORS.laneGlow,
     transparent: true,
-    opacity: 0.38,
+    opacity: 0.48,
     depthWrite: false,
     side: THREE.DoubleSide,
   });
@@ -1254,9 +1286,10 @@ function buildWarBoard(activeId = gateStageId) {
     const tall = isActive ? 2.05 : 1.82;
     card.position.set(start + i * (cardW + gap), isActive ? 0.04 : -0.02, 0.14);
 
+    const idleTint = STATION_TINTS[st.id] || COLORS.card;
     const bodyMat = isActive
       ? mat(COLORS.waiting, { emissive: COLORS.waitingGlow, emissiveIntensity: 0.72, roughness: 0.6 })
-      : mat(COLORS.card, { roughness: 0.9 });
+      : mat(idleTint, { roughness: 0.82 });
     const body = roundedCard(cardW, tall, 0.08, 0.16, bodyMat);
     body.castShadow = true;
     card.add(body);
@@ -1307,14 +1340,17 @@ function buildDesk(desk) {
   group.position.set(desk.x, 0, desk.z);
   group.userData.deskId = desk.id;
   group.name = `desk-${desk.id}`;
+  const isOffLane = !LANE_DESKS.some((d) => d.id === desk.id);
+  const woodBody = isOffLane ? 0x7a4f28 : COLORS.desk;
+  const woodTop = isOffLane ? 0xa87a50 : COLORS.wood;
 
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.72, 0.82), mat(COLORS.desk));
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.72, 0.82), mat(woodBody, { roughness: 0.78 }));
   body.position.y = 0.36;
   body.castShadow = true;
   body.receiveShadow = true;
   group.add(body);
 
-  const top = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.1, 0.96), mat(COLORS.wood, { roughness: 0.68 }));
+  const top = new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.1, 0.96), mat(woodTop, { roughness: 0.62 }));
   top.position.y = 0.77;
   top.castShadow = true;
   top.receiveShadow = true;
@@ -1322,7 +1358,7 @@ function buildDesk(desk) {
 
   const lock = new THREE.Mesh(
     new THREE.BoxGeometry(1.42, 0.055, 0.03),
-    mat(desk.color, { emissive: desk.color, emissiveIntensity: 0.18 }),
+    mat(desk.color, { emissive: desk.color, emissiveIntensity: isOffLane ? 0.08 : 0.22 }),
   );
   lock.position.set(0, 0.58, 0.42);
   group.add(lock);
@@ -1337,15 +1373,16 @@ function buildDesk(desk) {
 
   const chair = new THREE.Group();
   chair.position.set(0, 0, -0.95);
-  const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.52), mat(0xd7e0e8));
+  const chairTone = isOffLane ? 0xc8b8a8 : 0xdccab4;
+  const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.52), mat(chairTone));
   chairSeat.position.set(0, 0.46, 0);
-  const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.72, 0.08), mat(0xc5d0dc));
+  const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.72, 0.08), mat(chairTone, { roughness: 0.85 }));
   chairBack.position.set(0, 0.86, -0.28);
-  const chairLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.42, 10), mat(0xb3bec8));
+  const chairLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.42, 10), mat(COLORS.trim));
   chairLeg.position.set(0, 0.22, 0);
   chair.add(chairSeat, chairBack, chairLeg);
   group.add(chair);
-  addDeskProps(group, desk.color);
+  addDeskProps(group, desk.color, desk.id, isOffLane);
 
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(0.62, 0.78, 40),
@@ -1491,15 +1528,18 @@ function loadStudioTexture(url) {
   return tex;
 }
 
-function addDeskProps(group, color) {
-  const paper = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.025, 0.32), mat(0xf7f9fb));
+function addDeskProps(group, color, deskId, dimmed = false) {
+  const paper = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.025, 0.32), mat(0xfff8ee));
   paper.position.set(-0.42, 0.84, -0.08);
   const paper2 = paper.clone();
   paper2.position.set(-0.38, 0.865, -0.05);
   paper2.rotation.y = 0.15;
-  const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.12, 12), mat(color, { roughness: 0.45 }));
+  const mugColor = dimmed ? (color & 0xfefefe) >> 1 : color;
+  const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.12, 12), mat(mugColor, { roughness: 0.42 }));
   mug.position.set(0.48, 0.9, -0.18);
-  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.055, 0.16, 10), mat(0xc5d0da));
+  const accent = DESK_CUP_ACCENTS[deskId] || 0x2eb8b8;
+  const cupColor = dimmed ? 0xb8a898 : accent;
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.055, 0.16, 10), mat(cupColor, { roughness: 0.4 }));
   cup.position.set(0.18, 0.92, -0.22);
   for (const [dx, h] of [[-0.02, 0.1], [0, 0.13], [0.02, 0.08]]) {
     const pen = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, h, 6), mat(0x5b6b7c));
@@ -1512,11 +1552,11 @@ function addDeskProps(group, color) {
 function addBookcase(x, z) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  const carcass = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.65, 0.38), mat(0xb7c3ce));
+  const carcass = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.65, 0.38), mat(COLORS.desk));
   carcass.position.y = 0.82;
   carcass.castShadow = true;
   g.add(carcass);
-  const spines = [0xf59312, 0xf93498, 0xfd690f, 0x13b7a2, 0x1e86fc, 0x8f59f9, 0x14c16f, 0x8aa4bc];
+  const spines = [COLORS.art, COLORS.dev, COLORS.tester, COLORS.cto, COLORS.assistant, COLORS.cfo, COLORS.governess, 0x2eb8b8];
   spines.forEach((color, i) => {
     const book = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.34, 0.22), mat(color, { roughness: 0.7 }));
     const row = Math.floor(i / 4);
@@ -1530,14 +1570,14 @@ function addBookcase(x, z) {
 function addFloorLamp(x, z) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.7, 10), mat(0x9aa8b4));
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.7, 10), mat(COLORS.trim));
   pole.position.y = 0.85;
   const shade = new THREE.Mesh(
     new THREE.CylinderGeometry(0.22, 0.28, 0.28, 16),
-    mat(0xf4f7fb, { emissive: 0xd5e4f2, emissiveIntensity: 0.45 }),
+    mat(0xfff5e8, { emissive: 0xffe8c8, emissiveIntensity: 0.52 }),
   );
   shade.position.y = 1.72;
-  const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 0.06, 12), mat(0xb7c3ce));
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 0.06, 12), mat(COLORS.desk));
   foot.position.y = 0.03;
   g.add(pole, shade, foot);
   world.add(g);
@@ -1546,7 +1586,7 @@ function addFloorLamp(x, z) {
 function addClock() {
   const g = new THREE.Group();
   g.position.set(4.35, 5.55, -5.7);
-  const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.06, 24), mat(0xc5d0da));
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.06, 24), mat(COLORS.trim));
   rim.rotation.x = Math.PI / 2;
   const face = new THREE.Mesh(
     new THREE.CylinderGeometry(0.26, 0.26, 0.02, 24),
@@ -1565,14 +1605,14 @@ function addClock() {
 function addFileCabinet(x, z) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.15, 0.48), mat(0xaeb8c4));
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.15, 0.48), mat(COLORS.desk));
   body.position.y = 0.58;
   body.castShadow = true;
   g.add(body);
   for (const y of [0.28, 0.62, 0.96]) {
-    const drawer = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.28, 0.04), mat(0xd5dee6));
+    const drawer = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.28, 0.04), mat(0xdcc4a4));
     drawer.position.set(0, y, 0.24);
-    const pull = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 0.03), mat(0x8aa0b0));
+    const pull = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 0.03), mat(COLORS.trim));
     pull.position.set(0, y, 0.27);
     g.add(drawer, pull);
   }
@@ -1599,11 +1639,11 @@ function addPlant(x, z, scale) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
   g.scale.setScalar(scale);
-  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.42, 16), mat(0xb7c3ce));
+  const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.42, 16), mat(COLORS.pot));
   pot.position.y = 0.21;
   pot.castShadow = true;
   g.add(pot);
-  const leaf = mat(0x6ea37a);
+  const leaf = mat(COLORS.plant, { roughness: 0.72 });
   for (let i = 0; i < 6; i++) {
     const blob = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 10), leaf);
     const a = (i / 6) * Math.PI * 2;
@@ -1625,7 +1665,7 @@ function hangPicture(x, y, z, rotY, tex, aspect = 1.4) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
   group.rotation.y = rotY;
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.16, h + 0.16, 0.06), mat(0xc5d0da));
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.16, h + 0.16, 0.06), mat(COLORS.trim));
   frame.castShadow = true;
   const art = new THREE.Mesh(
     new THREE.PlaneGeometry(w, h),
@@ -1713,7 +1753,7 @@ function updateGlows(dt, elapsed) {
   for (const item of glows) {
     if (item.kind === "wait") item.material.emissiveIntensity = 0.48 + pulse * 0.42;
     else if (item.kind === "wait-halo") item.material.opacity = item.opacityBase + pulse * 0.28;
-    else if (item.kind === "lane") item.material.opacity = 0.26 + pulse * 0.2;
+    else if (item.kind === "lane") item.material.opacity = 0.36 + pulse * 0.24;
     else if (item.kind === "desk") {
       const target = item.id === focusedId ? 0.92 : 0;
       item.material.opacity += (target - item.material.opacity) * Math.min(1, dt * 8);

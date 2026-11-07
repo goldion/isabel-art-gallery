@@ -1,8 +1,8 @@
 :root {
-  --paper: #e7eef4;
+  --paper: #f3ede4;
   --ink: #243044;
-  --wood: #8a949e;
-  --accent: #5b94c4;
+  --wood: #a67c52;
+  --accent: #3589a8;
 }
 
 * {
@@ -16,7 +16,7 @@ body,
 #app {
   height: 100%;
   overflow: hidden;
-  background: #6d7c8c;
+  background: #8b7355;
   color: var(--ink);
   font-family: Nunito, "Trebuchet MS", "Segoe UI", sans-serif;
   touch-action: none;
@@ -51,7 +51,7 @@ body,
   display: flex;
   align-items: center;
   padding: 12px 18px;
-  background: linear-gradient(180deg, rgba(231, 238, 244, 0.94), rgba(231, 238, 244, 0.78));
+  background: linear-gradient(180deg, rgba(243, 237, 228, 0.94), rgba(243, 237, 228, 0.78));
   pointer-events: none;
   z-index: 2;
 }
@@ -72,8 +72,8 @@ body,
   max-width: calc(100% - 28px);
   padding: 8px 16px;
   border-radius: 999px;
-  background: rgba(231, 238, 244, 0.9);
-  color: #3c4c5c;
+  background: rgba(243, 237, 228, 0.9);
+  color: #4a3f36;
   font-size: 0.85rem;
   font-weight: 700;
   white-space: nowrap;
@@ -88,8 +88,8 @@ body,
   align-items: center;
   justify-content: center;
   background:
-    radial-gradient(circle at 18% 16%, rgba(186, 214, 232, 0.9), transparent 42%),
-    radial-gradient(circle at 84% 86%, rgba(196, 214, 228, 0.75), transparent 40%),
+    radial-gradient(circle at 18% 16%, rgba(255, 220, 180, 0.85), transparent 42%),
+    radial-gradient(circle at 84% 86%, rgba(232, 200, 168, 0.7), transparent 40%),
     var(--paper);
   z-index: 3;
   transition: opacity 0.45s ease;
