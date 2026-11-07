@@ -1073,6 +1073,9 @@ function beginWander(bot) {
   bot.state = "wander";
   bot.stateT = 0;
   bot.wanderLeft = 4 + Math.floor(Math.random() * 4);
+  bot.detour = null;
+  bot.returnMisses = 0;
+  resetProgress(bot);
   bot.goal = randomFloorPoint(bot.anchor.position);
 }
 
@@ -1081,7 +1084,40 @@ function beginReturn(bot) {
   bot.state = "return";
   bot.stateT = 0;
   bot.returnPhase = "toStand";
+  bot.detour = null;
+  bot.returnMisses = 0;
+  resetProgress(bot);
   bot.from.copy(bot.anchor.position);
+}
+
+function resetProgress(bot) {
+  bot.bestRemain = null;
+  bot.progressT = 0;
+}
+
+function insideFloor(x, z) {
+  return x >= FLOOR_BOX.minX && x <= FLOOR_BOX.maxX && z >= FLOOR_BOX.minZ && z <= FLOOR_BOX.maxZ;
+}
+
+function canStep(x, z) {
+  return insideFloor(x, z) && !hitsSolid(x, z);
+}
+
+function detourPoint(bot, target) {
+  const pos = bot.anchor.position;
+  const dx = target.x - pos.x;
+  const dz = target.z - pos.z;
+  const dist = Math.hypot(dx, dz) || 1;
+  const px = -dz / dist;
+  const pz = dx / dist;
+  const side = bot.detourSide || 1;
+  bot.detourSide = -side;
+  for (const mag of [1.6, 2.4, 1.0]) {
+    const x = pos.x + px * mag * side;
+    const z = pos.z + pz * mag * side;
+    if (canStep(x, z)) return new THREE.Vector3(x, FLOOR_Y, z);
+  }
+  return new THREE.Vector3(0.2, FLOOR_Y, 3.3);
 }
 
 function moveToward(bot, target, dt) {
@@ -1092,18 +1128,39 @@ function moveToward(bot, target, dt) {
   const step = Math.min(WALK_SPEED * dt, dist);
   const nx = pos.x + (dx / dist) * step;
   const nz = pos.z + (dz / dist) * step;
-  if (!hitsSolid(nx, nz)) {
+  let moved = false;
+  if (canStep(nx, nz)) {
     pos.x = nx;
     pos.z = nz;
-  } else if (!hitsSolid(nx, pos.z)) {
+    moved = true;
+  } else if (canStep(nx, pos.z)) {
     pos.x = nx;
-  } else if (!hitsSolid(pos.x, nz)) {
+    moved = true;
+  } else if (canStep(pos.x, nz)) {
     pos.z = nz;
-  } else if (bot.state === "wander") {
-    bot.goal = randomFloorPoint(pos);
+    moved = true;
+  } else {
+    const steer = Math.atan2(dz, dx);
+    for (const turn of [0.85, -0.85, 1.7, -1.7]) {
+      const sx = pos.x + Math.cos(steer + turn) * step;
+      const sz = pos.z + Math.sin(steer + turn) * step;
+      if (canStep(sx, sz)) {
+        pos.x = sx;
+        pos.z = sz;
+        moved = true;
+        break;
+      }
+    }
+  }
+  const remain = Math.hypot(target.x - pos.x, target.z - pos.z);
+  if (moved && (bot.bestRemain == null || remain < bot.bestRemain - 0.004)) {
+    bot.bestRemain = remain;
+    bot.progressT = 0;
+  } else {
+    bot.progressT = (bot.progressT || 0) + dt;
   }
   faceMove(bot, dx, dz);
-  return dist - step;
+  return remain;
 }
 
 const bubbleCache = new Map();
@@ -1197,7 +1254,14 @@ function updateLaneAnimators(dt, elapsed) {
     }
 
     if (bot.state === "wander") {
-      if (!bot.goal) bot.goal = randomFloorPoint(bot.anchor.position);
+      if (!bot.goal || bot.progressT > 0.65) {
+        if (bot.goal) bot.stalls = (bot.stalls || 0) + 1;
+        resetProgress(bot);
+        bot.goal = bot.stalls > 2
+          ? new THREE.Vector3(0.2, FLOOR_Y, 3.3)
+          : randomFloorPoint(bot.anchor.position);
+        if (bot.stalls > 2) bot.stalls = 0;
+      }
       const left = moveToward(bot, bot.goal, dt);
       const bob = Math.abs(Math.sin(elapsed * 8 + bot.phase)) * 0.06;
       bot.anchor.position.y = bot.floorLift + bob;
@@ -1205,6 +1269,7 @@ function updateLaneAnimators(dt, elapsed) {
       plantShadow(bot, true);
       if (left < 0.12) {
         bot.wanderLeft -= 1;
+        resetProgress(bot);
         if (bot.wanderLeft <= 0) beginReturn(bot);
         else bot.goal = randomFloorPoint(bot.anchor.position);
       }
@@ -1213,14 +1278,32 @@ function updateLaneAnimators(dt, elapsed) {
 
     if (bot.state === "return") {
       if (bot.returnPhase === "toStand") {
-        const left = moveToward(bot, bot.stand, dt);
-        bot.anchor.position.y = bot.floorLift + Math.abs(Math.sin(elapsed * 10 + bot.phase)) * 0.05;
-        playClip(bot, true, dt);
-        plantShadow(bot, true);
-        if (left < 0.07) {
-          bot.returnPhase = "sit";
-          bot.stateT = 0;
-          bot.from.copy(bot.anchor.position);
+        if (bot.progressT > 0.8) {
+          resetProgress(bot);
+          bot.returnMisses = (bot.returnMisses || 0) + 1;
+          if (bot.returnMisses >= 3) {
+            bot.returnPhase = "sit";
+            bot.stateT = 0;
+            bot.detour = null;
+            bot.from.copy(bot.anchor.position);
+          } else {
+            bot.detour = detourPoint(bot, bot.stand);
+          }
+        }
+        if (bot.returnPhase === "toStand") {
+          const left = moveToward(bot, bot.detour || bot.stand, dt);
+          bot.anchor.position.y = bot.floorLift + Math.abs(Math.sin(elapsed * 10 + bot.phase)) * 0.05;
+          playClip(bot, true, dt);
+          plantShadow(bot, true);
+          if (bot.detour && left < 0.28) {
+            bot.detour = null;
+            resetProgress(bot);
+          } else if (!bot.detour && left < 0.08) {
+            bot.returnPhase = "sit";
+            bot.stateT = 0;
+            bot.returnMisses = 0;
+            bot.from.copy(bot.anchor.position);
+          }
         }
       } else {
         const k = smooth(Math.min(1, bot.stateT / 0.85));
@@ -2204,13 +2287,22 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+function releaseIntro() {
+  if (introT >= 1 && controls.enabled) return;
+  introT = 1;
+  resetJob = null;
+  controls.enabled = true;
+  controls.update();
+}
+
 function bindInput() {
   const el = renderer.domElement;
+  el.addEventListener("pointerdown", releaseIntro, true);
+  el.addEventListener("wheel", releaseIntro, { capture: true, passive: true });
   el.addEventListener("pointerdown", (event) => {
     pointerDown = { x: event.clientX, y: event.clientY, t: performance.now() };
     el.classList.add("is-dragging");
-    if (introT < 1) introT = 1;
-    resetJob = null;
+    releaseIntro();
   });
   el.addEventListener("pointerup", (event) => {
     el.classList.remove("is-dragging");
