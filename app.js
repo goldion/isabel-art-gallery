@@ -260,7 +260,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/soft-next-ops/?v=26",
-    shelfCover: "10_game_assets/demo/soft-next-ops.png?v=2",
+    shelfCover: "10_game_assets/demo/soft-next-ops.png?v=3",
     iframeTitle: "Hammer Studio Soft Next",
   },
 ];
