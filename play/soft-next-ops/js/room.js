@@ -195,6 +195,7 @@ const pointer = new THREE.Vector2();
 let focusedId = null;
 let gateStageId = "pick";
 let gateBots = { art: "idle", developer: "idle", tester: "idle" };
+let gateUsage = {};
 let warBoardGroup = null;
 let gatePollTimer = null;
 let introT = REDUCE_MOTION ? 1 : 0;
@@ -1285,18 +1286,45 @@ function tokenBarTexture(pct, color) {
   return tex;
 }
 
+const STAGE_USAGE = {
+  pick: 0,
+  "soft-pass": 20,
+  "waiting-go": 45,
+  tip: 70,
+  smoke: 85,
+  done: 100,
+};
+
+function normalizeUsage(raw) {
+  const out = {};
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+  for (const [id, value] of Object.entries(raw)) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) continue;
+    out[id] = Math.max(0, Math.min(100, Math.round(n)));
+  }
+  return out;
+}
+
+function usageFor(bot) {
+  if (Object.prototype.hasOwnProperty.call(gateUsage, bot.id)) return gateUsage[bot.id];
+  const seat = gateBots[bot.id];
+  if (!seat || seat === "idle") return null;
+  return STAGE_USAGE[gateStageId] ?? 0;
+}
+
 function syncTokenBar(bot) {
   if (!bot.tokenBar) return;
-  if (bot.state !== "work") {
-    bot.tokenBar.visible = false;
+  const usage = bot.state === "work" ? usageFor(bot) : null;
+  if (usage == null) {
+    if (bot.tokenBar.visible) bot.tokenBar.visible = false;
     bot.tokenPct = -1;
     return;
   }
-  const pct = Math.round(Math.min(1, bot.stateT / Math.max(bot.workDur, 0.1)) * 100);
   bot.tokenBar.visible = true;
-  if (pct === bot.tokenPct) return;
-  bot.tokenPct = pct;
-  bot.tokenBar.material.map = tokenBarTexture(pct, bot.color);
+  if (usage === bot.tokenPct) return;
+  bot.tokenPct = usage;
+  bot.tokenBar.material.map = tokenBarTexture(usage, bot.color);
   bot.tokenBar.material.needsUpdate = true;
 }
 
@@ -1629,7 +1657,7 @@ async function loadGateStage() {
       const stage = normalizeGateStage(data?.stage);
       if (!stage) continue;
       const bots = normalizeGateBots(data?.bots, stage);
-      return { stage, bots, source: data.source || label };
+      return { stage, bots, usage: normalizeUsage(data?.usage), source: data.source || label };
     } catch {
       /* try next source */
     }
@@ -1637,19 +1665,22 @@ async function loadGateStage() {
   return {
     stage: gateStageId,
     bots: normalizeGateBots(gateBots, gateStageId),
+    usage: { ...gateUsage },
     source: "default",
   };
 }
 
-function applyGateSnapshot({ stage, bots }) {
+function applyGateSnapshot({ stage, bots, usage }) {
   let boardDirty = false;
   if (stage && stage !== gateStageId) {
     gateStageId = stage;
     buildWarBoard(gateStageId);
     boardDirty = true;
   }
+  gateUsage = normalizeUsage(usage);
   const nextBots = normalizeGateBots(bots, gateStageId);
   if (boardDirty || gateBotsChanged(nextBots)) applyGateSeatStatus(nextBots);
+  for (const bot of laneAnimators) bot.tokenPct = -1;
 }
 
 function startGatePolling() {
@@ -2461,6 +2492,7 @@ async function init() {
   const gate = await loadGateStage();
   gateStageId = gate.stage;
   gateBots = normalizeGateBots(gate.bots, gateStageId);
+  gateUsage = normalizeUsage(gate.usage);
   buildRoom();
   buildLaneRug();
   buildWarBoard(gateStageId);

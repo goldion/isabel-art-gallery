@@ -38,6 +38,17 @@ function normalizeBots(raw, stage) {
   return base;
 }
 
+function normalizeUsage(raw) {
+  const out = {};
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+  for (const [id, value] of Object.entries(raw)) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) continue;
+    out[id] = Math.max(0, Math.min(100, Math.round(n)));
+  }
+  return out;
+}
+
 function gatePayload(stage, bots, updatedAt, extra = {}) {
   return {
     stage,
@@ -83,11 +94,22 @@ export default {
       }
     };
 
+    const readUsage = async () => {
+      const raw = await env.GATE.get("usage");
+      if (!raw) return {};
+      try {
+        return normalizeUsage(JSON.parse(raw));
+      } catch {
+        return {};
+      }
+    };
+
     if (request.method === "GET") {
       const stage = await readStage();
       const updatedAt = (await env.GATE.get("updatedAt")) || null;
       const bots = await readBots(stage);
-      return json(gatePayload(stage, bots, updatedAt));
+      const usage = await readUsage();
+      return json(gatePayload(stage, bots, updatedAt, { usage }));
     }
 
     if (request.method === "PUT" || request.method === "POST") {
@@ -133,15 +155,26 @@ export default {
         }
       } else if (body?.stage !== undefined) {
         bots = defaultBotsForStage(stage);
+      } else if (body?.usage !== undefined) {
+        bots = priorBots;
       } else {
         return json({ error: "need_stage_or_bots" }, 400);
+      }
+
+      let usage = await readUsage();
+      if (body?.usage !== undefined && body.usage !== null) {
+        if (typeof body.usage !== "object" || Array.isArray(body.usage)) {
+          return json({ error: "bad_usage" }, 400);
+        }
+        usage = normalizeUsage({ ...usage, ...body.usage });
       }
 
       const updatedAt = new Date().toISOString();
       await env.GATE.put("stage", stage);
       await env.GATE.put("bots", JSON.stringify(bots));
+      await env.GATE.put("usage", JSON.stringify(usage));
       await env.GATE.put("updatedAt", updatedAt);
-      return json({ ...gatePayload(stage, bots, updatedAt), ok: true });
+      return json({ ...gatePayload(stage, bots, updatedAt, { usage }), ok: true });
     }
 
     return json({ error: "method" }, 405);
