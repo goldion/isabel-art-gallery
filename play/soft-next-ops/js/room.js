@@ -931,7 +931,7 @@ function makeMeshAnimator(desk) {
     }),
   );
   bubble.center.set(0.5, 0);
-  bubble.position.set(0.05, 1.22, 0);
+  bubble.position.set(0.05, weekShare(desk.id) == null ? 1.22 : 1.55, 0);
   bubble.scale.set(1.35, 0.58, 1);
   bubble.visible = false;
   const tokenBar = new THREE.Sprite(
@@ -941,8 +941,10 @@ function makeMeshAnimator(desk) {
     }),
   );
   tokenBar.center.set(0.5, 0.5);
-  tokenBar.position.set(0, 0.92, 0);
-  tokenBar.scale.set(1.15, 0.24, 1);
+  tokenBar.position.set(0, 1.18, 1.15);
+  tokenBar.scale.set(1.42, 0.4, 1);
+  tokenBar.material.depthTest = false;
+  tokenBar.renderOrder = 12;
   tokenBar.visible = false;
   anchor.add(body);
   anchor.add(shadow);
@@ -1255,31 +1257,56 @@ function syncBubble(bot) {
 
 const tokenBarCache = new Map();
 
+/**
+ * Hammer Studio Ops, "Share by bot (this week)".
+ * Admin on the chart is the Assistant desk (nameplate Admin).
+ * Deleted/other and Others are not a single desk, so those seats have no bar.
+ */
+const GROK_WEEK_SHARE = {
+  assistant: 25,
+  developer: 17,
+  cto: 13,
+  tester: 9,
+  art: 8,
+};
+const GROK_WEEK_MAX = Math.max(...Object.values(GROK_WEEK_SHARE));
+
+function weekShare(id) {
+  const share = GROK_WEEK_SHARE[id];
+  return Number.isFinite(share) ? share : null;
+}
+
 function cssHex(color) {
   return `#${color.toString(16).padStart(6, "0")}`;
 }
 
-function tokenBarTexture(pct, color) {
-  const key = `${color}:${pct}`;
+function tokenBarTexture(share, color) {
+  const fillPct = Math.round((share / GROK_WEEK_MAX) * 100);
+  const key = `${color}:${share}:${fillPct}`;
   const cached = tokenBarCache.get(key);
   if (cached) return cached;
   const fill = color === 0 ? "#3a3a3a" : cssHex(color);
   const label = color === 0 ? "#f4f7fb" : cssHex(color);
-  const tex = canvasTexture(420, 72, (ctx, w, h) => {
+  const tex = canvasTexture(480, 96, (ctx, w, h) => {
     ctx.clearRect(0, 0, w, h);
-    const trackW = 268;
-    roundPath(ctx, 8, 18, trackW, 36, 18);
-    ctx.fillStyle = "rgba(27, 40, 54, 0.55)";
+    const trackW = 286;
+    roundPath(ctx, 8, 22, trackW, 52, 26);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
     ctx.fill();
-    const fillW = Math.max(12, (trackW - 8) * (pct / 100));
-    roundPath(ctx, 12, 22, fillW, 28, 14);
+    const fillW = Math.max(18, (trackW - 12) * (fillPct / 100));
+    roundPath(ctx, 14, 28, fillW, 40, 20);
     ctx.fillStyle = fill;
     ctx.fill();
+    ctx.font = "800 40px Nunito, Trebuchet MS, sans-serif";
+    const text = `${share}%`;
+    const textW = ctx.measureText(text).width;
+    roundPath(ctx, trackW + 16, 18, textW + 28, 60, 22);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.94)";
+    ctx.fill();
     ctx.fillStyle = label;
-    ctx.font = "800 28px Nunito, Trebuchet MS, sans-serif";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
-    ctx.fillText(`${pct}%`, trackW + 22, 36);
+    ctx.fillText(text, trackW + 30, 48);
   });
   tokenBarCache.set(key, tex);
   return tex;
@@ -1287,16 +1314,16 @@ function tokenBarTexture(pct, color) {
 
 function syncTokenBar(bot) {
   if (!bot.tokenBar) return;
-  if (bot.state !== "work") {
+  const share = weekShare(bot.id);
+  if (bot.state !== "work" || share == null) {
     bot.tokenBar.visible = false;
     bot.tokenPct = -1;
     return;
   }
-  const pct = Math.round(Math.min(1, bot.stateT / Math.max(bot.workDur, 0.1)) * 100);
   bot.tokenBar.visible = true;
-  if (pct === bot.tokenPct) return;
-  bot.tokenPct = pct;
-  bot.tokenBar.material.map = tokenBarTexture(pct, bot.color);
+  if (share === bot.tokenPct) return;
+  bot.tokenPct = share;
+  bot.tokenBar.material.map = tokenBarTexture(share, bot.color);
   bot.tokenBar.material.needsUpdate = true;
 }
 
@@ -2268,7 +2295,9 @@ function setFocus(id) {
     return;
   }
   const desk = ALL_DESKS.find((item) => item.id === focusedId);
-  hintEl.textContent = `${labelFor(focusedId)} desk · bot coming back · double-click to reset the camera`;
+  const share = weekShare(focusedId);
+  const shareBit = share == null ? "" : ` · ${share}% this week`;
+  hintEl.textContent = `${labelFor(focusedId)} desk${shareBit} · bot coming back · double-click to reset the camera`;
   hintEl.style.color = !desk || desk.color === 0 ? "" : cssHex(desk.color);
 }
 
@@ -2484,6 +2513,8 @@ async function init() {
         z: Number(b.anchor.position.z.toFixed(3)),
         state: b.state,
         bubble: b.bubbleLine || "",
+        share: weekShare(b.id),
+        bar: Boolean(b.tokenBar && b.tokenBar.visible),
         mode: b.mode,
         frame: b.frame,
       }));
