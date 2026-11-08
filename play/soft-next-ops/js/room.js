@@ -942,7 +942,7 @@ function makeMeshAnimator(desk) {
   );
   tokenBar.center.set(0.5, 0.5);
   tokenBar.position.set(0, 0.92, 0);
-  tokenBar.scale.set(0.92, 0.22, 1);
+  tokenBar.scale.set(1.15, 0.24, 1);
   tokenBar.visible = false;
   anchor.add(body);
   anchor.add(shadow);
@@ -989,6 +989,7 @@ function makeMeshAnimator(desk) {
     bubbleLine: "",
     tokenBar,
     tokenPct: -1,
+    color: desk.color,
   };
 }
 
@@ -1254,25 +1255,33 @@ function syncBubble(bot) {
 
 const tokenBarCache = new Map();
 
-function tokenBarTexture(pct) {
-  const cached = tokenBarCache.get(pct);
+function cssHex(color) {
+  return `#${color.toString(16).padStart(6, "0")}`;
+}
+
+function tokenBarTexture(pct, color) {
+  const key = `${color}:${pct}`;
+  const cached = tokenBarCache.get(key);
   if (cached) return cached;
-  const tex = canvasTexture(360, 72, (ctx, w, h) => {
+  const fill = color === 0 ? "#3a3a3a" : cssHex(color);
+  const label = color === 0 ? "#f4f7fb" : cssHex(color);
+  const tex = canvasTexture(420, 72, (ctx, w, h) => {
     ctx.clearRect(0, 0, w, h);
-    roundPath(ctx, 6, 18, w - 12, 36, 18);
-    ctx.fillStyle = "rgba(27, 40, 54, 0.72)";
+    const trackW = 268;
+    roundPath(ctx, 8, 18, trackW, 36, 18);
+    ctx.fillStyle = "rgba(27, 40, 54, 0.55)";
     ctx.fill();
-    const fillW = Math.max(10, (w - 20) * (pct / 100));
-    roundPath(ctx, 10, 22, fillW, 28, 14);
-    ctx.fillStyle = pct >= 85 ? "#f0a36a" : "#5ee0f0";
+    const fillW = Math.max(12, (trackW - 8) * (pct / 100));
+    roundPath(ctx, 12, 22, fillW, 28, 14);
+    ctx.fillStyle = fill;
     ctx.fill();
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "800 26px Nunito, Trebuchet MS, sans-serif";
-    ctx.textAlign = "center";
+    ctx.fillStyle = label;
+    ctx.font = "800 28px Nunito, Trebuchet MS, sans-serif";
+    ctx.textAlign = "left";
     ctx.textBaseline = "middle";
-    ctx.fillText(`${pct}%`, w / 2, 36);
+    ctx.fillText(`${pct}%`, trackW + 22, 36);
   });
-  tokenBarCache.set(pct, tex);
+  tokenBarCache.set(key, tex);
   return tex;
 }
 
@@ -1287,7 +1296,7 @@ function syncTokenBar(bot) {
   bot.tokenBar.visible = true;
   if (pct === bot.tokenPct) return;
   bot.tokenPct = pct;
-  bot.tokenBar.material.map = tokenBarTexture(pct);
+  bot.tokenBar.material.map = tokenBarTexture(pct, bot.color);
   bot.tokenBar.material.needsUpdate = true;
 }
 
@@ -2252,11 +2261,15 @@ const ROOM_HINT = "Drag to look · scroll to zoom · click a desk to call the bo
 
 function setFocus(id) {
   focusedId = focusedId === id ? null : id;
-  if (hintEl) {
-    hintEl.textContent = focusedId
-      ? `${labelFor(focusedId)} desk · bot coming back · double-click to reset the camera`
-      : ROOM_HINT;
+  if (!hintEl) return;
+  if (!focusedId) {
+    hintEl.textContent = ROOM_HINT;
+    hintEl.style.color = "";
+    return;
   }
+  const desk = ALL_DESKS.find((item) => item.id === focusedId);
+  hintEl.textContent = `${labelFor(focusedId)} desk · bot coming back · double-click to reset the camera`;
+  hintEl.style.color = !desk || desk.color === 0 ? "" : cssHex(desk.color);
 }
 
 function labelFor(id) {
