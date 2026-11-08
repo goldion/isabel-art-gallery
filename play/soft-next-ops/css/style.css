@@ -89,7 +89,8 @@ body,
   color: #4a3f36;
   font-size: 0.85rem;
   font-weight: 700;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
   pointer-events: none;
   z-index: 2;
 }

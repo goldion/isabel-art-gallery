@@ -934,9 +934,20 @@ function makeMeshAnimator(desk) {
   bubble.position.set(0.05, 1.22, 0);
   bubble.scale.set(1.35, 0.58, 1);
   bubble.visible = false;
+  const tokenBar = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      transparent: true,
+      depthWrite: false,
+    }),
+  );
+  tokenBar.center.set(0.5, 0.5);
+  tokenBar.position.set(0, 0.92, 0);
+  tokenBar.scale.set(1.15, 0.24, 1);
+  tokenBar.visible = false;
   anchor.add(body);
   anchor.add(shadow);
   anchor.add(bubble);
+  anchor.add(tokenBar);
   world.add(anchor);
 
   const index = deskIndex(desk);
@@ -976,6 +987,9 @@ function makeMeshAnimator(desk) {
     floorLift: 0.58,
     bubble,
     bubbleLine: "",
+    tokenBar,
+    tokenPct: -1,
+    color: desk.color,
   };
 }
 
@@ -1219,7 +1233,7 @@ function workflowLine(bot) {
 function bubbleLine(bot) {
   const workflow = workflowLine(bot);
   if (workflow) return workflow;
-  if (bot.calledBack && bot.state === "return") return "Going back";
+  if (bot.calledBack && bot.state === "return") return "On my way";
   return "";
 }
 
@@ -1239,9 +1253,57 @@ function syncBubble(bot) {
   bot.bubble.scale.set(width, 0.58, 1);
 }
 
+const tokenBarCache = new Map();
+
+function cssHex(color) {
+  return `#${color.toString(16).padStart(6, "0")}`;
+}
+
+function tokenBarTexture(pct, color) {
+  const key = `${color}:${pct}`;
+  const cached = tokenBarCache.get(key);
+  if (cached) return cached;
+  const fill = color === 0 ? "#3a3a3a" : cssHex(color);
+  const label = color === 0 ? "#f4f7fb" : cssHex(color);
+  const tex = canvasTexture(420, 72, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    const trackW = 268;
+    roundPath(ctx, 8, 18, trackW, 36, 18);
+    ctx.fillStyle = "rgba(27, 40, 54, 0.55)";
+    ctx.fill();
+    const fillW = Math.max(12, (trackW - 8) * (pct / 100));
+    roundPath(ctx, 12, 22, fillW, 28, 14);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.fillStyle = label;
+    ctx.font = "800 28px Nunito, Trebuchet MS, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${pct}%`, trackW + 22, 36);
+  });
+  tokenBarCache.set(key, tex);
+  return tex;
+}
+
+function syncTokenBar(bot) {
+  if (!bot.tokenBar) return;
+  if (bot.state !== "work") {
+    bot.tokenBar.visible = false;
+    bot.tokenPct = -1;
+    return;
+  }
+  const pct = Math.round(Math.min(1, bot.stateT / Math.max(bot.workDur, 0.1)) * 100);
+  bot.tokenBar.visible = true;
+  if (pct === bot.tokenPct) return;
+  bot.tokenPct = pct;
+  bot.tokenBar.material.map = tokenBarTexture(pct, bot.color);
+  bot.tokenBar.material.needsUpdate = true;
+}
+
 function updateLaneAnimators(dt, elapsed) {
   for (const bot of laneAnimators) {
     syncBubble(bot);
+    syncTokenBar(bot);
     const focused = bot.id === focusedId;
     if (focused && bot.state !== "work") {
       bot.calledBack = true;
@@ -1812,7 +1874,7 @@ function heldProp(deskId) {
     const paint = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), basicMat(0xe23b2f));
     paint.position.set(0.145, 0.19, 0);
     g.add(handle, ferrule, bristle, paint);
-    g.position.set(0.52, -0.08, 0.36);
+    g.position.set(0.4, -0.1, 0.3);
   } else if (deskId === "developer") {
     const base = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.014, 0.15), silver);
     const lid = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.13, 0.01), silver);
@@ -1822,7 +1884,7 @@ function heldProp(deskId) {
     display.position.set(0, 0.07, -0.078);
     display.rotation.x = -0.45;
     g.add(base, lid, display);
-    g.position.set(0.5, -0.16, 0.4);
+    g.position.set(0.38, -0.18, 0.34);
     g.rotation.y = 0.05;
     return g;
   } else if (deskId === "tester") {
@@ -1832,13 +1894,13 @@ function heldProp(deskId) {
     const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.08, 6), basicMat(0x243044));
     handle.position.y = -0.12;
     g.add(ring, lens, handle);
-    g.position.set(0.48, -0.16, 0.36);
+    g.position.set(0.36, -0.18, 0.3);
   } else if (deskId === "cto") {
     const note = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.02), basicMat(0xffe56a));
     const line = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.012, 0.01), basicMat(0x13b7a2));
     line.position.set(0, 0.02, 0.012);
     g.add(note, line);
-    g.position.set(0.5, -0.1, 0.4);
+    g.position.set(0.38, -0.12, 0.34);
   } else if (deskId === "assistant") {
     const board = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.2, 0.02), basicMat(0xfff8ee));
     const clip = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.035, 0.024), silver);
@@ -1846,7 +1908,7 @@ function heldProp(deskId) {
     const line = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.01, 0.01), basicMat(0x8aa0b4));
     line.position.set(0, 0.01, 0.014);
     g.add(board, clip, line);
-    g.position.set(0.5, -0.02, 0.4);
+    g.position.set(0.38, -0.04, 0.34);
   } else if (deskId === "cfo") {
     const bill = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.11, 0.012), basicMat(0xb7d7a8));
     bill.rotation.z = -0.2;
@@ -1854,13 +1916,13 @@ function heldProp(deskId) {
     band.rotation.z = -0.2;
     band.position.z = 0.008;
     g.add(bill, band);
-    g.position.set(0.54, -0.12, 0.48);
+    g.position.set(0.4, -0.14, 0.4);
   } else if (deskId === "governess") {
     const cover = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.19, 0.04), basicMat(0x128a52));
     const pages = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.15, 0.018), basicMat(0xfff8ee));
     pages.position.z = 0.02;
     g.add(cover, pages);
-    g.position.set(0.5, -0.02, 0.32);
+    g.position.set(0.38, -0.04, 0.28);
   }
   g.rotation.y = -0.18;
   return g;
@@ -2195,13 +2257,19 @@ function hangPicture(x, y, z, rotY, tex, aspect = 1.4) {
   world.add(group);
 }
 
+const ROOM_HINT = "Drag to look · scroll to zoom · click a desk to call the bot back · double-click to reset the camera";
+
 function setFocus(id) {
   focusedId = focusedId === id ? null : id;
-  if (hintEl) {
-    hintEl.textContent = focusedId
-      ? `${labelFor(focusedId)} desk · double-click to reset the view`
-      : "Drag to look · scroll to zoom · click a desk";
+  if (!hintEl) return;
+  if (!focusedId) {
+    hintEl.textContent = ROOM_HINT;
+    hintEl.style.color = "";
+    return;
   }
+  const desk = ALL_DESKS.find((item) => item.id === focusedId);
+  hintEl.textContent = `${labelFor(focusedId)} desk · bot coming back · double-click to reset the camera`;
+  hintEl.style.color = !desk || desk.color === 0 ? "" : cssHex(desk.color);
 }
 
 function labelFor(id) {
@@ -2311,6 +2379,7 @@ function animate() {
     const k = smooth(resetJob.t);
     camera.position.lerpVectors(resetJob.fromPos, resetJob.toPos, k);
     controls.target.lerpVectors(resetJob.fromTarget, resetJob.toTarget, k);
+    camera.lookAt(controls.target);
     if (resetJob.t >= 1) {
       resetJob = null;
       controls.enabled = true;
