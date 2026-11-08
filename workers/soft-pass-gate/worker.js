@@ -1,7 +1,7 @@
 /**
  * Soft PASS gate — live stage + per-bot seat status for Hammer Studio war-room.
- * GET / → { stage, stages, bots, botStatuses, updatedAt, source }
- * PUT|POST / → { stage?, bots? } (optional SET_TOKEN bearer).
+ * GET / → { stage, stages, bots, botStatuses, usage?, updatedAt, source }
+ * PUT|POST / → { stage?, bots?, usage? } (optional SET_TOKEN bearer).
  */
 const STAGES = ["pick", "soft-pass", "waiting-go", "tip", "smoke", "done"];
 const BOT_IDS = ["art", "developer", "tester"];
@@ -36,6 +36,42 @@ function normalizeBots(raw, stage) {
     if (BOT_STATUSES.includes(s)) base[id] = s;
   }
   return base;
+}
+
+/** CFO frozen schema v1 — store as given; normalize common aliases only. */
+function normalizeUsagePayload(raw) {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw !== "object" || Array.isArray(raw)) {
+    return { error: "bad_usage" };
+  }
+  const out = { ...raw };
+  if (out.weeklyUsedPct == null && out.weeklyLimitUsedPct != null) {
+    const n = Number(out.weeklyLimitUsedPct);
+    if (Number.isFinite(n)) out.weeklyUsedPct = n;
+  }
+  if (out.resetsAt == null && out.resetsAtLocal != null) {
+    out.resetsAt = String(out.resetsAtLocal);
+  }
+  if (out.schema != null) {
+    const s = Number(out.schema);
+    if (!Number.isFinite(s)) return { error: "bad_usage_schema" };
+    out.schema = s;
+  }
+  if (out.weeklyUsedPct != null) {
+    const n = Number(out.weeklyUsedPct);
+    if (!Number.isFinite(n)) return { error: "bad_weeklyUsedPct" };
+    out.weeklyUsedPct = n;
+  }
+  if (out.bots != null) {
+    if (!Array.isArray(out.bots)) return { error: "bad_usage_bots" };
+    for (const row of out.bots) {
+      if (!row || typeof row !== "object") return { error: "bad_usage_bots" };
+      if (row.sharePct != null && !Number.isFinite(Number(row.sharePct))) {
+        return { error: "bad_usage_bots" };
+      }
+    }
+  }
+  return { value: out };
 }
 
 function gatePayload(stage, bots, updatedAt, extra = {}) {
@@ -83,11 +119,23 @@ export default {
       }
     };
 
+    const readUsage = async () => {
+      const raw = await env.GATE.get("usage");
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    };
+
     if (request.method === "GET") {
       const stage = await readStage();
       const updatedAt = (await env.GATE.get("updatedAt")) || null;
       const bots = await readBots(stage);
-      return json(gatePayload(stage, bots, updatedAt));
+      const usage = await readUsage();
+      const extra = usage ? { usage } : {};
+      return json(gatePayload(stage, bots, updatedAt, extra));
     }
 
     if (request.method === "PUT" || request.method === "POST") {
@@ -107,20 +155,42 @@ export default {
         return json({ error: "bad_json" }, 400);
       }
 
+      const hasUsage = body?.usage !== undefined && body?.usage !== null;
+      const hasStage =
+        body?.stage !== undefined && body.stage !== null && body.stage !== "";
+      const hasBots = body?.bots !== undefined && body.bots !== null;
+
+      if (!hasUsage && !hasStage && !hasBots) {
+        return json({ error: "need_stage_or_bots" }, 400);
+      }
+
       const priorStage = await readStage();
       const priorBots = await readBots(priorStage);
 
+      let usageDoc = null;
+      if (hasUsage) {
+        const normalized = normalizeUsagePayload(body.usage);
+        if (normalized.error) {
+          return json({ error: normalized.error }, 400);
+        }
+        usageDoc = normalized.value;
+        await env.GATE.put("usage", JSON.stringify(usageDoc));
+      }
+
       let stage = priorStage;
-      if (body?.stage !== undefined && body.stage !== null && body.stage !== "") {
+      let bots = priorBots;
+      let stageBotsTouched = false;
+
+      if (hasStage) {
         const next = String(body.stage).trim();
         if (!STAGES.includes(next)) {
           return json({ error: "bad_stage", stages: STAGES }, 400);
         }
         stage = next;
+        stageBotsTouched = true;
       }
 
-      let bots;
-      if (body?.bots !== undefined && body.bots !== null) {
+      if (hasBots) {
         if (typeof body.bots !== "object" || Array.isArray(body.bots)) {
           return json({ error: "bad_bots", botStatuses: BOT_STATUSES, bots: BOT_IDS }, 400);
         }
@@ -131,17 +201,25 @@ export default {
             return json({ error: "bad_bot_status", id, botStatuses: BOT_STATUSES }, 400);
           }
         }
-      } else if (body?.stage !== undefined) {
+        stageBotsTouched = true;
+      } else if (hasStage && !hasBots) {
         bots = defaultBotsForStage(stage);
-      } else {
-        return json({ error: "need_stage_or_bots" }, 400);
+        stageBotsTouched = true;
       }
 
       const updatedAt = new Date().toISOString();
-      await env.GATE.put("stage", stage);
-      await env.GATE.put("bots", JSON.stringify(bots));
-      await env.GATE.put("updatedAt", updatedAt);
-      return json({ ...gatePayload(stage, bots, updatedAt), ok: true });
+
+      if (stageBotsTouched) {
+        await env.GATE.put("stage", stage);
+        await env.GATE.put("bots", JSON.stringify(bots));
+        await env.GATE.put("updatedAt", updatedAt);
+      } else if (hasUsage) {
+        await env.GATE.put("updatedAt", updatedAt);
+      }
+
+      const usageOut = usageDoc ?? (await readUsage());
+      const extra = usageOut ? { usage: usageOut } : {};
+      return json({ ...gatePayload(stage, bots, updatedAt, extra), ok: true });
     }
 
     return json({ error: "method" }, 405);

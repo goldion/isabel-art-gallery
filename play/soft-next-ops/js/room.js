@@ -195,6 +195,10 @@ const pointer = new THREE.Vector2();
 let focusedId = null;
 let gateStageId = "pick";
 let gateBots = { art: "idle", developer: "idle", tester: "idle" };
+let gateUsage = null;
+/** Last-known desk share map when Worker `usage` is absent (fallback). */
+let lastKnownWeekShare = null;
+const USAGE_DESK_IDS = ["art", "developer", "tester", "cto", "assistant"];
 let warBoardGroup = null;
 let gatePollTimer = null;
 let introT = REDUCE_MOTION ? 1 : 0;
@@ -1269,10 +1273,30 @@ const GROK_WEEK_SHARE = {
   tester: 9,
   art: 8,
 };
-const GROK_WEEK_MAX = Math.max(...Object.values(GROK_WEEK_SHARE));
+
+function weekShareMap() {
+  const map = { ...GROK_WEEK_SHARE };
+  if (gateUsage?.bots && Array.isArray(gateUsage.bots)) {
+    for (const row of gateUsage.bots) {
+      const id = String(row?.id ?? "").trim();
+      if (!USAGE_DESK_IDS.includes(id)) continue;
+      const pct = Number(row?.sharePct);
+      if (Number.isFinite(pct)) map[id] = Math.round(pct);
+    }
+    lastKnownWeekShare = { ...map };
+    return map;
+  }
+  if (lastKnownWeekShare) return { ...lastKnownWeekShare };
+  return map;
+}
+
+function weekShareMax(shares) {
+  const vals = USAGE_DESK_IDS.map((id) => shares[id]).filter((n) => Number.isFinite(n) && n > 0);
+  return vals.length ? Math.max(...vals) : 1;
+}
 
 function weekShare(id) {
-  const share = GROK_WEEK_SHARE[id];
+  const share = weekShareMap()[id];
   return Number.isFinite(share) ? share : null;
 }
 
@@ -1281,7 +1305,7 @@ function cssHex(color) {
 }
 
 function tokenBarTexture(share, color) {
-  const fillPct = Math.round((share / GROK_WEEK_MAX) * 100);
+  const fillPct = Math.round((share / weekShareMax(weekShareMap())) * 100);
   const key = `${color}:${share}:${fillPct}`;
   const cached = tokenBarCache.get(key);
   if (cached) return cached;
@@ -1643,6 +1667,53 @@ function applyGateSeatStatus(bots) {
   }
 }
 
+function normalizeGateUsage(raw) {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw !== "object" || Array.isArray(raw)) return null;
+  return raw;
+}
+
+function usageDigestChanged(next) {
+  if (!next && !gateUsage) return false;
+  if (!next || !gateUsage) return true;
+  const keys = ["weeklyUsedPct", "resetsAt", "period", "updatedAt"];
+  if (keys.some((k) => String(next[k] ?? "") !== String(gateUsage[k] ?? ""))) return true;
+  const a = JSON.stringify(next.bots ?? null);
+  const b = JSON.stringify(gateUsage.bots ?? null);
+  return a !== b;
+}
+
+function syncUsageHud() {
+  const el = document.getElementById("usage-meter");
+  if (!el) return;
+  const pct = gateUsage?.weeklyUsedPct;
+  const resets = gateUsage?.resetsAt ?? gateUsage?.resetsAtLocal;
+  if (pct == null && !resets) {
+    el.hidden = true;
+    el.textContent = "";
+    return;
+  }
+  const parts = [];
+  if (Number.isFinite(Number(pct))) parts.push(`${Math.round(Number(pct))}% this week`);
+  if (resets) {
+    const when = String(resets).replace(/([T\s]\d{2}:\d{2}).*/, "$1");
+    parts.push(`resets ${when}`);
+  }
+  el.textContent = parts.join(" · ");
+  el.hidden = !parts.length;
+}
+
+function applyGateUsage(usage) {
+  const next = normalizeGateUsage(usage);
+  const changed = usageDigestChanged(next);
+  gateUsage = next;
+  if (changed) {
+    tokenBarCache.clear();
+    syncUsageHud();
+    for (const bot of laneAnimators) syncTokenBar(bot);
+  }
+}
+
 async function loadGateStage() {
   const sources = [
     { url: GATE_API, label: "worker" },
@@ -1656,7 +1727,9 @@ async function loadGateStage() {
       const stage = normalizeGateStage(data?.stage);
       if (!stage) continue;
       const bots = normalizeGateBots(data?.bots, stage);
-      return { stage, bots, source: data.source || label };
+      const usageKnown = Object.prototype.hasOwnProperty.call(data, "usage");
+      const usage = usageKnown ? normalizeGateUsage(data.usage) : undefined;
+      return { stage, bots, usage, usageKnown, source: data.source || label };
     } catch {
       /* try next source */
     }
@@ -1664,11 +1737,13 @@ async function loadGateStage() {
   return {
     stage: gateStageId,
     bots: normalizeGateBots(gateBots, gateStageId),
+    usage: undefined,
+    usageKnown: false,
     source: "default",
   };
 }
 
-function applyGateSnapshot({ stage, bots }) {
+function applyGateSnapshot({ stage, bots, usage, usageKnown }) {
   let boardDirty = false;
   if (stage && stage !== gateStageId) {
     gateStageId = stage;
@@ -1677,6 +1752,7 @@ function applyGateSnapshot({ stage, bots }) {
   }
   const nextBots = normalizeGateBots(bots, gateStageId);
   if (boardDirty || gateBotsChanged(nextBots)) applyGateSeatStatus(nextBots);
+  if (usageKnown) applyGateUsage(usage);
 }
 
 function startGatePolling() {
@@ -2490,6 +2566,7 @@ async function init() {
   const gate = await loadGateStage();
   gateStageId = gate.stage;
   gateBots = normalizeGateBots(gate.bots, gateStageId);
+  if (gate.usageKnown) applyGateUsage(gate.usage);
   buildRoom();
   buildLaneRug();
   buildWarBoard(gateStageId);
@@ -2532,7 +2609,10 @@ async function init() {
     refreshGate: async () => {
       const next = await loadGateStage();
       applyGateSnapshot(next);
-      return { stage: gateStageId, bots: { ...gateBots } };
+      return { stage: gateStageId, bots: { ...gateBots }, usage: gateUsage };
+    },
+    get gateUsage() {
+      return gateUsage ? { ...gateUsage } : null;
     },
   };
   startGatePolling();

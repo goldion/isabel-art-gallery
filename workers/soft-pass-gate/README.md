@@ -33,10 +33,24 @@ Seat semantics (War Room):
 
 | Method | Body | Response |
 |--------|------|----------|
-| `GET /` | — | `{ stage, stages, bots, botStatuses, updatedAt, source }` |
+| `GET /` | — | `{ stage, stages, bots, botStatuses, usage?, updatedAt, source }` |
 | `PUT /` or `POST /` | `{ "stage": "tip" }` | Sets stage; **re-derives** `bots` from defaults; returns full payload + `ok: true` |
 | `PUT /` or `POST /` | `{ "bots": { "developer": "cooking" } }` | Merges bot fields; stage unchanged |
 | `PUT /` or `POST /` | `{ "stage": "smoke", "bots": { "tester": "smoking" } }` | Both updated |
+| `PUT /` or `POST /` | `{ "usage": { … } }` | Persists CFO usage v1 to KV (`usage` key); stage/seat `bots` unchanged |
+| `PUT /` or `POST /` | `{ "stage": "tip", "usage": { … } }` | Stage + usage in one write |
+
+### Usage object (CFO schema v1)
+
+Stored under KV key `usage`. Typical fields (all optional except the object itself):
+
+- `schema` (number, `1`)
+- `period` (e.g. `"this_week"`)
+- `weeklyUsedPct` (number) — alias `weeklyLimitUsedPct`
+- `resetsAt` (ISO, e.g. `+08:00`) — alias `resetsAtLocal`
+- `bots`: `[{ id, name, sharePct }]` — ids may include `art`, `developer`, `tester`, `cto`, `assistant`, `admin`, `cfo`, `governess`, `other`
+- `updatedAt`, `source`
+- Optional extras (`plan`, `timezone`, `deskMap`, `notes`) are stored as sent.
 
 Older clients that only read `stage` remain compatible (extra fields ignored).
 
@@ -72,4 +86,4 @@ npx wrangler kv key put --namespace-id=<GATE_ID> updatedAt "$(date -u +%Y-%m-%dT
 
 ## Room client
 
-`play/soft-next-ops/js/room.js` polls the Worker every 12s (then `gate-status.json`). It lights **desk rings and locks** from `bots` — ambient walker sprites are not used as live status. Override the API base with `window.__SOFT_PASS_GATE_URL` before the module loads.
+`play/soft-next-ops/js/room.js` polls the Worker every 12s (then `gate-status.json`). It lights **desk rings and locks** from seat `bots`, and **“% this week” desk bars** from `usage.bots` (fallback: static hardcoded shares when `usage` is absent). HUD shows `weeklyUsedPct` and `resetsAt` when present. Override the API base with `window.__SOFT_PASS_GATE_URL` before the module loads.

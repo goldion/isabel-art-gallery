@@ -7,6 +7,21 @@
     "tester": "idle"
   },
   "botStatuses": ["idle", "cooking", "waiting-go", "smoking"],
+  "usage": {
+    "schema": 1,
+    "period": "this_week",
+    "weeklyUsedPct": 42,
+    "resetsAt": "2026-11-10T00:00:00+08:00",
+    "bots": [
+      { "id": "assistant", "name": "Admin", "sharePct": 25 },
+      { "id": "developer", "name": "Developer", "sharePct": 17 },
+      { "id": "cto", "name": "CTO", "sharePct": 13 },
+      { "id": "tester", "name": "Tester", "sharePct": 9 },
+      { "id": "art", "name": "Art", "sharePct": 8 }
+    ],
+    "updatedAt": "2026-11-07T09:50:00.000Z",
+    "source": "static"
+  },
   "updatedAt": "2026-11-07T09:50:00.000Z",
   "source": "static"
 }
