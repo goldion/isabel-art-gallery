@@ -7,6 +7,7 @@
     "tester": "idle"
   },
   "botStatuses": ["idle", "cooking", "waiting-go", "smoking"],
+  "usage": {},
   "updatedAt": "2026-11-07T09:50:00.000Z",
   "source": "static"
 }

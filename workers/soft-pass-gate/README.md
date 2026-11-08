@@ -29,13 +29,16 @@ Seat semantics (War Room):
 - **Tester** `smoking` — live smoke
 - **`waiting-go`** — pack ready, tip on HOLD (Art + Developer lit)
 
+`usage` is an optional map of bot id → 0–100. When present, a seated bot’s bar uses that number. When it is absent, an idle seat has no bar, and a live seat shows the current stage’s place in the pass (`pick` 0, `soft-pass` 20, `waiting-go` 45, `tip` 70, `smoke` 85, `done` 100). The sit animation is not usage.
+
 ## API
 
 | Method | Body | Response |
 |--------|------|----------|
-| `GET /` | — | `{ stage, stages, bots, botStatuses, updatedAt, source }` |
+| `GET /` | — | `{ stage, stages, bots, botStatuses, usage, updatedAt, source }` |
 | `PUT /` or `POST /` | `{ "stage": "tip" }` | Sets stage; **re-derives** `bots` from defaults; returns full payload + `ok: true` |
 | `PUT /` or `POST /` | `{ "bots": { "developer": "cooking" } }` | Merges bot fields; stage unchanged |
+| `PUT /` or `POST /` | `{ "usage": { "developer": 64 } }` | Merges 0–100 usage percents. The room shows this number on a seated bot. |
 | `PUT /` or `POST /` | `{ "stage": "smoke", "bots": { "tester": "smoking" } }` | Both updated |
 
 Older clients that only read `stage` remain compatible (extra fields ignored).
