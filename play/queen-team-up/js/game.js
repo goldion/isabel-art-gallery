@@ -33,7 +33,7 @@ const ROSTER = [
   { id: "sky-queen", name: "Sky queen", element: "air", src: "assets/characters/sky-queen.png", cols: 2, rows: 2, col: 0, row: 0 },
   { id: "plant-queen", name: "Plant queen", element: "plant", src: "assets/characters/plant-queen.png", cols: 4, rows: 1, col: 0, row: 0, label: true },
   { id: "dancing-queen", name: "Dancing queen", element: "air", src: "assets/characters/dancing-queen.png", cols: 3, rows: 2, col: 2, row: 0, label: true },
-  { id: "teddy", name: "Teddy", element: "plant", src: "assets/characters/teddy.png", cols: 4, rows: 2, col: 0, row: 0, label: true },
+  { id: "teddy", name: "Yellow bear", element: "plant", src: "assets/characters/teddy.png", cols: 4, rows: 2, col: 0, row: 0, label: true },
 ];
 
 const stage = document.getElementById("stage");
@@ -189,7 +189,8 @@ function refreshRoster() {
     const order = team.indexOf(card.dataset.id);
     card.classList.toggle("picked", order >= 0);
     const role = card.querySelector(".role");
-    role.textContent = order === 0 ? "You jump" : order > 0 ? "Extra life" : "";
+    role.textContent =
+      order === 0 ? "1 — You jump" : order === 1 ? "2 — Extra life" : order === 2 ? "3 — Extra life" : "";
   });
   $("btn-pond").disabled = team.length !== 3;
 }

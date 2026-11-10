@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Spelling vs Lennon</title>
-  <link rel="stylesheet" href="css/style.css?v=6" />
+  <link rel="stylesheet" href="css/style.css?v=7" />
 </head>
 <body>
   <div id="app">
@@ -25,6 +25,12 @@
       <div id="word-slots" aria-label="Your spelling"></div>
       <p id="spell-typed" class="spell-typed"></p>
       <div id="touch-letters" hidden></div>
+    </div>
+    <div id="screen-pick" class="screen hidden">
+      <h1>Who do you walk as?</h1>
+      <p>Tap a face card — or use A / D to browse and E to confirm.</p>
+      <div id="roster" class="roster"></div>
+      <button type="button" id="btn-walk">To the hallway</button>
     </div>
     <div id="onboarding" hidden>
       <p class="onboarding-title">Spelling vs Lennon!</p>
@@ -57,6 +63,6 @@
       <button id="cycle-btn" type="button">A/D</button>
     </div>
   </div>
-  <script type="module" src="js/game.js?v=6"></script>
+  <script type="module" src="js/game.js?v=7"></script>
 </body>
 </html>

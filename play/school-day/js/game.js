@@ -35,6 +35,9 @@ const ctx = stage.getContext("2d");
 const placeNameEl = document.getElementById("place-name");
 const crumbsEl = document.getElementById("crumbs");
 const promptEl = document.getElementById("prompt");
+const screenPickEl = document.getElementById("screen-pick");
+const rosterEl = document.getElementById("roster");
+const btnWalkEl = document.getElementById("btn-walk");
 const onboardingEl = document.getElementById("onboarding");
 const loadingEl = document.getElementById("loading");
 const finishEl = document.getElementById("finish");
@@ -191,10 +194,49 @@ function setPlace(id, { markVisit = true } = {}) {
   }
 }
 
+function syncPickScreen() {
+  screenPickEl.classList.toggle("hidden", state.phase !== "cast");
+}
+
+function refreshRoster() {
+  const active = CAST_IDS[state.castIndex];
+  rosterEl.querySelectorAll(".card").forEach((card) => {
+    card.classList.toggle("picked", card.dataset.id === active);
+  });
+}
+
+function buildRoster() {
+  rosterEl.replaceChildren();
+  CAST_IDS.forEach((id) => {
+    const spec = ASSET_PATHS.walkers[id];
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "card";
+    b.dataset.id = id;
+    const img = document.createElement("img");
+    img.src = sprites[`walker-${id}`].toDataURL();
+    img.alt = "";
+    const name = document.createElement("span");
+    name.className = "who";
+    name.textContent = spec.label;
+    b.append(img, name);
+    b.addEventListener("click", () => {
+      if (state.phase !== "cast") return;
+      state.castIndex = CAST_IDS.indexOf(id);
+      refreshGoals();
+      refreshRoster();
+      setPrompt("E — start as this walker!");
+    });
+    rosterEl.appendChild(b);
+  });
+  refreshRoster();
+}
+
 function cycleCast(dir) {
   if (state.phase !== "cast") return;
   state.castIndex = (state.castIndex + dir + CAST_IDS.length) % CAST_IDS.length;
   refreshGoals();
+  refreshRoster();
   setPrompt("E — pick this walker!");
 }
 
@@ -204,6 +246,7 @@ function confirmWalker() {
   state.phase = "play";
   state.started = true;
   onboardingEl.hidden = true;
+  syncPickScreen();
   state.visited.classroom = true;
   state.player.x = 420;
   state.player.y = 520;
@@ -388,17 +431,7 @@ function render() {
     );
   }
 
-  if (state.phase === "cast") {
-    drawWorldSprite(currentWalkerSprite(), 640, 470, 210);
-    ctx.save();
-    ctx.fillStyle = "rgba(244, 239, 227, 0.82)";
-    ctx.fillRect(0, window.innerHeight * 0.72, window.innerWidth, window.innerHeight * 0.28);
-    ctx.fillStyle = "#2a221c";
-    ctx.font = "800 18px Trebuchet MS, Segoe UI, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("A / D — pick your walker · E — start!", window.innerWidth / 2, window.innerHeight * 0.78);
-    ctx.restore();
-  } else if (!state.won) {
+  if (state.phase !== "cast" && !state.won) {
     drawWorldSprite(
       currentWalkerSprite(),
       state.player.x,
@@ -429,10 +462,12 @@ function resetGame() {
   state.player.x = 640;
   state.player.y = 520;
   finishEl.hidden = true;
-  onboardingEl.hidden = false;
+  onboardingEl.hidden = true;
   setPlace("classroom", { markVisit: false });
   refreshGoals();
-  setPrompt("A / D — pick your walker, then E!");
+  refreshRoster();
+  syncPickScreen();
+  setPrompt("Tap a face card — or A / D and E!");
 }
 
 async function boot() {
@@ -459,14 +494,19 @@ async function boot() {
     sprites[`npc-${id}`] = cutCell(img, spec.cols, 1);
   }
 
+  buildRoster();
+
   loadingEl.hidden = true;
-  onboardingEl.hidden = false;
+  onboardingEl.hidden = true;
   if ("ontouchstart" in window) touchEl.hidden = false;
   setPlace("classroom", { markVisit: false });
   refreshGoals();
-  setPrompt("A / D — pick your walker, then E!");
+  syncPickScreen();
+  setPrompt("Tap a face card — or A / D and E!");
   requestAnimationFrame(frame);
 }
+
+btnWalkEl.addEventListener("click", () => confirmWalker());
 
 window.addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();

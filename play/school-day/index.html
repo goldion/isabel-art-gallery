@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>School day!</title>
-  <link rel="stylesheet" href="css/style.css?v=5" />
+  <link rel="stylesheet" href="css/style.css?v=6" />
 </head>
 <body>
   <div id="app">
@@ -23,6 +23,12 @@
       <span id="goal-friends">Friends 0/2</span>
     </div>
     <p id="prompt" hidden></p>
+    <div id="screen-pick" class="screen hidden">
+      <h1>Who do you walk as?</h1>
+      <p>Tap a face card — or use A / D to browse and E to confirm.</p>
+      <div id="roster" class="roster"></div>
+      <button type="button" id="btn-walk">Start your day</button>
+    </div>
     <div id="onboarding" hidden>
       <p class="onboarding-title">School day!</p>
       <ul>
@@ -48,6 +54,6 @@
       <button id="cycle-btn" type="button">A/D</button>
     </div>
   </div>
-  <script type="module" src="js/game.js?v=5"></script>
+  <script type="module" src="js/game.js?v=6"></script>
 </body>
 </html>

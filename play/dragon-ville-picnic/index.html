@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>Dragon Ville Picnic</title>
-  <link rel="stylesheet" href="css/style.css?v=4" />
+  <link rel="stylesheet" href="css/style.css?v=5" />
 </head>
 <body>
   <div id="app">
@@ -20,6 +20,7 @@
       </div>
     </header>
     <div id="goals" aria-live="polite">
+      <span id="goal-walker">Pick your walker</span>
       <span id="goal-eggs">Eggs 0/4</span>
       <span id="goal-food">Food 0/3</span>
       <span id="goal-gift">Gift safe</span>
@@ -34,7 +35,13 @@
         <li>F shooes the gift-thief bird — no theft!</li>
         <li>Portal opens when eggs, food, and gift are ready</li>
       </ul>
-      <p class="onboarding-hint">Walk to start</p>
+      <p class="onboarding-hint">Pick who you walk as to start</p>
+    </div>
+    <div id="screen-pick" class="screen hidden">
+      <h1>Who do you walk as?</h1>
+      <p>Tap a picnic friend face card, then head into the park.</p>
+      <div id="roster" class="roster"></div>
+      <button type="button" id="btn-walk">Into the park</button>
     </div>
     <div id="finish" hidden>
       <p class="finish-title">Portal home!</p>
@@ -50,6 +57,6 @@
       <button id="shoo-btn" type="button">F</button>
     </div>
   </div>
-  <script type="module" src="js/game.js?v=4"></script>
+  <script type="module" src="js/game.js?v=5"></script>
 </body>
 </html>

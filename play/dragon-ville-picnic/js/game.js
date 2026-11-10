@@ -10,7 +10,17 @@ const ASSET_PATHS = {
     socket: "assets/backgrounds/socket-space.png",
     home: "assets/backgrounds/campsite.png",
   },
-  hero: { src: "assets/characters/undercover-princess.png", cols: 4 },
+  walkers: {
+    princess: {
+      src: "assets/characters/undercover-princess.png",
+      cols: 4,
+      label: "Undercover princess",
+    },
+    purple: { src: "assets/characters/purple-fox-dragon.png", cols: 4, label: "Purple fox dragon" },
+    pink: { src: "assets/characters/pink-bunny-dragon.png", cols: 4, label: "Pink bunny dragon" },
+    yellow: { src: "assets/characters/yellow-lightning-dragon.png", cols: 4, label: "Yellow lightning dragon" },
+    blue: { src: "assets/characters/blue-princess-dragon.png", cols: 4, label: "Blue princess dragon" },
+  },
   bird: { src: "assets/characters/bird.png", cols: 4 },
   dragons: {
     purple: { src: "assets/characters/purple-fox-dragon.png", cols: 4 },
@@ -41,6 +51,9 @@ const ctx = stage.getContext("2d");
 const placeNameEl = document.getElementById("place-name");
 const crumbsEl = document.getElementById("crumbs");
 const promptEl = document.getElementById("prompt");
+const screenPickEl = document.getElementById("screen-pick");
+const rosterEl = document.getElementById("roster");
+const btnWalkEl = document.getElementById("btn-walk");
 const onboardingEl = document.getElementById("onboarding");
 const loadingEl = document.getElementById("loading");
 const finishEl = document.getElementById("finish");
@@ -50,6 +63,7 @@ const stickEl = document.getElementById("stick");
 const stickKnobEl = document.getElementById("stick-knob");
 const actionBtn = document.getElementById("action-btn");
 const shooBtn = document.getElementById("shoo-btn");
+const goalWalkerEl = document.getElementById("goal-walker");
 const goalEggsEl = document.getElementById("goal-eggs");
 const goalFoodEl = document.getElementById("goal-food");
 const goalGiftEl = document.getElementById("goal-gift");
@@ -59,7 +73,12 @@ const analog = { x: 0, y: 0 };
 const sprites = {};
 const backgrounds = {};
 
+const CAST_IDS = Object.keys(ASSET_PATHS.walkers);
+
 const state = {
+  phase: "cast",
+  castIndex: 0,
+  walkerId: null,
   place: "park",
   started: false,
   won: false,
@@ -159,6 +178,21 @@ function foodOnBlanket() {
 }
 
 function refreshGoals() {
+  if (state.phase === "cast") {
+    const id = CAST_IDS[state.castIndex];
+    goalWalkerEl.textContent = `Walker: ${ASSET_PATHS.walkers[id].label}`;
+    goalWalkerEl.classList.remove("done");
+    goalEggsEl.textContent = "Eggs — after pick";
+    goalFoodEl.textContent = "Food — after pick";
+    goalGiftEl.textContent = "Gift — after pick";
+    goalEggsEl.classList.remove("done");
+    goalFoodEl.classList.remove("done");
+    goalGiftEl.classList.remove("done");
+    return;
+  }
+  const label = state.walkerId ? ASSET_PATHS.walkers[state.walkerId].label : "Walker";
+  goalWalkerEl.textContent = label;
+  goalWalkerEl.classList.add("done");
   const eggs = eggCount();
   const food = foodOnBlanket();
   goalEggsEl.textContent = `Eggs ${eggs}/4`;
@@ -245,7 +279,56 @@ function tryTravel() {
   }
 }
 
+function syncPickScreen() {
+  screenPickEl.classList.toggle("hidden", state.phase !== "cast");
+}
+
+function refreshRoster() {
+  const active = CAST_IDS[state.castIndex];
+  rosterEl.querySelectorAll(".card").forEach((card) => {
+    card.classList.toggle("picked", card.dataset.id === active);
+  });
+}
+
+function buildRoster() {
+  rosterEl.replaceChildren();
+  CAST_IDS.forEach((id) => {
+    const spec = ASSET_PATHS.walkers[id];
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "card";
+    b.dataset.id = id;
+    const img = document.createElement("img");
+    img.src = sprites[`walker-${id}`].toDataURL();
+    img.alt = "";
+    const name = document.createElement("span");
+    name.className = "who";
+    name.textContent = spec.label;
+    b.append(img, name);
+    b.addEventListener("click", () => {
+      if (state.phase !== "cast") return;
+      state.castIndex = CAST_IDS.indexOf(id);
+      refreshGoals();
+      refreshRoster();
+    });
+    rosterEl.appendChild(b);
+  });
+  refreshRoster();
+}
+
+function confirmWalker() {
+  if (state.phase !== "cast") return;
+  state.walkerId = CAST_IDS[state.castIndex];
+  state.phase = "play";
+  state.started = true;
+  onboardingEl.hidden = true;
+  syncPickScreen();
+  refreshGoals();
+  setPrompt("Hatch the eggs — mind-move food — keep the gift safe!");
+}
+
 function hatchNearestEgg() {
+  if (state.phase !== "play") return;
   if (state.place !== "hatch") return;
   let best = null;
   let bestD = 9999;
@@ -259,12 +342,14 @@ function hatchNearestEgg() {
   }
   if (!best || bestD > 120) return;
   best.hatched = true;
-  state.dragons.push({
-    kind: best.id,
-    x: best.x,
-    y: best.y - 20,
-    h: 110,
-  });
+  if (best.id !== state.walkerId) {
+    state.dragons.push({
+      kind: best.id,
+      x: best.x,
+      y: best.y - 20,
+      h: 110,
+    });
+  }
   refreshGoals();
   checkPortalReady();
 }
@@ -327,7 +412,13 @@ function shooBird() {
   }
 }
 
+function currentWalkerSprite() {
+  const id = state.phase === "cast" ? CAST_IDS[state.castIndex] : state.walkerId;
+  return sprites[`walker-${id}`];
+}
+
 function updatePlayer(dt) {
+  if (state.phase === "cast" || state.won) return;
   let mx = 0;
   let my = 0;
   if (keys.w) my -= 1;
@@ -421,13 +512,15 @@ function render() {
     drawWorldSprite(sprites[`dragon-${d.kind}`], d.x, d.y, d.h);
   }
 
-  drawWorldSprite(
-    sprites.heroWalk,
-    state.player.x,
-    state.player.y,
-    state.player.h,
-    state.player.facing < 0
-  );
+  if (state.phase === "play") {
+    drawWorldSprite(
+      currentWalkerSprite(),
+      state.player.x,
+      state.player.y,
+      state.player.h,
+      state.player.facing < 0
+    );
+  }
 }
 
 function drawSprite(canvas, x, y, height, flip = false) {
@@ -448,7 +541,7 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  if (!state.won) {
+  if (!state.won && state.phase === "play") {
     updatePlayer(dt);
     updateBird(dt);
     if (keys.e) mindMoveFood(dt);
@@ -459,6 +552,9 @@ function frame(now) {
 }
 
 function resetGame() {
+  state.phase = "cast";
+  state.castIndex = 0;
+  state.walkerId = null;
   state.won = false;
   state.started = false;
   state.place = "park";
@@ -488,9 +584,11 @@ function resetGame() {
     }
   });
   finishEl.hidden = true;
-  onboardingEl.hidden = false;
+  onboardingEl.hidden = true;
   setPlace("park");
   refreshGoals();
+  refreshRoster();
+  syncPickScreen();
 }
 
 async function boot() {
@@ -507,8 +605,10 @@ async function boot() {
     backgrounds[k] = img;
   });
 
-  const heroImg = await loadImage(ASSET_PATHS.hero.src);
-  sprites.heroWalk = cutCell(heroImg, ASSET_PATHS.hero.cols, 1);
+  for (const [id, spec] of Object.entries(ASSET_PATHS.walkers)) {
+    const img = await loadImage(spec.src);
+    sprites[`walker-${id}`] = cutCell(img, spec.cols, 1);
+  }
 
   const birdImg = await loadImage(ASSET_PATHS.bird.src);
   sprites.bird = cutCell(birdImg, ASSET_PATHS.bird.cols, 0);
@@ -523,13 +623,18 @@ async function boot() {
     sprites[id] = cutProp(img);
   }
 
+  buildRoster();
+
   loadingEl.hidden = true;
-  onboardingEl.hidden = false;
+  onboardingEl.hidden = true;
   if ("ontouchstart" in window) touchEl.hidden = false;
   refreshGoals();
+  syncPickScreen();
   setPlace("park");
   requestAnimationFrame(frame);
 }
+
+btnWalkEl.addEventListener("click", () => confirmWalker());
 
 window.addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
@@ -539,7 +644,10 @@ window.addEventListener("keydown", (e) => {
   if (k === "d" || e.key === "ArrowRight") keys.d = true;
   if (k === "e") keys.e = true;
   if (k === "f") keys.f = true;
-  if (k === "e" && !e.repeat) hatchNearestEgg();
+  if (k === "e" && !e.repeat) {
+    if (state.phase === "cast") confirmWalker();
+    else hatchNearestEgg();
+  }
 });
 
 window.addEventListener("keyup", (e) => {
@@ -613,7 +721,8 @@ stickEl.addEventListener("pointercancel", releaseStick);
 
 actionBtn.addEventListener("pointerdown", () => {
   keys.e = true;
-  hatchNearestEgg();
+  if (state.phase === "cast") confirmWalker();
+  else hatchNearestEgg();
 });
 actionBtn.addEventListener("pointerup", () => {
   keys.e = false;
