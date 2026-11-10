@@ -5,8 +5,8 @@ const WORLD = { w: 1280, h: 720 };
 
 const ASSET_PATHS = {
   backgrounds: {
-    classroom: "assets/backgrounds/classroom.png",
-    hallway: "assets/backgrounds/school-hallway.png",
+    classroom: "assets/backgrounds/school-yard.png",
+    hallway: "assets/backgrounds/school-yard.png",
   },
   walkers: {
     isabel: { src: "assets/characters/isabel.png", cols: 4, label: "Isabel" },

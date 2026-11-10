@@ -7,7 +7,7 @@ const WIN_WORDS = 5;
 const LOSE_MISTAKES = 3;
 
 const ASSET_PATHS = {
-  background: "assets/backgrounds/school-hallway.png",
+  background: "assets/backgrounds/spelling-bee.png",
   lennon: { src: "assets/characters/lennon.png", cols: 4 },
   walkers: {
     isabel: { src: "assets/characters/isabel.png", cols: 4, label: "Isabel" },
