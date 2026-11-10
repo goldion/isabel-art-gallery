@@ -25,7 +25,6 @@ const COLORS = {
   assistant: 0x1e86fc,
   cfo: 0x8f59f9,
   governess: 0x14c16f,
-  other: 0x8899a6,
   mainBot: 0x000000,
   mainBadge: 0xf59312,
   wood: 0xc49a6c,
@@ -93,7 +92,6 @@ const OFF_LANE = [
   { id: "cfo", role: "CFO", sub: "Expense", mark: "drop", shape: "teardrop", color: COLORS.cfo, x: COL_X[1], z: BACK_Z },
   { id: "governess", role: "Governess", mark: "star", shape: "star", color: COLORS.governess, x: COL_X[2], z: BACK_Z },
   { id: "main", role: "Main", sub: "Bot", mark: "blob", shape: "blob", color: COLORS.mainBot, x: COL_X[3], z: BACK_Z },
-  { id: "other", role: "Other", sub: "Unmapped", mark: "blob", shape: "blob", color: COLORS.other, x: 0, z: -3.55 },
 ];
 
 const ALL_DESKS = [...LANE_DESKS, ...OFF_LANE];
@@ -210,13 +208,13 @@ const USAGE_DESK_IDS = [
   "main",
   "cfo",
   "governess",
-  "other",
 ];
 function usageRowToDeskId(rowId) {
   const id = String(rowId ?? "").trim();
+  if (!id || id === "other") return null;
   if (id === "admin") return "main";
   if (USAGE_DESK_IDS.includes(id)) return id;
-  return "other";
+  return null;
 }
 
 function gateSeatLocked(botId) {
@@ -1306,27 +1304,20 @@ const GROK_WEEK_SHARE = {
   main: 0,
   cfo: 0,
   governess: 0,
-  other: 0,
 };
 
 function weekShareMap() {
   if (gateUsage?.bots && Array.isArray(gateUsage.bots)) {
     const map = Object.fromEntries(USAGE_DESK_IDS.map((id) => [id, 0]));
-    let otherExtra = 0;
     for (const row of gateUsage.bots) {
       const rawId = String(row?.id ?? "").trim();
       const pct = Number(row?.sharePct);
       if (!Number.isFinite(pct)) continue;
       const rounded = Math.round(pct);
-      if (rawId === "other") {
-        map.other = rounded;
-        continue;
-      }
       const deskId = usageRowToDeskId(rawId);
-      if (deskId === "other") otherExtra += rounded;
-      else map[deskId] = rounded;
+      if (!deskId) continue;
+      map[deskId] = rounded;
     }
-    map.other += otherExtra;
     lastKnownWeekShare = { ...map };
     return map;
   }
@@ -2274,12 +2265,6 @@ function addDeskProps(group, color, deskId) {
     const star = prop(new THREE.Mesh(new THREE.OctahedronGeometry(0.08, 0), mat(0xf5c518)));
     star.position.set(0.32, 0.92, -0.02);
     group.add(book, star);
-  } else if (deskId === "other") {
-    const tray = prop(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.3), mat(color)));
-    tray.position.set(0, 0.86, -0.04);
-    const tag = prop(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 0.02), mat(0xfff8ee)));
-    tag.position.set(0, 0.92, -0.18);
-    group.add(tray, tag);
   } else {
     const tile = prop(new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.04, 0.28), mat(0x2a2a2a)));
     tile.position.set(0, 0.86, -0.04);
