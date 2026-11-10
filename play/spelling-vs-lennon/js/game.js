@@ -49,6 +49,9 @@ const stage = document.getElementById("stage");
 const ctx = stage.getContext("2d");
 const placeNameEl = document.getElementById("place-name");
 const promptEl = document.getElementById("prompt");
+const screenPickEl = document.getElementById("screen-pick");
+const rosterEl = document.getElementById("roster");
+const btnWalkEl = document.getElementById("btn-walk");
 const onboardingEl = document.getElementById("onboarding");
 const loadingEl = document.getElementById("loading");
 const finishEl = document.getElementById("finish");
@@ -177,10 +180,49 @@ function refreshGoals() {
   goalLennonEl.classList.toggle("warn", state.lennonPoints >= LOSE_MISTAKES - 1);
 }
 
+function syncPickScreen() {
+  screenPickEl.classList.toggle("hidden", state.phase !== "cast");
+}
+
+function refreshRoster() {
+  const active = CAST_IDS[state.castIndex];
+  rosterEl.querySelectorAll(".card").forEach((card) => {
+    card.classList.toggle("picked", card.dataset.id === active);
+  });
+}
+
+function buildRoster() {
+  rosterEl.replaceChildren();
+  CAST_IDS.forEach((id) => {
+    const spec = ASSET_PATHS.walkers[id];
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "card";
+    b.dataset.id = id;
+    const img = document.createElement("img");
+    img.src = sprites[`walker-${id}`].toDataURL();
+    img.alt = "";
+    const name = document.createElement("span");
+    name.className = "who";
+    name.textContent = spec.label;
+    b.append(img, name);
+    b.addEventListener("click", () => {
+      if (state.phase !== "cast") return;
+      state.castIndex = CAST_IDS.indexOf(id);
+      refreshGoals();
+      refreshRoster();
+      setPrompt("E — start as this walker!");
+    });
+    rosterEl.appendChild(b);
+  });
+  refreshRoster();
+}
+
 function cycleCast(dir) {
   if (state.phase !== "cast") return;
   state.castIndex = (state.castIndex + dir + CAST_IDS.length) % CAST_IDS.length;
   refreshGoals();
+  refreshRoster();
   setPrompt("E — pick this walker!");
 }
 
@@ -189,6 +231,7 @@ function confirmWalker() {
   state.walkerId = CAST_IDS[state.castIndex];
   state.phase = "hallway";
   onboardingEl.hidden = true;
+  syncPickScreen();
   state.player.x = 280;
   state.player.y = 520;
   state.player.facing = 1;
@@ -426,15 +469,6 @@ function render() {
   drawBackground();
 
   if (state.phase === "cast") {
-    drawWorldSprite(currentWalkerSprite(), 640, 470, 210);
-    ctx.save();
-    ctx.fillStyle = "rgba(244, 239, 227, 0.48)";
-    ctx.fillRect(0, window.innerHeight * 0.72, window.innerWidth, window.innerHeight * 0.28);
-    ctx.fillStyle = "#2a221c";
-    ctx.font = "800 18px Trebuchet MS, Segoe UI, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("A / D — pick your walker · E — start!", window.innerWidth / 2, window.innerHeight * 0.78);
-    ctx.restore();
     return;
   }
 
@@ -532,10 +566,12 @@ function resetGame() {
   finishEl.hidden = true;
   loseEl.hidden = true;
   spellPanelEl.hidden = true;
-  onboardingEl.hidden = false;
+  onboardingEl.hidden = true;
   placeNameEl.textContent = "School hallway";
   refreshGoals();
-  setPrompt("A / D — pick your walker, then E!");
+  refreshRoster();
+  syncPickScreen();
+  setPrompt("Tap a face card — or A / D and E!");
 }
 
 async function boot() {
@@ -552,17 +588,22 @@ async function boot() {
   const lennonImg = await loadImage(ASSET_PATHS.lennon.src);
   sprites.lennon = cutCell(lennonImg, ASSET_PATHS.lennon.cols, 2);
 
+  buildRoster();
+
   loadingEl.hidden = true;
-  onboardingEl.hidden = false;
+  onboardingEl.hidden = true;
   if ("ontouchstart" in window) {
     touchEl.hidden = false;
     touchLettersEl.hidden = false;
     buildTouchLetters();
   }
   refreshGoals();
-  setPrompt("A / D — pick your walker, then E!");
+  syncPickScreen();
+  setPrompt("Tap a face card — or A / D and E!");
   requestAnimationFrame(frame);
 }
+
+btnWalkEl.addEventListener("click", () => confirmWalker());
 
 window.addEventListener("keydown", (e) => {
   const k = e.key.toLowerCase();
