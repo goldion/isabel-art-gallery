@@ -215,8 +215,8 @@ const DEMOS = [
     parent: "Classroom & hallway · meet school friends",
     blurb: "",
     kind: "play",
-    playPath: "play/school-day/?v=4",
-    shelfCover: "10_game_assets/demo/school-day.png?v=28",
+    playPath: "play/school-day/?v=5",
+    shelfCover: "10_game_assets/demo/school-day.png?v=29",
     iframeTitle: "School day",
   },
   {
@@ -227,7 +227,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/dragon-ville-picnic/?v=4",
-    shelfCover: "10_game_assets/demo/dragon-ville-picnic.png?v=24",
+    shelfCover: "10_game_assets/demo/dragon-ville-picnic.png?v=25",
     iframeTitle: "Picnic at Dragon Ville",
   },
   {
@@ -238,7 +238,7 @@ const DEMOS = [
     blurb: "",
     kind: "play",
     playPath: "play/queen-team-up/?v=7",
-    shelfCover: "10_game_assets/demo/queen-team-up.png?v=26",
+    shelfCover: "10_game_assets/demo/queen-team-up.png?v=27",
     iframeTitle: "Queen Team-Up",
   },
   {
@@ -248,8 +248,8 @@ const DEMOS = [
     parent: "School hallway · spell words · face Lennon",
     blurb: "",
     kind: "play",
-    playPath: "play/spelling-vs-lennon/?v=5",
-    shelfCover: "10_game_assets/demo/spelling-vs-lennon.png?v=27",
+    playPath: "play/spelling-vs-lennon/?v=6",
+    shelfCover: "10_game_assets/demo/spelling-vs-lennon.png?v=28",
     iframeTitle: "Spelling vs Lennon",
   },
   {
