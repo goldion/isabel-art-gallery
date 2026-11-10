@@ -25,6 +25,7 @@ const COLORS = {
   assistant: 0x1e86fc,
   cfo: 0x8f59f9,
   governess: 0x14c16f,
+  other: 0x8899a6,
   mainBot: 0x000000,
   mainBadge: 0xf59312,
   wood: 0xc49a6c,
@@ -92,6 +93,7 @@ const OFF_LANE = [
   { id: "cfo", role: "CFO", sub: "Expense", mark: "drop", shape: "teardrop", color: COLORS.cfo, x: COL_X[1], z: BACK_Z },
   { id: "governess", role: "Governess", mark: "star", shape: "star", color: COLORS.governess, x: COL_X[2], z: BACK_Z },
   { id: "main", role: "Main", sub: "Bot", mark: "blob", shape: "blob", color: COLORS.mainBot, x: COL_X[3], z: BACK_Z },
+  { id: "other", role: "Other", sub: "Unmapped", mark: "blob", shape: "blob", color: COLORS.other, x: 0, z: -3.55 },
 ];
 
 const ALL_DESKS = [...LANE_DESKS, ...OFF_LANE];
@@ -198,7 +200,29 @@ let gateBots = { art: "idle", developer: "idle", tester: "idle" };
 let gateUsage = null;
 /** Last-known desk share map when Worker `usage` is absent (fallback). */
 let lastKnownWeekShare = null;
-const USAGE_DESK_IDS = ["art", "developer", "tester", "cto", "assistant"];
+/** Desk ids that receive a weekly usage bar (admin usage maps to main). */
+const USAGE_DESK_IDS = [
+  "art",
+  "developer",
+  "tester",
+  "cto",
+  "assistant",
+  "main",
+  "cfo",
+  "governess",
+  "other",
+];
+function usageRowToDeskId(rowId) {
+  const id = String(rowId ?? "").trim();
+  if (id === "admin") return "main";
+  if (USAGE_DESK_IDS.includes(id)) return id;
+  return "other";
+}
+
+function gateSeatLocked(botId) {
+  const status = gateBots[botId];
+  return status === "cooking" || status === "waiting-go" || status === "smoking";
+}
 let warBoardGroup = null;
 let gatePollTimer = null;
 let introT = REDUCE_MOTION ? 1 : 0;
@@ -1190,24 +1214,35 @@ function moveToward(bot, target, dt) {
 
 const bubbleCache = new Map();
 
-function bubbleTexture(text) {
-  const cached = bubbleCache.get(text);
+function bubbleTexture(text, color = 0) {
+  const accent = color === 0 ? "#3a3a3a" : cssHex(color);
+  const key = `${color}:${text}`;
+  const cached = bubbleCache.get(key);
   if (cached) return cached;
   const tex = canvasTexture(640, 220, (ctx, w, h) => {
     ctx.clearRect(0, 0, w, h);
     roundPath(ctx, 18, 14, w - 36, h - 58, 40);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = accent;
+    ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.lineWidth = 8;
-    ctx.strokeStyle = "#d5e4f2";
+    ctx.strokeStyle = accent;
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(w * 0.5 - 24, h - 52);
     ctx.lineTo(w * 0.5, h - 12);
     ctx.lineTo(w * 0.5 + 24, h - 52);
     ctx.closePath();
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = accent;
+    ctx.globalAlpha = 0.22;
     ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = accent;
+    ctx.stroke();
     ctx.fillStyle = COLORS.ink;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -1219,7 +1254,7 @@ function bubbleTexture(text) {
     }
     ctx.fillText(text, w / 2, (h - 48) / 2 + 4);
   });
-  bubbleCache.set(text, tex);
+  bubbleCache.set(key, tex);
   return tex;
 }
 
@@ -1253,7 +1288,7 @@ function syncBubble(bot) {
     return;
   }
   bot.bubble.visible = true;
-  bot.bubble.material.map = bubbleTexture(line);
+  bot.bubble.material.map = bubbleTexture(line, bot.color ?? 0);
   bot.bubble.material.needsUpdate = true;
   const width = THREE.MathUtils.clamp(0.62 + line.length * 0.09, 1.1, 2.2);
   bot.bubble.scale.set(width, 0.58, 1);
@@ -1261,38 +1296,42 @@ function syncBubble(bot) {
 
 const tokenBarCache = new Map();
 
-/**
- * Hammer Studio Ops, "Share by bot (this week)".
- * Admin on the chart is the Assistant desk (nameplate Admin).
- * Deleted/other and Others are not a single desk, so those seats have no bar.
- */
+/** Static fallback when Worker `usage` is absent (CFO schema v1 desk ids). */
 const GROK_WEEK_SHARE = {
-  assistant: 25,
-  developer: 17,
-  cto: 13,
-  tester: 9,
   art: 8,
+  developer: 17,
+  tester: 9,
+  cto: 13,
+  assistant: 25,
+  main: 0,
+  cfo: 0,
+  governess: 0,
+  other: 0,
 };
 
 function weekShareMap() {
-  const map = { ...GROK_WEEK_SHARE };
   if (gateUsage?.bots && Array.isArray(gateUsage.bots)) {
+    const map = Object.fromEntries(USAGE_DESK_IDS.map((id) => [id, 0]));
+    let otherExtra = 0;
     for (const row of gateUsage.bots) {
-      const id = String(row?.id ?? "").trim();
-      if (!USAGE_DESK_IDS.includes(id)) continue;
+      const rawId = String(row?.id ?? "").trim();
       const pct = Number(row?.sharePct);
-      if (Number.isFinite(pct)) map[id] = Math.round(pct);
+      if (!Number.isFinite(pct)) continue;
+      const rounded = Math.round(pct);
+      if (rawId === "other") {
+        map.other = rounded;
+        continue;
+      }
+      const deskId = usageRowToDeskId(rawId);
+      if (deskId === "other") otherExtra += rounded;
+      else map[deskId] = rounded;
     }
+    map.other += otherExtra;
     lastKnownWeekShare = { ...map };
     return map;
   }
   if (lastKnownWeekShare) return { ...lastKnownWeekShare };
-  return map;
-}
-
-function weekShareMax(shares) {
-  const vals = USAGE_DESK_IDS.map((id) => shares[id]).filter((n) => Number.isFinite(n) && n > 0);
-  return vals.length ? Math.max(...vals) : 1;
+  return { ...GROK_WEEK_SHARE };
 }
 
 function weekShare(id) {
@@ -1305,7 +1344,7 @@ function cssHex(color) {
 }
 
 function tokenBarTexture(share, color) {
-  const fillPct = Math.round((share / weekShareMax(weekShareMap())) * 100);
+  const fillPct = Math.max(0, Math.min(100, Math.round(share)));
   const key = `${color}:${share}:${fillPct}`;
   const cached = tokenBarCache.get(key);
   if (cached) return cached;
@@ -1317,10 +1356,12 @@ function tokenBarTexture(share, color) {
     roundPath(ctx, 8, 22, trackW, 52, 26);
     ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
     ctx.fill();
-    const fillW = Math.max(18, (trackW - 12) * (fillPct / 100));
-    roundPath(ctx, 14, 28, fillW, 40, 20);
-    ctx.fillStyle = fill;
-    ctx.fill();
+    const fillW = fillPct <= 0 ? 0 : Math.max(18, (trackW - 12) * (fillPct / 100));
+    if (fillW > 0) {
+      roundPath(ctx, 14, 28, fillW, 40, 20);
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
     ctx.font = "800 40px Nunito, Trebuchet MS, sans-serif";
     const text = `${share}%`;
     const textW = ctx.measureText(text).width;
@@ -1356,9 +1397,13 @@ function updateLaneAnimators(dt, elapsed) {
     syncBubble(bot);
     syncTokenBar(bot);
     const focused = bot.id === focusedId;
+    const seatLocked = gateSeatLocked(bot.id);
     if (focused && bot.state !== "work") {
       bot.calledBack = true;
       if (bot.state !== "return") beginReturn(bot);
+    }
+    if (seatLocked && (bot.state === "wander" || bot.state === "leave")) {
+      beginReturn(bot);
     }
 
     if (bot.state === "work") {
@@ -1373,7 +1418,7 @@ function updateLaneAnimators(dt, elapsed) {
       playClip(bot, false, dt);
       plantShadow(bot, false);
       bot.stateT += dt;
-      if (!focused && bot.stateT > bot.workDur) beginLeave(bot);
+      if (!focused && !seatLocked && bot.stateT > bot.workDur) beginLeave(bot);
       continue;
     }
 
@@ -1664,6 +1709,11 @@ function applyGateSeatStatus(bots) {
         lock.material.emissive.setHex(group.userData.seatBaseColor);
       }
     }
+  }
+  for (const bot of laneAnimators) {
+    if (!gateSeatLocked(bot.id)) continue;
+    if (bot.state === "wander" || bot.state === "leave") beginReturn(bot);
+    else if (bot.state === "work") bot.stateT = 0;
   }
 }
 
@@ -2224,6 +2274,12 @@ function addDeskProps(group, color, deskId) {
     const star = prop(new THREE.Mesh(new THREE.OctahedronGeometry(0.08, 0), mat(0xf5c518)));
     star.position.set(0.32, 0.92, -0.02);
     group.add(book, star);
+  } else if (deskId === "other") {
+    const tray = prop(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.04, 0.3), mat(color)));
+    tray.position.set(0, 0.86, -0.04);
+    const tag = prop(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.08, 0.02), mat(0xfff8ee)));
+    tag.position.set(0, 0.92, -0.18);
+    group.add(tray, tag);
   } else {
     const tile = prop(new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.04, 0.28), mat(0x2a2a2a)));
     tile.position.set(0, 0.86, -0.04);
