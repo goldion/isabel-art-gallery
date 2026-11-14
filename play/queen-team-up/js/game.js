@@ -48,7 +48,7 @@ let player = null;
 let mermaid = null;
 let gugu = null;
 let camX = 0;
-let state = "title";
+let state = "pick";
 let joined = false;
 let guguDown = false;
 let lastPad = PADS[0];
@@ -775,6 +775,8 @@ async function boot() {
 
   buildRoster();
   hide("loading");
+  state = "pick";
+  show("screen-pick");
   requestAnimationFrame(frame);
 }
 
@@ -830,12 +832,6 @@ hold($("t-jump"), pressJump, releaseJump);
 
 document.querySelectorAll("#fight button").forEach((b) => {
   b.addEventListener("click", () => cast(b.dataset.el));
-});
-
-$("btn-start").addEventListener("click", () => {
-  hide("screen-title");
-  show("screen-pick");
-  state = "pick";
 });
 
 $("btn-pond").addEventListener("click", startPond);
