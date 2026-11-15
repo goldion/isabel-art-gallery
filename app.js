@@ -237,8 +237,8 @@ const DEMOS = [
     parent: "Pick three friends · jump the lily pads · join the mermaid",
     blurb: "",
     kind: "play",
-    playPath: "play/queen-team-up/?v=9",
-    shelfCover: "10_game_assets/demo/queen-team-up.png?v=27",
+    playPath: "play/queen-team-up/?v=10",
+    shelfCover: "10_game_assets/demo/queen-team-up.png?v=28",
     iframeTitle: "Queen Team-Up",
   },
   {
