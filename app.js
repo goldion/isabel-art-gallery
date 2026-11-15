@@ -1068,6 +1068,7 @@ function setSection(next) {
   const allowed = { comics: 1, songs: 1, novels: 1, demo: 1, gallery: 1 };
   const prevSection = section;
   section = allowed[next] ? next : "comics";
+  if (prevSection !== section && listEl) listEl.scrollLeft = 0;
   if (section === "comics" && prevSection !== "comics") {
     mode = "converted";
     syncVersionTabLabels();
@@ -1204,6 +1205,7 @@ function showComics() {
   pos.textContent = `${pageIndex + 1} / ${pages.length}`;
   prev.disabled = pageIndex <= 0;
   next.disabled = pageIndex >= pages.length - 1;
+  if (stageComic) stageComic.scrollTop = 0;
   syncLikeButtons();
   prefetchSharedCountsForSection();
 }
