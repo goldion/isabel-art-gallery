@@ -27,13 +27,15 @@ const PADS = [
   { x: 1970, y: 310, w: 270, h: 26, gugu: true },
 ];
 
+const ASSET_V = "?v=10";
+
 const ROSTER = [
-  { id: "mermaid", name: "Mermaid", element: "water", src: "assets/characters/mermaid.png", cols: 4, rows: 1, col: 1, row: 0, label: true },
-  { id: "sea-queen", name: "Sea queen", element: "water", src: "assets/characters/sea-queen.png", cols: 2, rows: 2, col: 0, row: 0 },
-  { id: "sky-queen", name: "Sky queen", element: "air", src: "assets/characters/sky-queen.png", cols: 2, rows: 2, col: 0, row: 0 },
-  { id: "plant-queen", name: "Plant queen", element: "plant", src: "assets/characters/plant-queen.png", cols: 4, rows: 1, col: 0, row: 0, label: true },
-  { id: "dancing-queen", name: "Dancing queen", element: "air", src: "assets/characters/dancing-queen.png", cols: 3, rows: 2, col: 2, row: 0, label: true },
-  { id: "teddy", name: "Yellow bear", element: "plant", src: "assets/characters/teddy.png", cols: 4, rows: 2, col: 0, row: 0, label: true },
+  { id: "mermaid", name: "Mermaid", element: "water", src: `assets/characters/mermaid.png${ASSET_V}`, cols: 4, rows: 1, col: 1, row: 0, label: true },
+  { id: "sea-queen", name: "Sea queen", element: "water", src: `assets/characters/sea-queen.png${ASSET_V}`, cols: 2, rows: 2, col: 0, row: 0 },
+  { id: "sky-queen", name: "Sky queen", element: "air", src: `assets/characters/sky-queen.png${ASSET_V}`, cols: 2, rows: 2, col: 0, row: 0 },
+  { id: "plant-queen", name: "Plant queen", element: "plant", src: `assets/characters/plant-queen.png${ASSET_V}`, cols: 4, rows: 1, col: 0, row: 0, label: true },
+  { id: "dancing-queen", name: "Dancing queen", element: "air", src: `assets/characters/dancing-queen.png${ASSET_V}`, cols: 3, rows: 2, col: 2, row: 0, label: true },
+  { id: "teddy", name: "Yellow bear", element: "plant", src: `assets/characters/teddy.png${ASSET_V}`, cols: 4, rows: 2, col: 0, row: 0, label: true },
 ];
 
 const stage = document.getElementById("stage");
@@ -749,13 +751,13 @@ async function boot() {
   useCoarsePointer();
 
   const jobs = [
-    loadImage("assets/backgrounds/full-pond.png").then((img) => (images.pond = img)),
+    loadImage(`assets/backgrounds/full-pond.png${ASSET_V}`).then((img) => (images.pond = img)),
     loadImage("assets/backgrounds/bubble-bath.png").then((img) => (images.bath = img)),
     loadImage("assets/backgrounds/stage.png").then((img) => (images.stage = img)),
-    loadImage("assets/elements/lily-pad.png").then((img) => (images.lily = img)),
-    loadImage("assets/elements/lotus.png").then((img) => (images.lotus = img)),
-    loadImage("assets/characters/gugu.png").then((img) => (images.gugu = img)),
-    loadImage("assets/characters/star-director.png").then((img) => (images.director = img)),
+    loadImage(`assets/elements/lily-pad.png${ASSET_V}`).then((img) => (images.lily = img)),
+    loadImage(`assets/elements/lotus.png${ASSET_V}`).then((img) => (images.lotus = img)),
+    loadImage(`assets/characters/gugu.png${ASSET_V}`).then((img) => (images.gugu = img)),
+    loadImage(`assets/characters/star-director.png${ASSET_V}`).then((img) => (images.director = img)),
   ];
   for (const r of ROSTER) {
     jobs.push(loadImage(r.src).then((img) => (images[r.id] = img)));
