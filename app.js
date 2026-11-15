@@ -785,6 +785,48 @@ function applyBodyChrome() {
   if (section === "comics") {
     document.body.classList.add(mode === "converted" ? "mode-comic" : "mode-notebook");
   }
+  syncHubVisualViewport();
+}
+
+const HUB_VV_MQL = window.matchMedia("(max-width: 900px)");
+
+function syncHubVisualViewport() {
+  const apply = () => {
+    const root = document.documentElement;
+    if (!HUB_VV_MQL.matches) {
+      root.style.removeProperty("--hub-vv-height");
+      root.style.removeProperty("--hub-vv-offset-top");
+      root.classList.remove("hub-vv-sync");
+      return;
+    }
+    const vv = window.visualViewport;
+    if (!vv) {
+      root.classList.add("hub-vv-sync");
+      return;
+    }
+    const height = Math.max(0, Math.round(vv.height));
+    const offsetTop = Math.max(0, Math.round(vv.offsetTop));
+    root.style.setProperty("--hub-vv-height", `${height}px`);
+    root.style.setProperty("--hub-vv-offset-top", `${offsetTop}px`);
+    root.classList.add("hub-vv-sync");
+  };
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(apply);
+  else apply();
+}
+
+function bindHubVisualViewport() {
+  syncHubVisualViewport();
+  window.addEventListener("resize", syncHubVisualViewport, { passive: true });
+  if (typeof HUB_VV_MQL.addEventListener === "function") {
+    HUB_VV_MQL.addEventListener("change", syncHubVisualViewport);
+  } else if (typeof HUB_VV_MQL.addListener === "function") {
+    HUB_VV_MQL.addListener(syncHubVisualViewport);
+  }
+  const vv = window.visualViewport;
+  if (vv) {
+    vv.addEventListener("resize", syncHubVisualViewport, { passive: true });
+    vv.addEventListener("scroll", syncHubVisualViewport, { passive: true });
+  }
 }
 
 const galleryShelfLede = document.getElementById("gallery-shelf-lede");
@@ -1453,4 +1495,5 @@ document.addEventListener("keydown", (event) => {
 });
 window.addEventListener("hashchange", readHash);
 syncVersionTabLabels();
+bindHubVisualViewport();
 readHash();
