@@ -788,7 +788,11 @@ function applyBodyChrome() {
   syncHubVisualViewport();
 }
 
-const HUB_VV_MQL = window.matchMedia("(max-width: 900px)");
+const HUB_VV_MQL = window.matchMedia("(max-width: 900px), (max-height: 520px)");
+
+function galleryUsesOverlay() {
+  return HUB_VV_MQL.matches;
+}
 
 function syncHubVisualViewport() {
   const apply = () => {
@@ -814,13 +818,18 @@ function syncHubVisualViewport() {
   else apply();
 }
 
+function onHubViewportChange() {
+  syncHubVisualViewport();
+  if (typeof refreshGalleryViewer === "function") refreshGalleryViewer();
+}
+
 function bindHubVisualViewport() {
   syncHubVisualViewport();
-  window.addEventListener("resize", syncHubVisualViewport, { passive: true });
+  window.addEventListener("resize", onHubViewportChange, { passive: true });
   if (typeof HUB_VV_MQL.addEventListener === "function") {
-    HUB_VV_MQL.addEventListener("change", syncHubVisualViewport);
+    HUB_VV_MQL.addEventListener("change", onHubViewportChange);
   } else if (typeof HUB_VV_MQL.addListener === "function") {
-    HUB_VV_MQL.addListener(syncHubVisualViewport);
+    HUB_VV_MQL.addListener(onHubViewportChange);
   }
   const vv = window.visualViewport;
   if (vv) {
@@ -852,6 +861,8 @@ const stageDemo = document.getElementById("stage-demo");
 const demoPlay = document.getElementById("demo-play");
 const demoIframe = document.getElementById("demo-iframe");
 const galleryFocusPanel = document.getElementById("gallery-focus-panel");
+const galleryFocusClose = document.getElementById("gallery-focus-close");
+const galleryScrollEl = document.getElementById("gallery-scroll");
 const galleryFocus = document.getElementById("gallery-focus");
 const galleryPage = document.getElementById("gallery-page");
 const galleryCaption = document.getElementById("gallery-caption");
@@ -871,6 +882,7 @@ const shelfTitle = document.getElementById("shelf-title");
 const shelfLede = document.getElementById("shelf-lede");
 
 let section = "comics";
+let galleryViewerWanted = false;
 let galleryKind = "characters";
 let galleryPack = null;
 let itemIndex = 0;
@@ -1084,6 +1096,8 @@ function markNav() {
     if (section === id) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   }
+  const scroller = document.querySelector(".sections");
+  if (scroller) scroller.classList.toggle("is-scrolled", scroller.scrollLeft > 4);
 }
 
 function markGalleryTabs() {
@@ -1094,16 +1108,42 @@ function markGalleryTabs() {
 }
 
 function setGalleryFocusVisible(show) {
+  const overlay = galleryUsesOverlay();
+  const open = overlay ? !!(show && galleryViewerWanted) : !!show;
+  document.body.classList.toggle("gallery-viewer-open", open && overlay);
   if (galleryFocus) {
-    galleryFocus.classList.toggle("hidden", !show);
-    if (show) galleryFocus.removeAttribute("aria-hidden");
+    galleryFocus.classList.toggle("hidden", !open);
+    if (open) galleryFocus.removeAttribute("aria-hidden");
     else galleryFocus.setAttribute("aria-hidden", "true");
   }
   if (galleryFocusPanel) {
-    galleryFocusPanel.classList.toggle("is-open", show);
-    if (show) galleryFocusPanel.removeAttribute("hidden");
+    galleryFocusPanel.classList.toggle("is-open", open);
+    if (open) galleryFocusPanel.removeAttribute("hidden");
     else galleryFocusPanel.setAttribute("hidden", "");
+    if (open && overlay) {
+      galleryFocusPanel.setAttribute("role", "dialog");
+      galleryFocusPanel.setAttribute("aria-modal", "true");
+    } else {
+      galleryFocusPanel.removeAttribute("role");
+      galleryFocusPanel.removeAttribute("aria-modal");
+    }
   }
+  if (galleryFocusClose) {
+    if (open && overlay) galleryFocusClose.removeAttribute("hidden");
+    else galleryFocusClose.setAttribute("hidden", "");
+  }
+}
+
+function refreshGalleryViewer() {
+  if (section !== "gallery") return;
+  const hasArt = !!(galleryPage && galleryPage.getAttribute("src"));
+  setGalleryFocusVisible(hasArt);
+}
+
+function closeGalleryViewer() {
+  if (!galleryViewerWanted) return;
+  galleryViewerWanted = false;
+  refreshGalleryViewer();
 }
 
 function setSection(next) {
@@ -1119,6 +1159,7 @@ function setSection(next) {
   }
   itemIndex = 0;
   pageIndex = 0;
+  if (section !== "gallery") galleryViewerWanted = false;
   markNav();
   markGalleryTabs();
   comicTabs.classList.toggle("hidden", section !== "comics");
@@ -1165,6 +1206,7 @@ function modePageLabel() {
 
 function renderList() {
   const all = items();
+  const shelfScroll = listEl ? listEl.scrollLeft : 0;
   listEl.innerHTML = "";
   all.forEach((item, i) => {
     const btn = document.createElement("button");
@@ -1233,6 +1275,7 @@ function renderList() {
     });
     listEl.appendChild(btn);
   });
+  if (listEl) listEl.scrollLeft = shelfScroll;
 }
 
 function showComics() {
@@ -1349,6 +1392,10 @@ function showGallery(opts = {}) {
     pos.textContent = "0 / 0";
     prev.disabled = true;
     next.disabled = true;
+    const galleryPrev = document.getElementById("gallery-prev");
+    const galleryNext = document.getElementById("gallery-next");
+    if (galleryPrev) galleryPrev.disabled = true;
+    if (galleryNext) galleryNext.disabled = true;
     return;
   }
   galleryPage.src = ASSET + art.file;
@@ -1359,7 +1406,13 @@ function showGallery(opts = {}) {
   pos.textContent = `${pageIndex + 1} / ${arts.length}`;
   prev.disabled = pageIndex <= 0;
   next.disabled = pageIndex >= arts.length - 1;
+  const galleryPrev = document.getElementById("gallery-prev");
+  const galleryNext = document.getElementById("gallery-next");
+  if (galleryPrev) galleryPrev.disabled = pageIndex <= 0;
+  if (galleryNext) galleryNext.disabled = pageIndex >= arts.length - 1;
+  const shelfScroll = galleryScrollEl ? galleryScrollEl.scrollTop : 0;
   galleryGrid.innerHTML = "";
+  const overlay = galleryUsesOverlay();
   arts.forEach((item, i) => {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -1371,8 +1424,10 @@ function showGallery(opts = {}) {
     const thumb = document.createElement("img");
     thumb.src = ASSET + item.file;
     thumb.alt = "";
+    thumb.decoding = "async";
+    thumb.loading = i === pageIndex ? "eager" : "lazy";
     slot.appendChild(thumb);
-    if (i === pageIndex) {
+    if (i === pageIndex && !overlay) {
       slot.appendChild(document.createTextNode("Shown above"));
     }
     const chipRow = document.createElement("span");
@@ -1389,14 +1444,27 @@ function showGallery(opts = {}) {
     btn.appendChild(label);
     btn.addEventListener("click", () => {
       pageIndex = i;
+      if (galleryUsesOverlay()) galleryViewerWanted = true;
       showItem();
     });
     galleryGrid.appendChild(btn);
   });
-  if (opts.scrollGalleryShelf) {
+  if (galleryScrollEl && !opts.scrollGalleryShelf) {
+    const y = shelfScroll;
+    const restoreShelf = () => {
+      galleryScrollEl.scrollTop = y;
+    };
+    restoreShelf();
+    requestAnimationFrame(restoreShelf);
+  }
+  if (opts.scrollGalleryShelf && galleryScrollEl) {
     const active = galleryGrid.querySelector("button.active");
     if (active) {
-      active.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+      const card = active.getBoundingClientRect();
+      const frame = galleryScrollEl.getBoundingClientRect();
+      if (card.top < frame.top + 4 || card.bottom > frame.bottom - 4) {
+        galleryScrollEl.scrollTop += card.top - frame.top - 8;
+      }
     }
   }
   prefetchSharedCountsForSection();
@@ -1474,6 +1542,7 @@ function stepPage(delta) {
     const nextIndex = pageIndex + delta;
     if (nextIndex < 0 || nextIndex >= arts.length) return;
     pageIndex = nextIndex;
+    if (galleryUsesOverlay()) galleryViewerWanted = true;
     showItem({ scrollGalleryShelf: true });
   }
 }
@@ -1489,10 +1558,66 @@ if (itemLikeBtn) itemLikeBtn.addEventListener("click", () => toggleCurrentLike()
 prev.addEventListener("click", () => stepPage(-1));
 next.addEventListener("click", () => stepPage(1));
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && section === "gallery" && galleryUsesOverlay()) {
+    closeGalleryViewer();
+    return;
+  }
   if (section !== "comics" && section !== "gallery") return;
   if (event.key === "ArrowLeft") prev.click();
   if (event.key === "ArrowRight") next.click();
 });
+
+function bindHorizontalSwipe(el, onSwipe) {
+  if (!el) return;
+  let startX = 0;
+  let startY = 0;
+  let tracking = false;
+  el.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button, a, input, textarea, select")) return;
+    if (!galleryUsesOverlay()) return;
+    tracking = true;
+    startX = event.clientX;
+    startY = event.clientY;
+  });
+  el.addEventListener("pointerup", (event) => {
+    if (!tracking) return;
+    tracking = false;
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy) * 1.35) return;
+    onSwipe(dx < 0 ? 1 : -1);
+  });
+  el.addEventListener("pointercancel", () => {
+    tracking = false;
+  });
+}
+
+if (galleryFocusClose) {
+  galleryFocusClose.addEventListener("click", () => closeGalleryViewer());
+}
+const galleryPrevBtn = document.getElementById("gallery-prev");
+const galleryNextBtn = document.getElementById("gallery-next");
+if (galleryPrevBtn) galleryPrevBtn.addEventListener("click", () => stepPage(-1));
+if (galleryNextBtn) galleryNextBtn.addEventListener("click", () => stepPage(1));
+if (galleryFocusPanel) {
+  galleryFocusPanel.addEventListener("click", (event) => {
+    if (event.target === galleryFocusPanel) closeGalleryViewer();
+  });
+}
+bindHorizontalSwipe(stageComic, (delta) => {
+  if (section === "comics") stepPage(delta);
+});
+bindHorizontalSwipe(galleryFocusPanel, (delta) => {
+  if (section === "gallery" && galleryViewerWanted) stepPage(delta);
+});
+
+const sectionBar = document.querySelector(".sections");
+if (sectionBar) {
+  sectionBar.addEventListener("scroll", () => {
+    sectionBar.classList.toggle("is-scrolled", sectionBar.scrollLeft > 4);
+  }, { passive: true });
+}
+
 window.addEventListener("hashchange", readHash);
 syncVersionTabLabels();
 bindHubVisualViewport();
