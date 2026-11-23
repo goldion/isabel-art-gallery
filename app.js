@@ -111,9 +111,16 @@ const BOOKS = [
     id: "pond-team",
     title: "Pond team",
     blurb: "Pond, mermaid team, the end",
-    shelfCover: "07_comics/converted/pond-1.png",
+    shelfCover: "07_comics/converted/pond-team-1.png",
     original: imgs([1002, 1003, 1015, 1035, 1036, 1055, 1065]),
-    converted: [conv("pond-1.png", "The pond team")],
+    converted: [
+      conv("pond-team-1.png", "First day at the pond"),
+      conv("pond-team-2.png", "Supper and the tent"),
+      conv("pond-team-3.png", "The battle with Lifia"),
+      conv("pond-team-4.png", "Lotusaia’s arrival"),
+      conv("pond-team-5.png", "Here, join our team"),
+      conv("pond-team-6.png", "The end"),
+    ],
   },
   {
     id: "more",
