@@ -866,7 +866,7 @@ const stageNovel = document.getElementById("stage-novel");
 const stageGallery = document.getElementById("stage-gallery");
 const stageDemo = document.getElementById("stage-demo");
 const demoPlay = document.getElementById("demo-play");
-const demoIframe = document.getElementById("demo-iframe");
+const demoOpen = document.getElementById("demo-open");
 const galleryFocusPanel = document.getElementById("gallery-focus-panel");
 const galleryFocusClose = document.getElementById("gallery-focus-close");
 const galleryScrollEl = document.getElementById("gallery-scroll");
@@ -1177,7 +1177,6 @@ function setSection(next) {
   stageNovel.classList.toggle("hidden", section !== "novels");
   stageDemo.classList.toggle("hidden", section !== "demo");
   stageGallery.classList.toggle("hidden", section !== "gallery");
-  if (section !== "demo" && demoIframe) demoIframe.removeAttribute("src");
   if (section !== "gallery") setGalleryFocusVisible(false);
   applyBodyChrome();
   if (section === "comics") {
@@ -1198,7 +1197,7 @@ function setSection(next) {
   } else if (section === "demo") {
     shelfKicker.textContent = "Demo";
     shelfTitle.textContent = "Playable games";
-    shelfLede.textContent = "Try Isabel’s games right here — same builds as /play/… on this site.";
+    shelfLede.textContent = "Tap a game to play it in a new tab.";
   } else {
     shelfKicker.textContent = "Novels";
     shelfTitle.textContent = "Stories";
@@ -1278,6 +1277,7 @@ function renderList() {
     btn.addEventListener("click", () => {
       itemIndex = i;
       pageIndex = 0;
+      if (section === "demo") openDemoGame(item);
       showItem();
     });
     listEl.appendChild(btn);
@@ -1340,13 +1340,20 @@ function galleryChipKind() {
   return GALLERY_CHIP[galleryKind] || "characters";
 }
 
+function openDemoGame(entry) {
+  if (!entry || !entry.playPath) return;
+  const opened = window.open(urlFromRoot(entry.playPath), "_blank", "noopener,noreferrer");
+  if (opened) opened.opener = null;
+}
+
 function showDemo() {
   const entry = DEMOS[itemIndex];
   title.textContent = entry.title;
   kicker.textContent = "Playable demo";
-  demoIframe.title = entry.iframeTitle || entry.title;
-  const src = urlFromRoot(entry.playPath);
-  if (demoIframe.getAttribute("src") !== src) demoIframe.src = src;
+  if (demoOpen) {
+    demoOpen.href = urlFromRoot(entry.playPath);
+    demoOpen.textContent = `Open ${entry.kid || entry.title} in a new tab`;
+  }
   pager.classList.add("hidden");
   syncLikeButtons();
   prefetchSharedCountsForSection();
