@@ -434,27 +434,103 @@ body.section-gallery main {
   min-height: 0;
 }
 
+body.section-demo {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "nav"
+    "main";
+}
+
+body.section-demo #shelf,
+body.section-demo main > header {
+  display: none;
+}
+
+body.section-demo main {
+  background: transparent;
+}
+
 #stage-demo.stage {
+  display: block;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.85rem 1.25rem 2rem;
+  background: transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.demo-picker-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: 1.5rem;
+  margin: 0.15rem 0 1.15rem;
+}
+
+.demo-picker-titles .kicker {
+  margin: 0 0 0.2rem;
+}
+
+.demo-picker-titles h1 {
+  margin: 0;
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+
+.demo-picker-head .lede {
+  margin: 0 0 0.15rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1rem 0.9rem;
+  align-items: stretch;
+}
+
+.demo-card {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  padding: 0.75rem 1rem 1.25rem;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  background: #fff9f1;
+  border: 1.5px solid rgba(214, 194, 168, 0.95);
+  border-radius: 1.25rem;
+  padding: 0.7rem 0.7rem 0.55rem;
+  box-shadow: 0 8px 18px rgba(61, 52, 40, 0.06);
 }
 
-.demo-play {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-}
-
-#demo-iframe {
-  flex: 1;
+.demo-card-art {
+  display: block;
   width: 100%;
-  min-height: min(72vh, 40rem);
-  border: 2px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: #2a221c;
-  box-shadow: var(--shadow-soft);
+  aspect-ratio: 1;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  background: #fff;
+}
+
+.demo-card-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.demo-card-title {
+  display: block;
+  margin-top: 0.55rem;
+  min-height: calc(2 * 1.25em);
+  line-height: 1.25;
+  text-align: center;
+  overflow: visible;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--ink);
 }
 
 /* Comics: storybook — one big page */
@@ -1287,14 +1363,6 @@ img {
     height: auto;
   }
 
-  #stage-demo.stage {
-    padding: 0.55rem 0.75rem 0.9rem;
-  }
-
-  #demo-iframe {
-    min-height: min(58dvh, 28rem);
-  }
-
   /* Gallery: the sticker grid fills the stage. A chosen sticker opens over it. */
   #stage-gallery.stage {
     display: flex;
@@ -1396,10 +1464,73 @@ img {
   }
 }
 
-@media (max-width: 560px) {
-  #demo-iframe {
-    min-height: min(52dvh, 22rem);
-    border-radius: var(--radius-md);
+@media (max-width: 900px) {
+  body.section-demo #topnav {
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 0.35rem;
+    column-gap: 0.35rem;
+    padding: calc(0.55rem + env(safe-area-inset-top)) 0.85rem 0.4rem;
+  }
+
+  body.section-demo .brand {
+    flex: 1 0 100%;
+    font-size: 1.28rem;
+    line-height: 1.15;
+  }
+
+  body.section-demo .sections {
+    flex: 1 0 100%;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 0.2rem;
+    overflow: visible;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  body.section-demo .section-link {
+    flex: 0 1 auto;
+    min-height: 2.35rem;
+    padding: 0.28rem 0.55rem;
+    font-size: 0.92rem;
+  }
+
+  body.section-demo #stage-demo.stage {
+    padding: 0.25rem 0.85rem 1.5rem;
+  }
+
+  body.section-demo .demo-picker-head {
+    grid-template-columns: 1fr;
+    align-items: start;
+    row-gap: 0.2rem;
+    margin: 0.15rem 0 0.85rem;
+  }
+
+  body.section-demo .demo-picker-titles h1 {
+    font-size: 1.65rem;
+  }
+
+  body.section-demo .demo-picker-head .lede {
+    margin: 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  body.section-demo .demo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  body.section-demo .demo-card {
+    padding: 0.55rem 0.55rem 0.45rem;
+    border-radius: 1.15rem;
+  }
+
+  body.section-demo .demo-card-title {
+    font-size: 0.95rem;
   }
 }
 
@@ -1648,4 +1779,15 @@ img {
   #gallery-grid button:hover {
     transform: translateY(-2px);
   }
+
+  .demo-card:hover {
+    border-color: rgba(244, 164, 184, 0.95);
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-2px);
+  }
+}
+
+.demo-card:focus-visible {
+  outline: 3px solid var(--sky);
+  outline-offset: 3px;
 }

@@ -164,6 +164,7 @@ const DEMOS = [
     id: "fruit-catcher",
     title: "Catch the fruit!",
     kid: "Catch the fruit!",
+    cardLabel: "Catch the fruit",
     parent: "Basket race · 2 minutes · dodge bombs",
     blurb: "",
     kind: "play",
@@ -175,6 +176,7 @@ const DEMOS = [
     id: "god-sisters-stroll",
     title: "Walk with your god sister",
     kid: "Walk with your god sister",
+    cardLabel: "God Sisters Stroll",
     parent: "Garden, park, pond · F waves · E talks",
     blurb: "",
     kind: "play",
@@ -186,6 +188,7 @@ const DEMOS = [
     id: "dragon-flight",
     title: "Fly the blue princess!",
     kid: "Fly the blue princess!",
+    cardLabel: "Dragon Flight",
     parent: "Ring race through 龍城 · 12 rings",
     blurb: "",
     kind: "play",
@@ -197,6 +200,7 @@ const DEMOS = [
     id: "clover-wheel",
     title: "Race the clover wheel!",
     kid: "Race the clover wheel!",
+    cardLabel: "Clover Wheel",
     parent: "Greenness Queen vs sunglasses 小花 · 3 laps",
     blurb: "",
     kind: "play",
@@ -208,6 +212,7 @@ const DEMOS = [
     id: "transform-dragon-city",
     title: "Transform Dragon City!",
     kid: "Transform Dragon City!",
+    cardLabel: "Transform Dragon City",
     parent: "Move · jump · transform · rescue",
     blurb: "",
     kind: "play",
@@ -219,6 +224,7 @@ const DEMOS = [
     id: "school-day",
     title: "School day!",
     kid: "School day!",
+    cardLabel: "School Day",
     parent: "Classroom & hallway · meet school friends",
     blurb: "",
     kind: "play",
@@ -230,6 +236,7 @@ const DEMOS = [
     id: "dragon-ville-picnic",
     title: "Picnic at Dragon Ville!",
     kid: "Picnic at Dragon Ville!",
+    cardLabel: "Picnic at Dragon Ville",
     parent: "Hatch eggs · mind-move food · shoo the bird · portal home",
     blurb: "",
     kind: "play",
@@ -241,6 +248,7 @@ const DEMOS = [
     id: "queen-team-up",
     title: "Queen Team-Up!",
     kid: "Queen Team-Up!",
+    cardLabel: "Queen Team-Up",
     parent: "Pick three friends · jump the lily pads · join the mermaid",
     blurb: "",
     kind: "play",
@@ -252,6 +260,7 @@ const DEMOS = [
     id: "spelling-vs-lennon",
     title: "Spelling vs Lennon!",
     kid: "Spelling vs Lennon!",
+    cardLabel: "Spelling vs Lennon",
     parent: "School hallway · spell words · face Lennon",
     blurb: "",
     kind: "play",
@@ -263,6 +272,7 @@ const DEMOS = [
     id: "soft-next-ops",
     title: "Hammer Studio Soft Next!",
     kid: "Hammer Studio Soft Next!",
+    cardLabel: "War Room",
     parent: "Soft Next desks · Soft PASS board · Hammer Studio",
     blurb: "",
     kind: "play",
@@ -270,6 +280,19 @@ const DEMOS = [
     shelfCover: "10_game_assets/demo/soft-next-ops.png?v=3",
     iframeTitle: "Hammer Studio Soft Next",
   },
+];
+
+const DEMO_PICKER_ORDER = [
+  "fruit-catcher",
+  "god-sisters-stroll",
+  "dragon-flight",
+  "clover-wheel",
+  "soft-next-ops",
+  "queen-team-up",
+  "spelling-vs-lennon",
+  "transform-dragon-city",
+  "dragon-ville-picnic",
+  "school-day",
 ];
 
 const NOVELS = [
@@ -865,8 +888,7 @@ const stageSong = document.getElementById("stage-song");
 const stageNovel = document.getElementById("stage-novel");
 const stageGallery = document.getElementById("stage-gallery");
 const stageDemo = document.getElementById("stage-demo");
-const demoPlay = document.getElementById("demo-play");
-const demoOpen = document.getElementById("demo-open");
+const demoGrid = document.getElementById("demo-grid");
 const galleryFocusPanel = document.getElementById("gallery-focus-panel");
 const galleryFocusClose = document.getElementById("gallery-focus-close");
 const galleryScrollEl = document.getElementById("gallery-scroll");
@@ -1171,7 +1193,7 @@ function setSection(next) {
   markGalleryTabs();
   comicTabs.classList.toggle("hidden", section !== "comics");
   galleryTabs.classList.toggle("hidden", section !== "gallery");
-  pager.classList.toggle("hidden", section !== "comics" && section !== "gallery" && section !== "demo");
+  pager.classList.toggle("hidden", section !== "comics" && section !== "gallery");
   stageComic.classList.toggle("hidden", section !== "comics");
   stageSong.classList.toggle("hidden", section !== "songs");
   stageNovel.classList.toggle("hidden", section !== "novels");
@@ -1196,8 +1218,8 @@ function setSection(next) {
         : "Characters, props, and places redrawn from the notebook.";
   } else if (section === "demo") {
     shelfKicker.textContent = "Demo";
-    shelfTitle.textContent = "Playable games";
-    shelfLede.textContent = "Tap a game to play it in a new tab.";
+    shelfTitle.textContent = "Pick a game";
+    shelfLede.textContent = "Tap a cover — it opens in a new tab.";
   } else {
     shelfKicker.textContent = "Novels";
     shelfTitle.textContent = "Stories";
@@ -1214,6 +1236,7 @@ function renderList() {
   const all = items();
   const shelfScroll = listEl ? listEl.scrollLeft : 0;
   listEl.innerHTML = "";
+  if (section === "demo") return;
   all.forEach((item, i) => {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -1277,7 +1300,6 @@ function renderList() {
     btn.addEventListener("click", () => {
       itemIndex = i;
       pageIndex = 0;
-      if (section === "demo") openDemoGame(item);
       showItem();
     });
     listEl.appendChild(btn);
@@ -1340,20 +1362,44 @@ function galleryChipKind() {
   return GALLERY_CHIP[galleryKind] || "characters";
 }
 
-function openDemoGame(entry) {
-  if (!entry || !entry.playPath) return;
-  const opened = window.open(urlFromRoot(entry.playPath), "_blank", "noopener,noreferrer");
-  if (opened) opened.opener = null;
+function renderDemoPicker() {
+  if (!demoGrid) return;
+  const byId = new Map(DEMOS.map((entry) => [entry.id, entry]));
+  demoGrid.replaceChildren();
+  DEMO_PICKER_ORDER.forEach((id) => {
+    const entry = byId.get(id);
+    if (!entry || !entry.playPath) return;
+    const label = entry.cardLabel || entry.kid || entry.title;
+    const link = document.createElement("a");
+    link.className = "demo-card";
+    link.href = urlFromRoot(entry.playPath);
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+
+    const art = document.createElement("span");
+    art.className = "demo-card-art";
+    const img = document.createElement("img");
+    img.className = "demo-card-cover";
+    img.alt = "";
+    img.width = 288;
+    img.height = 288;
+    img.decoding = "async";
+    if (entry.shelfCover) img.src = urlFromRoot(entry.shelfCover);
+    art.appendChild(img);
+
+    const titleEl = document.createElement("span");
+    titleEl.className = "demo-card-title";
+    titleEl.textContent = label;
+
+    link.append(art, titleEl);
+    demoGrid.appendChild(link);
+  });
 }
 
 function showDemo() {
-  const entry = DEMOS[itemIndex];
-  title.textContent = entry.title;
-  kicker.textContent = "Playable demo";
-  if (demoOpen) {
-    demoOpen.href = urlFromRoot(entry.playPath);
-    demoOpen.textContent = `Open ${entry.kid || entry.title} in a new tab`;
-  }
+  renderDemoPicker();
+  title.textContent = "Pick a game";
+  kicker.textContent = "Demo";
   pager.classList.add("hidden");
   syncLikeButtons();
   prefetchSharedCountsForSection();

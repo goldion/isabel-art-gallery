@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="app.css?v=26" />
+  <link rel="stylesheet" href="app.css?v=27" />
 </head>
 <body class="section-comics mode-comic">
   <nav id="topnav" aria-label="Isabel Art">
@@ -85,9 +85,16 @@
 
     <article id="stage-novel" class="stage hidden"></article>
 
-    <div id="stage-demo" class="stage hidden" aria-label="Playable demos">
-      <div id="demo-play" class="demo-play">
-        <p id="demo-open-note">Tap a game on the shelf. It opens in a new tab. <a id="demo-open" target="_blank" rel="noopener noreferrer">Open this game in a new tab</a></p>
+    <div id="stage-demo" class="stage hidden" aria-label="Pick a game">
+      <div class="demo-picker">
+        <header class="demo-picker-head">
+          <div class="demo-picker-titles">
+            <p class="kicker">Demo</p>
+            <h1>Pick a game</h1>
+          </div>
+          <p class="lede">Tap a cover — it opens in a new tab.</p>
+        </header>
+        <div id="demo-grid" class="demo-grid"></div>
       </div>
     </div>
 
@@ -126,7 +133,7 @@
     </div>
   </main>
 
-  <script src="app.js?v=113"></script>
+  <script src="app.js?v=114"></script>
   <script>
     (function () {
       var list = document.getElementById("list");
